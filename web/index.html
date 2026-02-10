@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base href="/">
+    <meta charset="UTF-8">
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+    <meta name="description" content="AI Fitness Coach - Your Personal AI Trainer">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="AI Fitness Coach">
+    <link rel="apple-touch-icon" href="icons/Icon-192.png">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>AI Fitness Coach</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" type="text/css" href="splash/splash.css">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="theme-color" content="#6C63FF">
+    <link href="splash/splash.css" media="(prefers-color-scheme: dark)" rel="stylesheet">
+    <script>
+      window.addEventListener('flutter-inappwebview-post-message', function(event) {
+        if (event.detail.type == 'captureImageUriData') {
+          onImageCapture(event.detail.imageSrc);
+        }
+      });
+    </script>
+</head>
+<body>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('flutter_service_worker.js');
+        });
+      }
+    </script>
+
+    <script src="flutter_bootstrap.js" async></script>
+    <script type="module">
+  
+    import { initializeApp } from "firebase/app";
+    import { getAnalytics } from "firebase/analytics";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKS_MbeZVXRU1BzlzYXFECZuavyRogsiw",
+      authDomain: "aifitnes.firebaseapp.com",
+      projectId: "aifitnes",
+      storageBucket: "aifitnes.firebasestorage.app",
+      messagingSenderId: "701123620337",
+      appId: "1:701123620337:web:a3d4ec8157b92e66062850",
+      measurementId: "G-HN1YJ43JPM"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    </script>
+    <script>
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        console.log('beforeinstallprompt fired');
+      });
+    </script>
+</body>
+</html>
