@@ -24,10 +24,10 @@ class InventoryScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0A0E21),
+          backgroundColor: const Color(0xFF1C1C1E),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF1D1E33),
-            title: const Text('🏋️ Мой инвентарь'),
+            backgroundColor: const Color(0xFF1C1C1E),
+            title: const Text('Мой инвентарь'),
             elevation: 0,
           ),
           body: ListView(
@@ -39,8 +39,8 @@ class InventoryScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF00D9FF).withOpacity(0.1),
-                      const Color(0xFF6C5CE7).withOpacity(0.1),
+                      const Color(0xFF2C2C2E).withOpacity(0.1),
+                      const Color(0xFF2C2C2E).withOpacity(0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
@@ -231,8 +231,8 @@ class InventoryScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF1D1E33),
-                      const Color(0xFF252B41).withOpacity(0.8),
+                      const Color(0xFF2C2C2E),
+                      const Color(0xFF2C2C2E).withOpacity(0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
@@ -358,14 +358,14 @@ class InventoryScreen extends StatelessWidget {
             ? const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF00D9FF), Color(0xFF0099CC)],
+                colors: [Color(0xFF2C2C2E), Color(0xFF2C2C2E)],
               )
             : LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF1D1E33),
-                  const Color(0xFF252B41).withOpacity(0.8),
+                  const Color(0xFF2C2C2E),
+                  const Color(0xFF2C2C2E).withOpacity(0.8),
                 ],
               ),
         borderRadius: BorderRadius.circular(16),
@@ -677,7 +677,7 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1D1E33),
+      backgroundColor: const Color(0xFF1C1C1E),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
@@ -693,7 +693,7 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF6C5CE7), Color(0xFF8B7FF4)],
+                      colors: [Color(0xFF1C1C1E), Color(0xFF1C1C1E)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),

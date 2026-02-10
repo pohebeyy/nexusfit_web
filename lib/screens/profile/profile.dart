@@ -6,15 +6,19 @@ import 'package:startap/screens/auth/login_screen.dart';
 import 'inventory_screen.dart';
 import 'context_json_screen.dart';
 
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+
 
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
@@ -23,7 +27,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _height = TextEditingController();
   final _weight = TextEditingController();
 
+
   DateTime? _birthDate;
+
 
   @override
   void initState() {
@@ -39,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+
   @override
   void dispose() {
     _firstName.dispose();
@@ -50,9 +57,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+
   void _syncFromProvider() {
     final p = context.read<ProfileProvider>().profile;
     if (p == null) return;
+
 
     _firstName.text = p.firstName;
     _lastName.text = p.lastName;
@@ -62,37 +71,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _weight.text = p.weightKg?.toStringAsFixed(1) ?? '';
     _birthDate = p.birthDate;
 
+
     if (mounted) setState(() {});
   }
 
-  Future<void> _pickBirthDate() async {
-    final now = DateTime.now();
-    final initial = _birthDate ?? DateTime(now.year - 20, 1, 1);
 
-    final picked = await showDatePicker(
+  Future<void> _editGoal() async {
+    if (!mounted) return;
+    final provider = context.read<ProfileProvider>();
+    
+    final result = await showDialog<String>(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime(1900),
-      lastDate: DateTime(now.year + 1),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF00D9FF),
-              onPrimary: Color(0xFF0A0E21),
-              surface: Color(0xFF1D1E33),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context) => _EditDialog(
+        title: 'Цель',
+        initialValue: _goal.text,
+        hint: 'Например: Набрать 90 кг',
+      ),
     );
-
-    if (picked != null) {
-      setState(() => _birthDate = picked);
-    }
+    
+    if (!mounted || result == null || result.isEmpty) return;
+    
+    _goal.text = result;
+    final p = provider.profile!;
+    await provider.save(p.copyWith(goalText: result));
   }
+
+
+
+  Future<void> _editHeight() async {
+    if (!mounted) return;
+    final provider = context.read<ProfileProvider>();
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => _EditDialog(
+        title: 'Рост (см)',
+        initialValue: _height.text,
+        hint: 'Например: 180',
+        keyboardType: TextInputType.number,
+      ),
+    );
+    
+    if (!mounted || result == null || result.isEmpty) return;
+    
+    _height.text = result;
+    final p = provider.profile!;
+    await provider.save(p.copyWith(heightCm: double.tryParse(result)));
+  }
+
+
+  Future<void> _editWeight() async {
+    if (!mounted) return;
+    final provider = context.read<ProfileProvider>();
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => _EditDialog(
+        title: 'Вес (кг)',
+        initialValue: _weight.text,
+        hint: 'Например: 75.5',
+        keyboardType: TextInputType.number,
+      ),
+    );
+    
+    if (!mounted || result == null || result.isEmpty) return;
+    
+    _weight.text = result;
+    final p = provider.profile!;
+    await provider.save(p.copyWith(weightKg: double.tryParse(result.replaceAll(',', '.'))));
+  }
+
+  Future<void> _editInjuries() async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const _InjuriesScreen(),
+      ),
+    );
+  }
+
 
   String _formatDate(DateTime? d) {
     if (d == null) return '';
@@ -101,41 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return '$dd.$mm.${d.year}';
   }
 
-  double? _tryParseDouble(String text) {
-    final t = text.trim().replaceAll(',', '.');
-    if (t.isEmpty) return null;
-    return double.tryParse(t);
-  }
-
-  Future<void> _save() async {
-    final provider = context.read<ProfileProvider>();
-    final p = provider.profile;
-    if (p == null) return;
-
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    final next = p.copyWith(
-      firstName: _firstName.text.trim(),
-      lastName: _lastName.text.trim(),
-      email: _email.text.trim(),
-      birthDate: _birthDate,
-      goalText: _goal.text.trim(),
-      heightCm: _tryParseDouble(_height.text),
-      weightKg: _tryParseDouble(_weight.text),
-    );
-
-    await provider.save(next);
-
-    if (!mounted) return;
-    final err = provider.error;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(err == null ? '✅ Профиль обновлен' : '❌ Ошибка: $err'),
-        backgroundColor: err == null ? Colors.green : Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,29 +165,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, provider, _) {
         if (provider.isLoading && provider.profile == null) {
           return const Scaffold(
-            backgroundColor: Color(0xFF0A0E21),
+            backgroundColor: Color(0xFF1C1C1E),
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Color(0xFF00D9FF)),
+                valueColor: AlwaysStoppedAnimation(Color(0xFFFFD700)),
               ),
             ),
           );
         }
 
+
         final p = provider.profile;
         if (p == null) {
           return Scaffold(
-            backgroundColor: const Color(0xFF0A0E21),
+            backgroundColor: const Color(0xFF1C1C1E),
             appBar: AppBar(
-              backgroundColor: const Color(0xFF1D1E33),
+              backgroundColor: const Color(0xFF2C2C2E),
               title: const Text('Профиль'),
             ),
             body: Center(
               child: ElevatedButton(
                 onPressed: provider.isLoading ? null : () async => provider.load(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00D9FF),
-                  foregroundColor: const Color(0xFF0A0E21),
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: const Color(0xFF1C1C1E),
                 ),
                 child: const Text('Загрузить профиль'),
               ),
@@ -173,96 +196,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
 
+
         return Scaffold(
-          backgroundColor: const Color(0xFF0A0E21),
+          backgroundColor: const Color(0xFF1C1C1E),
           body: CustomScrollView(
             slivers: [
-              // ПРЕМИУМ APP BAR
+              // КОМПАКТНЫЙ APP BAR
               SliverAppBar(
-                expandedHeight: 200,
                 floating: false,
                 pinned: true,
-                backgroundColor: const Color(0xFF0A0E21),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF6C5CE7),
-                          const Color(0xFF00D9FF).withOpacity(0.8),
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const SizedBox(height: 60),
-                        Container(
-                          width: 90,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF00D9FF), Color(0xFF6C5CE7)],
-                            ),
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF00D9FF).withOpacity(0.4),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            color: Colors.white,
-                            size: 45,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '${p.firstName} ${p.lastName}'.trim().isEmpty
-                              ? 'Мой профиль'
-                              : '${p.firstName} ${p.lastName}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
+                backgroundColor: const Color(0xFF1C1C1E),
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                title: const Text(
+                  'Профиль',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                centerTitle: true,
                 actions: [
-                                  IconButton(
-                  tooltip: 'Выход',
-                  onPressed: provider.isLoading
-                      ? null
-                      : () async {
-                          // 1. Выполняем выход в провайдере
-                          await provider.logout();
-                          
-                          if (!context.mounted) return;
-
-                          // 2. 🔥 ПЕРЕХОД НА ЛОГИН С ОЧИСТКОЙ ИСТОРИИ
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                            (route) => false, // Это условие удаляет все предыдущие экраны
-                          );
-                        },
-                  icon: const Icon(Icons.logout_rounded),
-                ),
-
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                    onPressed: provider.isLoading
+                        ? null
+                        : () async {
+                            await provider.logout();
+                            if (!context.mounted) return;
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                  ),
                 ],
               ),
+
 
               // КОНТЕНТ
               SliverToBoxAdapter(
@@ -273,218 +253,220 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ЛИЧНЫЕ ДАННЫЕ
-                        _PremiumSectionTitle('👤 Личные данные'),
-                        const SizedBox(height: 12),
-                        _PremiumCard(
-                          child: Column(
-                            children: [
-                              _PremiumTextField(
-                                controller: _firstName,
-                                label: 'Имя',
-                                icon: Icons.person_outline,
-                              ),
-                              const SizedBox(height: 16),
-                              _PremiumTextField(
-                                controller: _lastName,
-                                label: 'Фамилия',
-                                icon: Icons.person_outline,
-                              ),
-                              const SizedBox(height: 16),
-                              _PremiumTextField(
-                                controller: _email,
-                                label: 'Почта',
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 16),
-                              InkWell(
-                                onTap: _pickBirthDate,
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.1),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today_rounded,
-                                        color: const Color(0xFF00D9FF),
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Дата рождения',
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(0.6),
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _formatDate(_birthDate).isEmpty
-                                                  ? 'Не указана'
-                                                  : _formatDate(_birthDate),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        // ПРОФИЛЬ КАРТОЧКА
+                        _ProfileCard(
+                          firstName: p.firstName.isEmpty ? 'Александр' : p.firstName,
+                          lastName: p.lastName.isEmpty ? '' : p.lastName,
+                          subtitle: '💎 PRO SUBSCRIBER',
+                          onEdit: () {},
                         ),
 
-                        const SizedBox(height: 24),
 
-                        // АНТРОПОМЕТРИЯ
-                        _PremiumSectionTitle('📏 Антропометрия'),
+                        const SizedBox(height: 16),
+
+
+                        // БЫСТРЫЕ ДЕЙСТВИЯ
+                        _SectionTitle('ОБСЛЕДОВАНИЕ + ПЛАН'),
                         const SizedBox(height: 12),
-                        _PremiumCard(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _PremiumTextField(
-                                  controller: _height,
-                                  label: 'Рост (см)',
-                                  icon: Icons.height_rounded,
-                                  keyboardType: TextInputType.number,
-                                ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QuickActionButton(
+                                icon: Icons.home_rounded,
+                                label: 'ДОМ',
+                                onTap: () {},
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _PremiumTextField(
-                                  controller: _weight,
-                                  label: 'Вес (кг)',
-                                  icon: Icons.monitor_weight_outlined,
-                                  keyboardType: TextInputType.number,
-                                ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _QuickActionButton(
+                                icon: Icons.fitness_center_rounded,
+                                label: 'ЗАЛ',
+                                onTap: () {},
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _QuickActionButton(
+                                icon: Icons.water_drop_rounded,
+                                label: 'ДИЕТА',
+                                onTap: () {},
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _QuickActionButton(
+                                icon: Icons.add_rounded,
+                                label: 'CUSTOM',
+                                onTap: () {},
+                              ),
+                            ),
+                          ],
                         ),
 
-                        const SizedBox(height: 24),
-
-                        // ЦЕЛЬ
-                        _PremiumSectionTitle('🎯 Цель'),
-                        const SizedBox(height: 12),
-                        _PremiumCard(
-                          child: _PremiumTextField(
-                            controller: _goal,
-                            label: 'Например: Набрать 90 кг',
-                            icon: Icons.flag_rounded,
-                            maxLines: 2,
-                          ),
-                        ),
 
                         const SizedBox(height: 24),
 
-                        // ОГРАНИЧЕНИЯ
-                        _PremiumSectionTitle('🩺 Ограничения и травмы'),
-                        const SizedBox(height: 12),
-                        _PremiumCard(child: _InjuriesEditor()),
 
-                        const SizedBox(height: 24),
-
-                        // НАВИГАЦИОННЫЕ КАРТОЧКИ
-                        _PremiumSectionTitle('⚙️ Настройки'),
+                        // ИНВЕНТАРЬ
+                        _SectionTitle('ТЕЛО И ЦЕЛИ'),
                         const SizedBox(height: 12),
-                        
-                        _NavigationCard(
+                        _MenuItem(
                           icon: Icons.fitness_center_rounded,
-                          title: 'Мой инвентарь',
-                          subtitle: 'Активный пресет: ${equipmentPresetTitle(p.preset)}',
-                          trailing: '${p.equipmentEnabled.length} шт',
+                          title: 'ДОСТУПНЫЙ ПРЕСЕТ',
+                          subtitle: equipmentPresetTitle(p.preset),
+                          trailing: '',
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const InventoryScreen()),
                           ),
                         ),
-                        
+
+
+                        const SizedBox(height: 24),
+
+
+                        // АНТРОПОМЕТРИЯ
+                        _SectionTitle('АНТРОПОМЕТРИЯ'),
                         const SizedBox(height: 12),
-                        
-                        _NavigationCard(
-                          icon: Icons.code_rounded,
-                          title: 'Контекст для AI',
-                          subtitle: 'Редактор JSON',
-                          trailing: '${p.aiContext.length} ключей',
+                        _MenuItem(
+                          icon: Icons.flag_rounded,
+                          title: 'Цель',
+                          trailing: p.goalText.isEmpty ? 'Не указана' : p.goalText,
+                          onTap: _editGoal,
+                        ),
+                        const SizedBox(height: 8),
+                        _MenuItem(
+                          icon: Icons.height_rounded,
+                          title: 'Рост',
+                          trailing: p.heightCm == null ? 'Не указан' : '${p.heightCm!.toInt()} см',
+                          onTap: _editHeight,
+                        ),
+                        const SizedBox(height: 8),
+                        _MenuItem(
+                          icon: Icons.monitor_weight_outlined,
+                          title: 'Вес',
+                          trailing: p.weightKg == null ? 'Не указан' : '${p.weightKg!.toStringAsFixed(1)} кг',
+                          onTap: _editWeight,
+                        ),
+
+
+                        const SizedBox(height: 24),
+
+
+                        // ТРАВМЫ И ОГРАНИЧЕНИЯ
+                        _SectionTitle('ТРАВМЫ И ОГРАНИЧЕНИЯ'),
+                        const SizedBox(height: 12),
+                        _MenuItem(
+                          icon: Icons.warning_rounded,
+                          iconColor: const Color(0xFFFF4538),
+                          title: 'Травмы и Ограничения',
+                          trailing: p.injuries.isEmpty ? 'ОПИСАТЬ' : '${p.injuries.length} шт',
+                          trailingColor: const Color(0xFFFF4538),
+                          onTap: _editInjuries,
+                        ),
+
+
+                        const SizedBox(height: 24),
+
+
+                        // AI КОНТЕКСТ
+                        _SectionTitle('AI CONTEXT'),
+                        const SizedBox(height: 12),
+                        _MenuItem(
+                          icon: Icons.memory_rounded,
+                          title: 'AI Context',
+                          trailing: 'Digital Twin',
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const ContextJsonScreen()),
                           ),
                         ),
 
+
+                        const SizedBox(height: 24),
+
+
+                        // НАСТРОЙКИ
+                        _SectionTitle('НАСТРОЙКИ'),
                         const SizedBox(height: 12),
-                        
-                        _NavigationCard(
-                          icon: Icons.star_rounded,
+                        _MenuItem(
+                          icon: Icons.shopping_bag_rounded,
                           title: 'Подписка',
-                          subtitle: 'Управление подпиской',
-                          trailing: 'Pro',
-                          onTap: provider.isLoading
-                              ? null
-                              : () async {
-                                  await provider.api.updateSubscriptionStub();
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Открыть paywall позже'),
-                                      backgroundColor: Color(0xFF6C5CE7),
-                                    ),
-                                  );
-                                },
+                          trailing: 'Актив',
+                          onTap: () {},
                         ),
+                        const SizedBox(height: 8),
+                        _MenuItem(
+                          icon: Icons.notifications_outlined,
+                          title: 'Уведомления',
+                          trailing: '',
+                          onTap: () {},
+                        ),
+                        const SizedBox(height: 8),
+                        _MenuItem(
+                          icon: Icons.language_rounded,
+                          title: 'Язык',
+                          trailing: 'Русский',
+                          onTap: () {},
+                        ),
+
 
                         const SizedBox(height: 32),
 
-                        // КНОПКА СОХРАНЕНИЯ
+
+                        // КНОПКА ВЫХОДА
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: provider.isLoading ? null : _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00D9FF),
-                              foregroundColor: const Color(0xFF0A0E21),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: OutlinedButton(
+                            onPressed: provider.isLoading
+                                ? null
+                                : () async {
+                                    await provider.logout();
+                                    if (!context.mounted) return;
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(
+                                        builder: (context) => const LoginScreen(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: const BorderSide(color: Color(0xFFFF4538), width: 1.5),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              elevation: 0,
                             ),
-                            child: provider.isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(Color(0xFF0A0E21)),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Обновить данные',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
+                            child: const Text(
+                              '🔥 ВЫЙТИ ИЗ АККАУНТА',
+                              style: TextStyle(
+                                color: Color(0xFFFF4538),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
+
+
+                        const SizedBox(height: 16),
+
+
+                        Center(
+                          child: TextButton(
+                            onPressed: () {},
+                            child: Text(
+                              'УДАЛИТЬ БАЗУ',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
 
                         const SizedBox(height: 40),
                       ],
@@ -500,220 +482,337 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ПРЕМИУМ КОМПОНЕНТЫ
 
-class _PremiumSectionTitle extends StatelessWidget {
+// КОМПОНЕНТЫ
+
+
+class _ProfileCard extends StatelessWidget {
+  final String firstName;
+  final String lastName;
+  final String subtitle;
+  final VoidCallback onEdit;
+
+
+  const _ProfileCard({
+    required this.firstName,
+    required this.lastName,
+    required this.subtitle,
+    required this.onEdit,
+  });
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.1),
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$firstName $lastName'.trim(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _SectionTitle extends StatelessWidget {
   final String text;
-  const _PremiumSectionTitle(this.text);
+  const _SectionTitle(this.text);
+
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+      style: TextStyle(
+        color: Colors.white.withOpacity(0.5),
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
       ),
     );
   }
 }
 
-class _PremiumCard extends StatelessWidget {
-  final Widget child;
-  const _PremiumCard({required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-          width: 1,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _PremiumTextField extends StatelessWidget {
-  final TextEditingController controller;
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
   final String label;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final int? maxLines;
+  final VoidCallback onTap;
 
-  const _PremiumTextField({
-    required this.controller,
-    required this.label,
+
+  const _QuickActionButton({
     required this.icon,
-    this.keyboardType,
-    this.maxLines = 1,
+    required this.label,
+    required this.onTap,
   });
+
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-        prefixIcon: Icon(icon, color: const Color(0xFF00D9FF), size: 20),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(12),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF00D9FF), width: 2),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _NavigationCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String trailing;
-  final VoidCallback? onTap;
 
-  const _NavigationCard({
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final String title;
+  final String? subtitle;
+  final String trailing;
+  final Color? trailingColor;
+  final VoidCallback onTap;
+
+
+  const _MenuItem({
     required this.icon,
+    this.iconColor,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.trailing,
-    this.onTap,
+    this.trailingColor,
+    required this.onTap,
   });
+
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
-          ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(12),
         ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF00D9FF).withOpacity(0.2),
-                        const Color(0xFF6C5CE7).withOpacity(0.2),
-                      ],
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor ?? Colors.white, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
-                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: const Color(0xFF00D9FF), size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 12,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00D9FF).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        trailing,
-                        style: const TextStyle(
-                          color: Color(0xFF00D9FF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Color(0xFF00D9FF),
-                      size: 14,
                     ),
                   ],
-                ),
-              ],
+                ],
+              ),
             ),
+            if (trailing.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  trailing,
+                  style: TextStyle(
+                    color: trailingColor ?? Colors.white.withOpacity(0.5),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white.withOpacity(0.3),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _EditDialog extends StatefulWidget {
+  final String title;
+  final String initialValue;
+  final String hint;
+  final TextInputType? keyboardType;
+
+
+  const _EditDialog({
+    required this.title,
+    required this.initialValue,
+    required this.hint,
+    this.keyboardType,
+  });
+
+  @override
+  State<_EditDialog> createState() => _EditDialogState();
+}
+
+class _EditDialogState extends State<_EditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF2C2C2E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(
+        widget.title,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: widget.keyboardType,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.05),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
           ),
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Отмена',
+            style: TextStyle(color: Colors.white.withOpacity(0.5)),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFFD700),
+            foregroundColor: const Color(0xFF1C1C1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: const Text('Сохранить'),
+        ),
+      ],
     );
   }
 }
 
-class _InjuriesEditor extends StatefulWidget {
+
+
+// ЭКРАН РЕДАКТИРОВАНИЯ ТРАВМ
+class _InjuriesScreen extends StatefulWidget {
+  const _InjuriesScreen();
+
+
   @override
-  State<_InjuriesEditor> createState() => _InjuriesEditorState();
+  State<_InjuriesScreen> createState() => _InjuriesScreenState();
 }
 
-class _InjuriesEditorState extends State<_InjuriesEditor> {
+
+class _InjuriesScreenState extends State<_InjuriesScreen> {
   final _ctrl = TextEditingController();
+
 
   @override
   void dispose() {
@@ -721,90 +820,116 @@ class _InjuriesEditorState extends State<_InjuriesEditor> {
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ProfileProvider>();
-    final p = provider.profile!;
-    
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _ctrl,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Например: сломал ногу, астма',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF00D9FF), width: 2),
-                  ),
-                ),
-              ),
+    return Consumer<ProfileProvider>(
+      builder: (context, provider, _) {
+        final p = provider.profile!;
+        
+        return Scaffold(
+          backgroundColor: const Color(0xFF1C1C1E),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF2C2C2E),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
             ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00D9FF), Color(0xFF6C5CE7)],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                onPressed: provider.isLoading
-                    ? null
-                    : () async {
-                        final text = _ctrl.text;
-                        _ctrl.clear();
-                        await provider.addInjury(text);
-                      },
-                icon: const Icon(Icons.add_rounded, color: Colors.white),
-              ),
+            title: const Text(
+              'Травмы и Ограничения',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (p.injuries.isEmpty)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Пока пусто',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
-            ),
-          )
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (int i = 0; i < p.injuries.length; i++)
-                Chip(
-                  label: Text(p.injuries[i]),
-                  deleteIcon: const Icon(Icons.close, size: 18),
-                  onDeleted: provider.isLoading ? null : () => provider.removeInjuryAt(i),
-                  backgroundColor: Colors.red.withOpacity(0.15),
-                  labelStyle: const TextStyle(color: Colors.red),
-                  deleteIconColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.red.withOpacity(0.3)),
-                  ),
-                ),
-            ],
+            centerTitle: true,
           ),
-      ],
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _ctrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Например: сломал ногу, астма',
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                          filled: true,
+                          fillColor: const Color(0xFF2C2C2E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        onPressed: provider.isLoading
+                            ? null
+                            : () async {
+                                final text = _ctrl.text.trim();
+                                if (text.isEmpty) return;
+                                _ctrl.clear();
+                                await provider.addInjury(text);
+                              },
+                        icon: const Icon(Icons.add_rounded, color: Color(0xFF1C1C1E)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (p.injuries.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Пока пусто',
+                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: p.injuries.length,
+                      itemBuilder: (context, i) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2C2C2E),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_rounded, color: Color(0xFFFF4538), size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  p.injuries[i],
+                                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: provider.isLoading ? null : () => provider.removeInjuryAt(i),
+                                icon: const Icon(Icons.close_rounded, color: Color(0xFFFF4538), size: 20),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

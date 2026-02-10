@@ -133,7 +133,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ИСТОЧНИК
-                      _buildSourceToggle(),
+                      
                       const SizedBox(height: 24),
 
                       // КАЛЕНДАРЬ
@@ -229,24 +229,16 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D1E33),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Календарь тренировок',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
+          
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0E21),
+              color: const Color(0xFF2C2C2E),
               borderRadius: BorderRadius.circular(18),
             ),
             child: TableCalendar(
@@ -340,7 +332,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
       Widget _buildSelectedWorkoutCard(ActivityDay activity, bool isToday) {
     // Определяем статус
     String statusText = 'ЗАПЛАНИРОВАНО';
-    Color statusColor = const Color(0xFF00E5FF);
+    Color statusColor = const Color(0xFF2C2C2E);
     IconData statusIcon = Icons.calendar_today_rounded;
 
     final today = _normalize(DateTime.now());
@@ -377,7 +369,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF101322), 
+            const Color(0xFF2C2C2E), 
             statusColor.withOpacity(0.12)
           ],
         ),
@@ -454,7 +446,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0E21),
+                  color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.3)),
                 ),
@@ -464,7 +456,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
-                        'Ты утром поел овсянку? Отлично! Сегодня я подобрал упражнения с фокусом на выносливость.',
+                        'Не страшно! В этот день у тебя было мало энергии (спал 4ч). Нейросеть перенесла эту тренировку на завтра.',
                         style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
                       ),
                     ),

@@ -5,27 +5,36 @@ import 'package:image_picker/image_picker.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({Key? key}) : super(key: key);
+
 
   @override
   State<HealthDashboard> createState() => _HealthDashboardState();
 }
 
+
 class _HealthDashboardState extends State<HealthDashboard> {
   DateTime? _selectedDay;
   DateTime _focusedDay = DateTime.now();
+  CalendarFormat _calendarFormat = CalendarFormat.week; // Начинаем с недельного вида
+
 
   @override
   void initState() {
     super.initState();
+    _selectedDay = _normalize(DateTime.now());
   }
 
+
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
+
 
   DayAnalytics _getDayAnalytics(DateTime day) {
     final random = Random(day.day + day.month * 100);
     final isPast = day.isBefore(_normalize(DateTime.now()));
+
 
     if (!isPast) {
       return DayAnalytics(
@@ -48,8 +57,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
       );
     }
 
+
     final isGoodDay = random.nextBool();
     final progressToGoal = (0.5 + random.nextDouble() * 2).toStringAsFixed(1);
+
 
     return DayAnalytics(
       date: day,
@@ -76,6 +87,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
       muscleGroupsWorked: ['Квадрицепс', 'Ягодицы', 'Икры'],
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,8 +138,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildCalendar() {
     final today = _normalize(DateTime.now());
+
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -136,8 +150,8 @@ class _HealthDashboardState extends State<HealthDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
+            const Color(0xFF2C2C2E),
+            const Color(0xFF2C2C2E).withOpacity(0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -145,134 +159,168 @@ class _HealthDashboardState extends State<HealthDashboard> {
           color: Colors.white.withOpacity(0.08),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+        
+      ),
+      child: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (d) => _selectedDay != null && isSameDay(_selectedDay, d),
+            calendarFormat: _calendarFormat,
+            availableCalendarFormats: const {
+              CalendarFormat.week: 'Неделя',
+              CalendarFormat.month: 'Месяц',
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              final selNorm = _normalize(selectedDay);
+              final isPassedOrToday = !selNorm.isAfter(today);
+              if (isPassedOrToday) {
+                setState(() {
+                  if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
+                    _selectedDay = null;
+                  } else {
+                    _selectedDay = selectedDay;
+                  }
+                  _focusedDay = focusedDay;
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Анализ будет доступен после завершения дня'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Color(0xFF6C5CE7),
+                  ),
+                );
+              }
+            },
+            onPageChanged: (focusedDay) => setState(() => _focusedDay = focusedDay),
+            headerStyle: HeaderStyle(
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+              formatButtonVisible: false,
+              titleCentered: true,
+              leftChevronIcon: Icon(
+                Icons.chevron_left_rounded,
+                color: Colors.white.withOpacity(0.7),
+                size: 24,
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withOpacity(0.7),
+                size: 24,
+              ),
+            ),
+            calendarStyle: CalendarStyle(
+              todayDecoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C5CE7), Color(0xFF5A4CD6)],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              selectedDecoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF00D9FF), Color(0xFF0099CC)],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00D9FF).withOpacity(0.4),
+                    blurRadius: 16,
+                  ),
+                ],
+              ),
+              defaultTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              weekendTextStyle: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 15,
+              ),
+              disabledTextStyle: TextStyle(color: Colors.grey[700]),
+              outsideTextStyle: TextStyle(color: Colors.grey[800]),
+            ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekendStyle: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+              weekdayStyle: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) {
+                final isPast = day.isBefore(today);
+                return _buildDayCell(day, isPast);
+              },
+              todayBuilder: (context, day, focusedDay) {
+                return _buildDayCell(day, false, isToday: true);
+              },
+              outsideBuilder: (context, day, focusedDay) {
+                return _buildDayCell(day, false, isOutside: true);
+              },
+            ),
+          ),
+          // Кнопка раскрытия/сворачивания
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _calendarFormat = _calendarFormat == CalendarFormat.week
+                    ? CalendarFormat.month
+                    : CalendarFormat.week;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _calendarFormat == CalendarFormat.week
+                        ? Icons.keyboard_arrow_down_rounded
+                        : Icons.keyboard_arrow_up_rounded,
+                    color: Colors.white.withOpacity(0.6),
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      child: TableCalendar(
-        firstDay: DateTime.utc(2020, 1, 1),
-        lastDay: DateTime.utc(2030, 12, 31),
-        focusedDay: _focusedDay,
-        selectedDayPredicate: (d) => _selectedDay != null && isSameDay(_selectedDay, d),
-        calendarFormat: CalendarFormat.month,
-        onDaySelected: (selectedDay, focusedDay) {
-          final selNorm = _normalize(selectedDay);
-          final isPassedOrToday = !selNorm.isAfter(today);
-
-          if (isPassedOrToday) {
-            setState(() {
-              if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
-                _selectedDay = null;
-              } else {
-                _selectedDay = selectedDay;
-              }
-              _focusedDay = focusedDay;
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Анализ будет доступен после завершения дня'),
-                duration: Duration(seconds: 2),
-                backgroundColor: Color(0xFF6C5CE7),
-              ),
-            );
-          }
-        },
-        onPageChanged: (focusedDay) => setState(() => _focusedDay = focusedDay),
-        headerStyle: HeaderStyle(
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-          formatButtonVisible: false,
-          titleCentered: true,
-          leftChevronIcon: Icon(
-            Icons.chevron_left_rounded,
-            color: Colors.white.withOpacity(0.7),
-            size: 24,
-          ),
-          rightChevronIcon: Icon(
-            Icons.chevron_right_rounded,
-            color: Colors.white.withOpacity(0.7),
-            size: 24,
-          ),
-        ),
-        calendarStyle: CalendarStyle(
-          todayDecoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6C5CE7), Color(0xFF5A4CD6)],
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6C5CE7).withOpacity(0.3),
-                blurRadius: 12,
-              ),
-            ],
-          ),
-          selectedDecoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00D9FF), Color(0xFF0099CC)],
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00D9FF).withOpacity(0.4),
-                blurRadius: 16,
-              ),
-            ],
-          ),
-          defaultTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
-          weekendTextStyle: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 15,
-          ),
-          disabledTextStyle: TextStyle(color: Colors.grey[700]),
-          outsideTextStyle: TextStyle(color: Colors.grey[800]),
-        ),
-        daysOfWeekStyle: DaysOfWeekStyle(
-          weekendStyle: TextStyle(
-            color: Colors.white.withOpacity(0.6),
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-          weekdayStyle: TextStyle(
-            color: Colors.white.withOpacity(0.6),
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-        ),
-        calendarBuilders: CalendarBuilders(
-          defaultBuilder: (context, day, focusedDay) {
-            final isPast = day.isBefore(today);
-            return _buildDayCell(day, isPast);
-          },
-          todayBuilder: (context, day, focusedDay) {
-            return _buildDayCell(day, false, isToday: true);
-          },
-          outsideBuilder: (context, day, focusedDay) {
-            return _buildDayCell(day, false, isOutside: true);
-          },
-        ),
       ),
     );
   }
 
+
   Widget _buildDayCell(DateTime day, bool isPast, {bool isToday = false, bool isOutside = false}) {
     final random = Random(day.day + day.month * 100);
+
 
     if (isOutside) {
       return const SizedBox();
     }
+
 
     if (!isPast) {
       return Center(
@@ -286,6 +334,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
         ),
       );
     }
+
 
     return Stack(
       alignment: Alignment.center,
@@ -310,10 +359,13 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildDailyRewind() {
     if (_selectedDay == null) return const SizedBox.shrink();
 
+
     final analytics = _getDayAnalytics(_selectedDay!);
+
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -342,6 +394,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildGoalImpactCard(DayAnalytics analytics) {
     final monthNames = [
       'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
@@ -350,8 +403,8 @@ class _HealthDashboardState extends State<HealthDashboard> {
     final dateStr =
         '${analytics.date.day.toString().padLeft(2, '0')} ${monthNames[analytics.date.month - 1].toUpperCase()}';
 
-    final isPositive = analytics.progressToGoal > 0;
 
+    final isPositive = analytics.progressToGoal > 0;
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -359,18 +412,11 @@ class _HealthDashboardState extends State<HealthDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isPositive
-              ? [const Color(0xFF51CF66), const Color(0xFF37B24D)]
-              : [const Color(0xFFFF922B), const Color(0xFFF59F00)],
+              ? [const Color(0xFF2C2C2E), const Color(0xFF2C2C2E)]
+              : [const Color(0xFF2C2C2E), const Color(0xFF2C2C2E)],
         ),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: (isPositive ? const Color(0xFF51CF66) : const Color(0xFFFF922B))
-                .withOpacity(0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,9 +500,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildWorkoutCard(DayAnalytics analytics) {
     final isCompleted = analytics.workoutStatus == 'Выполнена';
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -464,23 +510,13 @@ class _HealthDashboardState extends State<HealthDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
+            const Color(0xFF2C2C2E),
+            const Color(0xFF2C2C2E).withOpacity(0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: (isCompleted ? Colors.purpleAccent : Colors.orangeAccent)
-              .withOpacity(0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        
+        
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,7 +550,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '🏋️ ТРЕНИРОВКА',
+                  'ТРЕНИРОВКА',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -600,10 +636,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildSleepCard(DayAnalytics analytics) {
     final percent = (analytics.sleepHours / analytics.sleepGoal * 100).toInt();
     final isSufficient = percent >= 75;
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -611,15 +647,12 @@ class _HealthDashboardState extends State<HealthDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
+            const Color(0xFF2C2C2E),
+            const Color(0xFF2C2C2E).withOpacity(0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.purpleAccent.withOpacity(0.2),
-          width: 1.5,
-        ),
+        
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,7 +683,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: const Text(
-                  '🌙 СОН',
+                  'СОН',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -757,9 +790,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildNutritionCard(DayAnalytics analytics) {
     final percent = (analytics.caloriesIntake / analytics.caloriesGoal * 100).toInt();
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -767,15 +800,12 @@ class _HealthDashboardState extends State<HealthDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D1E33),
-            const Color(0xFF252B41).withOpacity(0.8),
+            const Color(0xFF2C2C2E),
+            const Color(0xFF2C2C2E).withOpacity(0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.orangeAccent.withOpacity(0.2),
-          width: 1.5,
-        ),
+        
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,7 +836,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: const Text(
-                  '🍽️ ПИТАНИЕ',
+                  'ПИТАНИЕ',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -913,12 +943,12 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
+
   Widget _buildMuscleHeatmap(DayAnalytics analytics) {
     const muscleGroups = [
       'Грудь', 'Спина', 'Плечи', 'Бицепс', 'Трицепс', 'Предплечья',
       'Пресс', 'Квадрицепс', 'Бицепс бедра', 'Ягодицы', 'Икры', 'Трапеции'
     ];
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1027,11 +1057,13 @@ class _HealthDashboardState extends State<HealthDashboard> {
   }
 }
 
+
 // ============ PAINTER ============
 class TripleRingsPainter extends CustomPainter {
   final double caloriesProgress;
   final double sleepProgress;
   final double workoutProgress;
+
 
   TripleRingsPainter({
     required this.caloriesProgress,
@@ -1039,14 +1071,17 @@ class TripleRingsPainter extends CustomPainter {
     required this.workoutProgress,
   });
 
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
+
 
     _drawRing(canvas, center, 18, caloriesProgress, const Color(0xFFFF6B6B));
     _drawRing(canvas, center, 13, sleepProgress, const Color(0xFF6C5CE7));
     _drawRing(canvas, center, 8, workoutProgress, const Color(0xFF51CF66));
   }
+
 
   void _drawRing(Canvas canvas, Offset center, double radius, double progress, Color color) {
     final bgPaint = Paint()
@@ -1054,7 +1089,9 @@ class TripleRingsPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
+
     canvas.drawCircle(center, radius, bgPaint);
+
 
     final progressPaint = Paint()
       ..color = color
@@ -1062,9 +1099,11 @@ class TripleRingsPainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
+
     final rect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawArc(rect, -pi / 2, 2 * pi * progress, false, progressPaint);
   }
+
 
   @override
   bool shouldRepaint(TripleRingsPainter oldDelegate) {
@@ -1073,6 +1112,7 @@ class TripleRingsPainter extends CustomPainter {
         oldDelegate.workoutProgress != workoutProgress;
   }
 }
+
 
 // ============ MODEL ============
 class DayAnalytics {
@@ -1096,6 +1136,7 @@ class DayAnalytics {
   final String caloriesInsight;
   
   final List<String> muscleGroupsWorked;
+
 
   DayAnalytics({
     required this.date,
