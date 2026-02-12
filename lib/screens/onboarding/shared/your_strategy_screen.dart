@@ -115,7 +115,7 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       body: Stack(
         children: [
           // Основной контент
@@ -214,7 +214,7 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
           height: 200,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.05)),
           ),
@@ -305,7 +305,7 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
@@ -473,17 +473,11 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF00D9FF), Color(0xFF0055FF)],
+                  colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00D9FF).withOpacity(0.4 + (_pulseController.value * 0.2)),
-                    blurRadius: 20 + (_pulseController.value * 10),
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                
               ),
               child: ElevatedButton(
                 onPressed: () {

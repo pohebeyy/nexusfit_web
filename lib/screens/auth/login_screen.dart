@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -136,16 +136,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFFFF4538),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFF00D9FF).withOpacity(0.3),
+              color: const Color(0xFFFF4538).withOpacity(0.3),
               width: 1,
             ),
           ),
           child: const Icon(
             Icons.fitness_center_rounded,
-            color: Color(0xFF00D9FF),
+            color: Color(0xFFFFFFFF),
             size: 28,
           ),
         ),
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const Text(
           'С возвращением',
           style: TextStyle(
-            color: Color(0xFF00D9FF),
+            color: Color(0xFFFFFFFF),
             fontSize: 28,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
               prefixIcon: Icon(
                 Icons.email_outlined,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               border: InputBorder.none,
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -268,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
               prefixIcon: Icon(
                 Icons.lock_outlined,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               suffixIcon: IconButton(
@@ -320,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         child: const Text(
           'Забыли пароль?',
           style: TextStyle(
-            color: Color(0xFF00D9FF),
+            color: Color(0xFFAEAEB2),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -342,24 +342,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 Color(0xFF00B8D4),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00D9FF).withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+           
           ),
           child: ElevatedButton(
             onPressed: authProvider.isLoading ? null : _login,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
+              backgroundColor: Color(0xFFFF4538),
+              
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              disabledBackgroundColor: Colors.transparent,
+              
             ),
             child: authProvider.isLoading
                 ? const SizedBox(
@@ -475,7 +469,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F3A),
+          color: const Color(0xFF1C1C1E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: const Color(0xFFB0B5C0).withOpacity(0.15),
@@ -527,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: const Text(
             'Зарегистрироваться',
             style: TextStyle(
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFAEAEB2),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

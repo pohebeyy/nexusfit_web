@@ -77,12 +77,12 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF2C2C2E)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -165,7 +165,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -177,12 +177,12 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF00D9FF).withOpacity(0.15),
+              color: const Color(0xFFFF4538).withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.monitor_weight_outlined,
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFF4538),
               size: 28,
             ),
           ),
@@ -217,7 +217,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -245,13 +245,13 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF00D9FF).withOpacity(0.15) 
-              : Colors.transparent,
+              ? const Color(0xFFFFFFFF).withOpacity(0.15) 
+              : Color(0xFFFFFFF),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected 
-                ? const Color(0xFF00D9FF) 
-                : Colors.transparent,
+                ? const Color(0xFF2C2C2E) 
+                : Color(0xFFFFFFF),
             width: 2,
           ),
         ),
@@ -259,7 +259,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0),
+            color: isSelected ? const Color(0xFF2C2C2E) : const Color(0xFFB0B5C0),
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
@@ -272,10 +272,10 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.3),
+          color: const Color(0xFF2C2C2E).withOpacity(0.3),
           width: 2,
         ),
       ),
@@ -511,7 +511,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F3A),
+          color: const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -552,15 +552,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
                   )
                 : null,
             color: canContinue ? null : const Color(0xFF1A1F3A),
-            boxShadow: canContinue
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00D9FF).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
+            
           ),
           child: ElevatedButton(
             onPressed: canContinue
@@ -574,8 +566,8 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
+              backgroundColor: Color(0xFFFF4538),
+              
               padding: const EdgeInsets.symmetric(vertical: 16),
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(

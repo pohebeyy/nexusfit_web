@@ -89,7 +89,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -190,7 +190,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? color.withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
@@ -379,10 +379,10 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF00D9FF).withOpacity(0.1),
+        color: const Color(0xFF2C2C2E).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.3),
+          color: const Color(0xFF2C2C2E).withOpacity(0.3),
           width: 1,
         ),
       ),

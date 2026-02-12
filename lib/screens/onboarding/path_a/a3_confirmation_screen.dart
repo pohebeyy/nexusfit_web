@@ -16,7 +16,7 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -44,7 +44,7 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
                     'Готово!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF00D9FF),
+                      color: Color(0xFFFFFFFF),
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
@@ -102,19 +102,19 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF00D9FF).withOpacity(0.2),
-              const Color(0xFF00D9FF).withOpacity(0.05),
+              const Color(0xFFFFFFFFF).withOpacity(0.2),
+              const Color(0xFFFFFFFFF).withOpacity(0.05),
             ],
           ),
           border: Border.all(
-            color: const Color(0xFF00D9FF).withOpacity(0.4),
+            color: const Color(0xFFFFFFFFF).withOpacity(0.4),
             width: 2,
           ),
         ),
         child: const Icon(
           Icons.check_circle_outline,
           size: 50,
-          color: Color(0xFF00D9FF),
+          color: Color(0xFFFFFFFFF),
         ),
       ),
     );
@@ -129,10 +129,10 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.2),
+          color: const Color(0xFF2C2C2E).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -144,7 +144,7 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
               children: [
                 Icon(
                   Icons.checklist_rounded,
-                  color: const Color(0xFF00D9FF).withOpacity(0.8),
+                  color: const Color(0xFFFF4538).withOpacity(0.8),
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -178,12 +178,12 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D9FF).withOpacity(0.1),
+                          color: const Color(0xFFFF4538).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           item['icon'] as IconData,
-                          color: const Color(0xFF00D9FF),
+                          color: const Color(0xFFFF4538),
                           size: 20,
                         ),
                       ),
@@ -245,12 +245,12 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _isConfirmed 
-              ? const Color(0xFF00D9FF).withOpacity(0.1) 
+              ? const Color(0xFFFF4538).withOpacity(0.1) 
               : const Color(0xFF1A1F3A),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isConfirmed 
-                ? const Color(0xFF00D9FF) 
+                ? const Color(0xFFFF4538) 
                 : const Color(0xFFB0B5C0).withOpacity(0.2),
             width: _isConfirmed ? 2 : 1,
           ),
@@ -262,12 +262,12 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: _isConfirmed ? const Color(0xFF00D9FF) : Colors.transparent,
+                color: _isConfirmed ? const Color(0xFFFF4538) : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: _isConfirmed 
-                      ? const Color(0xFF00D9FF) 
-                      : const Color(0xFFB0B5C0).withOpacity(0.5),
+                      ? const Color(0xFFFF4538) 
+                      : const Color(0xFFFF4538).withOpacity(0.5),
                   width: 2,
                 ),
               ),
@@ -284,7 +284,7 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
               child: Text(
                 'Подтверждаю корректность введенных данных',
                 style: TextStyle(
-                  color: _isConfirmed ? const Color(0xFF00D9FF) : Colors.white,
+                  color: _isConfirmed ? const Color(0xFFFFFFFF) : Colors.white,
                   fontSize: 14,
                   fontWeight: _isConfirmed ? FontWeight.w600 : FontWeight.w500,
                 ),
@@ -341,19 +341,11 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
             borderRadius: BorderRadius.circular(12),
             gradient: _isConfirmed
                 ? const LinearGradient(
-                    colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                   )
                 : null,
             color: _isConfirmed ? null : const Color(0xFF1A1F3A),
-            boxShadow: _isConfirmed
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00D9FF).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
+           
           ),
           child: ElevatedButton(
             onPressed: _isConfirmed

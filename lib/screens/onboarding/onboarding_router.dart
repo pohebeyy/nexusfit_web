@@ -9,7 +9,7 @@ class OnboardingRouter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -21,7 +21,7 @@ class OnboardingRouter extends StatelessWidget {
               const Text(
                 'Выбери способ начала',
                 style: TextStyle(
-                  color: Color(0xFF00D9FF),
+                  color: Color(0xFFFFFFFF),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -50,7 +50,7 @@ class OnboardingRouter extends StatelessWidget {
                 description: 'Сделай фото и получи точные данные автоматически',
                 icon: Icons.photo_camera,
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                  colors: [Color(0xFFFF4538), Color(0xFF00000000)],
                 ),
                 onTap: () {
                   Navigator.push(
@@ -60,7 +60,7 @@ class OnboardingRouter extends StatelessWidget {
                 },
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 26),
               
               // Option B: Без фото (ручной ввод)
               _buildPathOption(
@@ -69,7 +69,7 @@ class OnboardingRouter extends StatelessWidget {
                 description: 'Введи параметры тела самостоятельно',
                 icon: Icons.edit_outlined,
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6B4FFF), Color(0xFF8B6FFF)],
+                  colors: [Color(0xFF2C2C2E), Color(0xFF2C2C2E)],
                 ),
                 onTap: () {
                   Navigator.push(
@@ -103,13 +103,7 @@ class OnboardingRouter extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          
         ),
         child: Row(
           children: [

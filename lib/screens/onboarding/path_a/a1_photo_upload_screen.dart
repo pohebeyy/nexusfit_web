@@ -44,7 +44,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -66,7 +66,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
                   const Text(
                     'Делаем фото твоего тела',
                     style: TextStyle(
-                      color: Color(0xFF00D9FF),
+                      color: Color(0xFFFFFFFF),
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
@@ -110,19 +110,13 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
   Widget _buildInstructionCard() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.2),
+          color: const Color(0xFF2C2C2E).withOpacity(0.2),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00D9FF).withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        
       ),
       child: Column(
         children: [
@@ -138,8 +132,8 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1A1F3A),
-                  Color(0xFF0F1329),
+                  Color(0xFF2C2C2E),
+                  Color(0xFF2C2C2E),
                 ],
               ),
             ),
@@ -153,17 +147,17 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D9FF).withOpacity(0.1),
+                          color: const Color(0xFF2C2C2E).withOpacity(0.1),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF00D9FF).withOpacity(0.3),
+                            color: const Color(0xFFFF4538).withOpacity(0.3),
                             width: 2,
                           ),
                         ),
                         child: const Icon(
                           Icons.person_outline,
                           size: 80,
-                          color: Color(0xFF00D9FF),
+                          color: Color(0xFFFF4538),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -196,7 +190,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
               children: [
                 Icon(
                   Icons.lightbulb_outline,
-                  color: const Color(0xFF00D9FF).withOpacity(0.8),
+                  color: const Color(0xFFB0B5C0).withOpacity(0.8),
                   size: 22,
                 ),
                 const SizedBox(width: 12),
@@ -223,18 +217,18 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isCorrect 
-            ? const Color(0xFF00D9FF).withOpacity(0.15) 
-            : const Color(0xFFFF6B6B).withOpacity(0.15),
+            ? const Color(0xFFB0B5C0).withOpacity(0.15) 
+            : const Color(0xFFB0B5C0).withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isCorrect ? const Color(0xFF00D9FF) : const Color(0xFFFF6B6B),
+          color: isCorrect ? const Color(0xFFB0B5C0) : const Color(0xFFFF6B6B),
           width: 1,
         ),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isCorrect ? const Color(0xFF00D9FF) : const Color(0xFFFF6B6B),
+          color: isCorrect ? const Color(0xFF1C1C1E) : const Color(0xFFFF6B6B),
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
@@ -270,12 +264,12 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00D9FF).withOpacity(0.1),
+                    color: const Color(0xFF1C1C1E).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     req['icon'] as IconData,
-                    color: const Color(0xFF00D9FF),
+                    color: const Color(0xFFFF4538),
                     size: 18,
                   ),
                 ),
@@ -307,15 +301,9 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: const LinearGradient(
-                colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00D9FF).withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              
             ),
             child: ElevatedButton(
               onPressed: () => _pickImage(ImageSource.camera),
@@ -355,7 +343,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
               padding: const EdgeInsets.symmetric(vertical: 16),
               minimumSize: const Size(double.infinity, 56),
               side: BorderSide(
-                color: const Color(0xFF00D9FF).withOpacity(0.5),
+                color: const Color(0xFF2C2C2E).withOpacity(0.5),
                 width: 1.5,
               ),
               shape: RoundedRectangleBorder(
@@ -365,14 +353,14 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.photo_library_outlined, color: Color(0xFF00D9FF), size: 22),
+                Icon(Icons.photo_library_outlined, color: Color(0xFFFF4538), size: 22),
                 SizedBox(width: 10),
                 Text(
                   'Загрузить из галереи',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF00D9FF),
+                    color: Color(0xFFFF4538),
                   ),
                 ),
               ],

@@ -17,7 +17,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
 
   final Map<String, Map<String, dynamic>> _bodyZones = {
     'chest': {
-      'title': 'Грудьь',
+      'title': '',
       'subtitle': 'Грудные мышцы',
       'icon': '💪',
       'color': const Color(0xFF00D9FF),
@@ -212,9 +212,9 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
@@ -327,19 +327,11 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                  colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                 )
               : null,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF00D9FF).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -436,22 +428,22 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00D9FF).withOpacity(0.15),
+                      color: const Color(0xFFFF4538).withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFF00D9FF).withOpacity(0.4),
+                        color: const Color(0xFFFF4538).withOpacity(0.4),
                         width: 1,
                       ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.touch_app, color: Color(0xFF00D9FF), size: 18),
+                        Icon(Icons.touch_app, color: Color(0xFFFF4538), size: 18),
                         SizedBox(width: 8),
                         Text(
                           'Нажми на тело',
                           style: TextStyle(
-                            color: Color(0xFF00D9FF),
+                            color: Color(0xFFFFFFFF),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -480,19 +472,10 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         gradient: _selectedZones.length >= _maxSelections
-            ? const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFE91E63)])
-            : const LinearGradient(colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)]),
+            ? const LinearGradient(colors: [Color(0xFFFF4538), Color(0xFFFF4538)])
+            : const LinearGradient(colors: [Color(0xFFFF4538), Color(0xFFFF4538)]),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (_selectedZones.length >= _maxSelections
-                    ? const Color(0xFFFF5252)
-                    : const Color(0xFF00D9FF))
-                .withOpacity(0.5),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -527,13 +510,13 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF00D9FF).withOpacity(0.15),
-              const Color(0xFF00D9FF).withOpacity(0.05),
+              const Color(0xFF2C2C2E).withOpacity(0.15),
+              const Color(0xFF2C2C2E).withOpacity(0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: const Color(0xFF00D9FF).withOpacity(0.3),
+            color: const Color(0xFF2C2C2E).withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -541,7 +524,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
           children: [
             Icon(
               _selectedZones.isEmpty ? Icons.touch_app : Icons.lightbulb_outline,
-              color: const Color(0xFF00D9FF),
+              color: const Color(0xFFFF4538),
               size: 22,
             ),
             const SizedBox(width: 14),
@@ -596,15 +579,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                   color: isSelected ? color : color.withOpacity(0.3),
                   width: isSelected ? 2 : 1,
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: color.withOpacity(0.4),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : null,
+                
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

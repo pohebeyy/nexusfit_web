@@ -33,7 +33,7 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -167,13 +167,13 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF00D9FF).withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              ? const Color(0xFFFF4538).withOpacity(0.15) 
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected 
-                ? const Color(0xFF00D9FF) 
-                : const Color(0xFFB0B5C0).withOpacity(0.1),
+                ? const Color(0xFFFF4538) 
+                : const Color(0xFF2C2C2E).withOpacity(0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -181,14 +181,14 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0),
+              color: isSelected ? const Color(0xFFFFFFFF) : const Color(0xFFB0B5C0),
               size: 32,
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF00D9FF) : Colors.white,
+                color: isSelected ? const Color(0xFFFFFFFF) : Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -208,7 +208,7 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -223,12 +223,12 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF00D9FF).withOpacity(0.1),
+                color: const Color(0xFFFFFFFF).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFF00D9FF),
+                color: const Color(0xFFFFFFFF),
                 size: 22,
               ),
             ),

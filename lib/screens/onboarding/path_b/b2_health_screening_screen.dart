@@ -123,7 +123,7 @@ class _B2HealthScreeningScreenState extends State<B2HealthScreeningScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -219,7 +219,7 @@ class _B2HealthScreeningScreenState extends State<B2HealthScreeningScreen> {
           hintText: 'Опиши свои ограничения...',
           hintStyle: TextStyle(color: const Color(0xFFB0B5C0).withOpacity(0.5)),
           filled: true,
-          fillColor: const Color(0xFF1A1F3A),
+          fillColor: const Color(0xFF2C2C2E),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -308,7 +308,7 @@ class _B2HealthScreeningScreenState extends State<B2HealthScreeningScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? color.withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected 
@@ -446,8 +446,8 @@ class _B2HealthScreeningScreenState extends State<B2HealthScreeningScreen> {
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
+                  backgroundColor: Color(0xFFFF4538),
+                  
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(

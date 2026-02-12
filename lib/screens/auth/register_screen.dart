@@ -106,9 +106,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
@@ -163,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const Text(
           'Создать аккаунт',
           style: TextStyle(
-            color: Color(0xFF00D9FF),
+            color: Color(0xFFFFFFFFF),
             fontSize: 28,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
@@ -198,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -218,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               prefixIcon: Icon(
                 Icons.person_outline,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               border: InputBorder.none,
@@ -257,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               prefixIcon: Icon(
                 Icons.email_outlined,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               border: InputBorder.none,
@@ -317,7 +317,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -338,7 +338,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               prefixIcon: Icon(
                 Icons.lock_outlined,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               suffixIcon: IconButton(
@@ -391,7 +391,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1F3A),
+            color: const Color(0xFF2C2C2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -412,7 +412,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               prefixIcon: Icon(
                 Icons.lock_outlined,
-                color: const Color(0xFF00D9FF).withOpacity(0.6),
+                color: const Color(0xFFAEAEB2).withOpacity(0.6),
                 size: 20,
               ),
               suffixIcon: IconButton(
@@ -459,7 +459,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             onChanged: (value) {
               setState(() => _agreedToTerms = value ?? false);
             },
-            activeColor: const Color(0xFF00D9FF),
+            activeColor: const Color(0xFF0A0E27),
             checkColor: const Color(0xFF0A0E27),
             side: BorderSide(
               color: const Color(0xFFB0B5C0).withOpacity(0.3),
@@ -484,7 +484,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 TextSpan(
                   text: 'Условия использования',
                   style: TextStyle(
-                    color: Color(0xFF00D9FF),
+                    color: Color(0xFFB0B5C0),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -492,7 +492,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 TextSpan(
                   text: 'Политику конфиденциальности',
                   style: TextStyle(
-                    color: Color(0xFF00D9FF),
+                    color: Color(0xFFB0B5C0),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -513,17 +513,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             borderRadius: BorderRadius.circular(12),
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF00D9FF),
-                Color(0xFF00B8D4),
+                Color(0xFFFF4538),
+                Color(0xFFFF4538),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00D9FF).withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            
           ),
           child: ElevatedButton(
             onPressed: authProvider.isLoading ? null : _register,
@@ -641,7 +635,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F3A),
+          color: const Color(0xFF1C1C1E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: const Color(0xFFB0B5C0).withOpacity(0.15),

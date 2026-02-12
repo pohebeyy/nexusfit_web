@@ -94,12 +94,12 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF1C1C1E)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -195,7 +195,7 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? color.withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
@@ -365,7 +365,7 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1F3A),
+                      color: const Color(0xFF2C2C2E),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: color.withOpacity(0.3),
@@ -412,10 +412,10 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF00D9FF).withOpacity(0.1),
+        color: const Color(0xFF2C2C2E).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.3),
+          color: const Color(0xFF2C2C2E).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -423,7 +423,7 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
         children: [
           Icon(
             Icons.lightbulb_outline,
-            color: const Color(0xFF00D9FF),
+            color: const Color(0xFFFF4538),
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -455,19 +455,11 @@ class _ExperienceScreenState extends State<ExperienceScreen> {
             borderRadius: BorderRadius.circular(12),
             gradient: canContinue
                 ? const LinearGradient(
-                    colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                   )
                 : null,
             color: canContinue ? null : const Color(0xFF1A1F3A),
-            boxShadow: canContinue
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00D9FF).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
+            
           ),
           child: ElevatedButton(
             onPressed: canContinue

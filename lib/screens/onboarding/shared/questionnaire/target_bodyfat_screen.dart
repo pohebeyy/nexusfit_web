@@ -127,7 +127,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
     final currentRanges = _bodyfatRanges[_selectedGender]!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -248,7 +248,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF00D9FF).withOpacity(0.15) 
+              ? const Color(0xFF2C2C2E).withOpacity(0.15) 
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
@@ -270,7 +270,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0),
+                color: isSelected ? const Color(0xFFFFFFFF) : const Color(0xFFFFFFFF),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -285,10 +285,10 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF00D9FF).withOpacity(0.1),
+        color: const Color(0xFF2C2C2E).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.3),
+          color: const Color(0xFF2C2C2E).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -297,7 +297,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         children: [
           Icon(
             Icons.info_outline,
-            color: const Color(0xFF00D9FF),
+            color: const Color(0xFFFF4538),
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -308,7 +308,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
                 const Text(
                   'Важно знать',
                   style: TextStyle(
-                    color: Color(0xFF00D9FF),
+                    color: Color(0xFFFFFFFF),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -350,7 +350,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? color.withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
@@ -526,19 +526,12 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
             borderRadius: BorderRadius.circular(12),
             gradient: canContinue
                 ? const LinearGradient(
-                    colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                   )
                 : null,
             color: canContinue ? null : const Color(0xFF1A1F3A),
-            boxShadow: canContinue
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00D9FF).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
+            
+                
           ),
           child: ElevatedButton(
             onPressed: canContinue

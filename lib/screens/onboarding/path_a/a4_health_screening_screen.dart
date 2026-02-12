@@ -123,7 +123,7 @@ class _A4HealthScreeningScreenState extends State<A4HealthScreeningScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -308,7 +308,7 @@ class _A4HealthScreeningScreenState extends State<A4HealthScreeningScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? color.withOpacity(0.15) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected 

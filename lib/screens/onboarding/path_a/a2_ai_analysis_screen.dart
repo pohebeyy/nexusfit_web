@@ -80,7 +80,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -258,33 +258,37 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
 
   Widget _buildGenderOption(String value, String label, IconData icon) {
     final isSelected = _gender == value;
+    
     return InkWell(
       onTap: () => setState(() => _gender = value),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F3A),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected 
+              ? const Color(0xFFFF4538).withOpacity(0.15) 
+              : const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0).withOpacity(0.1),
+            color: isSelected 
+                ? const Color(0xFFFF4538) 
+                : const Color(0xFF2C2C2E).withOpacity(0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0),
-              size: 22,
+              color: isSelected ? const Color(0xFFFFFFFF) : const Color(0xFFB0B5C0),
+              size: 32,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF00D9FF) : Colors.white,
+                color: isSelected ? const Color(0xFFFFFFFF) : Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -360,10 +364,10 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00D9FF).withOpacity(0.15) : const Color(0xFF1A1F3A),
+          color: isSelected ? const Color(0xFF2C2C2E).withOpacity(0.15) : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0).withOpacity(0.2),
+            color: isSelected ? const Color(0xFFFF4538) : const Color(0xFFFF4538).withOpacity(0.2),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -371,7 +375,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF00D9FF) : Colors.white,
+            color: isSelected ? const Color(0xFFFFFFFF) : Colors.white,
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
@@ -426,7 +430,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -471,7 +475,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -526,7 +530,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFFB0B5C0).withOpacity(0.1),
@@ -548,7 +552,7 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
                 children: [
                   Icon(
                     icon,
-                    color: const Color(0xFF00D9FF),
+                    color: const Color(0xFFFF4538),
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -594,15 +598,9 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: const LinearGradient(
-            colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+            colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00D9FF).withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          
         ),
         child: ElevatedButton(
           onPressed: () {
