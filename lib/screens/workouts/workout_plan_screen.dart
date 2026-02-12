@@ -281,7 +281,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: const BoxDecoration(
-                  color: Color(0xFF6C5CE7),
+                  color: Color(0xFFFF4538),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -448,11 +448,11 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFFFF4538).withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.psychology_rounded, color: Color(0xFF00E5FF), size: 20),
+                    const Icon(Icons.psychology_rounded, color: Color(0xFFFF4538), size: 20),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
@@ -615,7 +615,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00E5FF),
+                  backgroundColor: const Color(0xFFFF4538),
                   foregroundColor: const Color(0xFF0A0E21),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

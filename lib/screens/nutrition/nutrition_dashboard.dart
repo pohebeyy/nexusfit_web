@@ -1277,10 +1277,10 @@ class _MealCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF64D2FF).withOpacity(0.15),
+                            color: const Color(0xFFFF4538).withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF64D2FF).withOpacity(0.3),
+                              color: const Color(0xFFFF4538).withOpacity(0.3),
                             ),
                           ),
                           child: Text(
@@ -1288,7 +1288,7 @@ class _MealCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF64D2FF),
+                              color: Color(0xFFFFFFFF),
                             ),
                           ),
                         ),

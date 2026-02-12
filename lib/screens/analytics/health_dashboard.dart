@@ -230,15 +230,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
               ),
               selectedDecoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF00D9FF), Color(0xFF0099CC)],
+                  colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                 ),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00D9FF).withOpacity(0.4),
-                    blurRadius: 16,
-                  ),
-                ],
+                
               ),
               defaultTextStyle: const TextStyle(
                 color: Colors.white,

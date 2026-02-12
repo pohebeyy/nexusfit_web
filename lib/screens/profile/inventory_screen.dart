@@ -45,14 +45,14 @@ class InventoryScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF00D9FF).withOpacity(0.3),
+                    color: const Color(0xFF2C2C2E).withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.info_outline_rounded,
-                      color: Color(0xFF00D9FF),
+                      color: Color(0xFFFF4538),
                       size: 24,
                     ),
                     const SizedBox(width: 12),
@@ -137,7 +137,7 @@ class InventoryScreen extends StatelessWidget {
                                 height: 50,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF6C5CE7), Color(0xFF8B7FF4)],
+                                    colors: [Color(0xFF2C2C2E), Color(0xFF2C2C2E)],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -201,8 +201,8 @@ class InventoryScreen extends StatelessWidget {
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Создать кастомный пресет'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF00D9FF),
-                    side: const BorderSide(color: Color(0xFF00D9FF), width: 1.5),
+                    foregroundColor: const Color(0xFFFFFFFFF),
+                    side: const BorderSide(color: Color(0xFF2C2C2E), width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -263,7 +263,7 @@ class InventoryScreen extends StatelessWidget {
                               ),
                             ),
                             value: enabled,
-                            activeColor: const Color(0xFF00D9FF),
+                            activeColor: const Color(0xFFFF4538),
                             onChanged: provider.isLoading
                                 ? null
                                 : (v) => provider.toggleEquipment(item, v),
@@ -294,9 +294,9 @@ class InventoryScreen extends StatelessWidget {
                   icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
                   label: const Text('Добавить свой инвентарь'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF6C5CE7),
+                    foregroundColor: const Color(0xFFFF4538),
                     side: BorderSide(
-                      color: const Color(0xFF6C5CE7).withOpacity(0.5),
+                      color: const Color(0xFF2C2C2E),
                       width: 1.5,
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -316,19 +316,19 @@ class InventoryScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF00D9FF).withOpacity(0.15),
-                        const Color(0xFF6C5CE7).withOpacity(0.15),
+                        const Color(0xFF2C2C2E).withOpacity(0.15),
+                        const Color(0xFF2C2C2E).withOpacity(0.15),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF00D9FF).withOpacity(0.3),
+                      color: const Color(0xFFFF4538).withOpacity(0.3),
                     ),
                   ),
                   child: Text(
                     'Активно: ${p.equipmentEnabled.length} / ${provider.equipmentCatalog.length}',
                     style: const TextStyle(
-                      color: Color(0xFF00D9FF),
+                      color: Color(0xFFFF4538),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -371,19 +371,11 @@ class InventoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: selected
-              ? const Color(0xFF00D9FF)
+              ? const Color(0xFFFF4538)
               : Colors.white.withOpacity(0.08),
           width: selected ? 2 : 1,
         ),
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF00D9FF).withOpacity(0.3),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ]
-            : [],
+       
       ),
       child: Material(
         color: Colors.transparent,
@@ -405,7 +397,7 @@ class InventoryScreen extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.fitness_center_rounded,
-                    color: selected ? Colors.white : const Color(0xFF00D9FF),
+                    color: selected ? Colors.white : const Color(0xFFFF4538),
                     size: 24,
                   ),
                 ),
@@ -813,8 +805,8 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D9FF),
-                      foregroundColor: const Color(0xFF0A0E21),
+                      backgroundColor: const Color(0xFF2C2C2E),
+                      foregroundColor: const Color(0xFF2C2C2E),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
