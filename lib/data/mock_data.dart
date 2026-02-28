@@ -26,34 +26,7 @@ class MockData {
     );
   }
 
-  static List<ChatMessage> getMockChatHistory() {
-    return [
-      ChatMessage(
-        id: 'msg_1',
-        content: 'Привет, Алексей! Как прошла ночь?',
-        type: MessageType.ai,
-        timestamp: DateTime.now().subtract(Duration(hours: 2)),
-      ),
-      ChatMessage(
-        id: 'msg_2',
-        content: 'Спал хорошо, встал в 7',
-        type: MessageType.user,
-        timestamp: DateTime.now().subtract(Duration(hours: 2)),
-      ),
-      ChatMessage(
-        id: 'msg_3',
-        content: 'Отлично! Помнишь, вчера спина болела. Как она сейчас?',
-        type: MessageType.ai,
-        timestamp: DateTime.now().subtract(Duration(hours: 1, minutes: 50)),
-      ),
-      ChatMessage(
-        id: 'msg_4',
-        content: 'Намного лучше! Растяжка помогла',
-        type: MessageType.user,
-        timestamp: DateTime.now().subtract(Duration(hours: 1, minutes: 40)),
-      ),
-    ];
-  }
+  
 
   static List<Meal> getMockMeals() {
     return [

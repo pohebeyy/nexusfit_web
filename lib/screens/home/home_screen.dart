@@ -289,12 +289,7 @@ Widget build(BuildContext context) {
   }
 }
 
-class TodayWorkoutCard extends StatefulWidget {
-  const TodayWorkoutCard({super.key});
 
-  @override
-  State<TodayWorkoutCard> createState() => TodayWorkoutCardState();
-}
 
 
 enum FlipCardType { sleep, nutrition, activity, water }

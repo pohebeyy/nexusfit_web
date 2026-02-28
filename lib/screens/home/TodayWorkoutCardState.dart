@@ -1,18 +1,131 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:yaml/yaml.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:startap/screens/home/adaptiom_sheet.dart';
 import 'package:startap/screens/home/home_screen.dart';
 import 'package:startap/screens/workouts/workout_plan_screen.dart';
+import 'package:startap/services/api/StringApi.dart';
+
+class TodayWorkoutCard extends StatefulWidget {
+  const TodayWorkoutCard({Key? key}) : super(key: key);
+
+  @override
+  State<TodayWorkoutCard> createState() => TodayWorkoutCardState();
+}
 
 class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   bool _isExpanded = false;
+  bool _isLoading = true;
+
+  // Динамические переменные
+  String _workoutName = 'Загрузка...';
+  String _difficulty = 'Определяется';
+  int _calories = 0;
+  int _durationMinutes = 0;
+  List<Map<String, String>> _exercises = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkoutPlan();
+  }
+
+  // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
+  Future<void> _loadWorkoutPlan() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Получаем текущую дату в формате "2026-02-28"
+    final String todayDate = DateTime.now().toIso8601String().split('T')[0];
+    
+    // Проверяем сохраненную дату и сохраненный YAML
+    final String? cachedDate = prefs.getString('workout_date');
+    final String? cachedYaml = prefs.getString('workout_yaml');
+
+    // Если данные есть и они за сегодня — используем кэш
+    if (cachedDate == todayDate && cachedYaml != null) {
+      debugPrint("Используем кэшированную тренировку за $todayDate");
+      _parseAndSetState(cachedYaml);
+    } else {
+      debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
+      await _fetchFromNetwork(prefs, todayDate);
+    }
+  }
+
+  // Загрузка по сети (n8n)
+  Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
+    try {
+      final response = await http.post(
+        Uri.parse(StringApi.apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': 'test@fitflow.local', // Замените на реальные данные авторизованного юзера
+          'user_id': 1
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String yamlString = data['workout']['content'];
+        
+        // Сохраняем в кэш новую дату и YAML
+        await prefs.setString('workout_date', todayDate);
+        await prefs.setString('workout_yaml', yamlString);
+
+        _parseAndSetState(yamlString);
+      } else {
+        setState(() => _isLoading = false);
+        debugPrint('Ошибка сервера: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('Ошибка сети: $e');
+    }
+  }
+
+  // Парсинг YAML и обновление UI
+  void _parseAndSetState(String yamlString) {
+    try {
+      final yamlMap = loadYaml(yamlString);
+
+      setState(() {
+        _workoutName = yamlMap['workout_name'] ?? 'Тренировка на сегодня';
+        _difficulty = yamlMap['difficulty'] ?? 'medium';
+        _calories = yamlMap['estimated_calories'] ?? 0;
+        _durationMinutes = yamlMap['estimated_duration_min'] ?? 0;
+
+        _exercises = [];
+        if (yamlMap['exercises'] != null) {
+          for (var ex in yamlMap['exercises']) {
+            _exercises.add({
+              'name': ex['name'].toString(),
+              'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
+            });
+          }
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Ошибка парсинга YAML: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    const difficulty = 'Средняя';
-    const calories = 420;
-    const muscleGroups = ['Спина', 'Бицепс'];
-    const exercisesCount = 4;
-    const durationMinutes = 45;
+    if (_isLoading) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        height: 150,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(child: CircularProgressIndicator(color: Color(0xFFFF3B30))),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -50,16 +163,16 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                       ),
                     ),
                     Icon(
-                      Icons.keyboard_arrow_down_rounded,
+                      _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                       color: Colors.grey[500],
                       size: 24,
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Силовая: Спина + Бицепс',
-                  style: TextStyle(
+                Text(
+                  _workoutName,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -74,22 +187,17 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                         return Icon(
                           Icons.star,
                           size: 16,
-                          color: i < 5 ? const Color(0xFFFFD700) : Colors.grey[700],
+                          color: i < (_difficulty == 'hard' ? 5 : _difficulty == 'medium' ? 3 : 2) 
+                              ? const Color(0xFFFFD700) 
+                              : Colors.grey[700],
                         );
                       }),
                     ),
                     const SizedBox(width: 16),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[600],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    _buildDot(),
                     const SizedBox(width: 8),
                     Text(
-                      '$durationMinutes мин',
+                      '$_durationMinutes мин',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 14,
@@ -97,14 +205,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[600],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    _buildDot(),
                     const SizedBox(width: 8),
                     const Icon(
                       Icons.local_fire_department_rounded,
@@ -113,7 +214,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '$calories ккал',
+                      '$_calories ккал',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 14,
@@ -126,12 +227,13 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                 AnimatedCrossFade(
                   firstChild: const SizedBox.shrink(),
                   secondChild: Column(
-                    children: const [
-                      _ExerciseRow(name: 'Подтягивания', reps: '3x12', icon: Icons.sports_gymnastics),
-                      _ExerciseRow(name: 'Тяга штанги в наклоне', reps: '4x10', icon: Icons.fitness_center),
-                      _ExerciseRow(name: 'Тяга верхнего блока', reps: '3x12', icon: Icons.trending_down),
-                      _ExerciseRow(name: 'Подъём на бицепс', reps: '3x15', icon: Icons.accessibility_new),
-                      SizedBox(height: 12),
+                    children: [
+                      ..._exercises.map((ex) => _ExerciseRow(
+                            name: ex['name']!,
+                            reps: ex['display']!.split(' - ').last, 
+                            icon: Icons.fitness_center,
+                          )),
+                      const SizedBox(height: 12),
                     ],
                   ),
                   crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
@@ -186,6 +288,17 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDot() {
+    return Container(
+      width: 4,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.grey[600],
+        shape: BoxShape.circle,
       ),
     );
   }

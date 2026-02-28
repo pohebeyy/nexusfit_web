@@ -123,24 +123,7 @@ class MessageBubble extends StatelessWidget {
             ),
           ),
           // Action Cards
-          if (message.actionCards != null && message.actionCards!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 48,
-                right: 0,
-                top: 12,
-                bottom: 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: message.actionCards!
-                    .map((card) => ActionCardWidget(
-                          card: card,
-                          onActionTap: onActionTap,
-                        ))
-                    .toList(),
-              ),
-            ),
+          
         ],
       ),
     );
