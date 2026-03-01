@@ -42,7 +42,7 @@ class FitnessApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NutritionProvider()),
         ChangeNotifierProvider(create: (_) => WorkoutProvider()),
         ChangeNotifierProvider(create: (_) => HealthProvider()),
-
+        
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(api: ProfileApi()),
         ),

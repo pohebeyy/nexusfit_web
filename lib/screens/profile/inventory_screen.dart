@@ -3,14 +3,42 @@ import 'package:provider/provider.dart';
 import 'package:startap/models/ProfileModel.dart';
 import 'package:startap/providers/profile_provider.dart';
 
-class InventoryScreen extends StatelessWidget {
+class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
+
+  @override
+  State<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends State<InventoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<ProfileProvider>();
+      if (provider.profile == null && !provider.isLoading) {
+        provider.load();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ProfileProvider>(
       builder: (context, provider, _) {
         final p = provider.profile;
+
+        if (provider.isLoading && p == null) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF1C1C1E),
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Color(0xFFFF4538)),
+              ),
+            ),
+          );
+        }
+
         if (p == null) {
           return const Scaffold(
             backgroundColor: Color(0xFF0A0E21),
@@ -27,8 +55,16 @@ class InventoryScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF1C1C1E),
           appBar: AppBar(
             backgroundColor: const Color(0xFF1C1C1E),
-            title: const Text('Мой инвентарь'),
+            title: const Text(
+              'Мой инвентарь',
+              style: TextStyle(color: Colors.white),
+            ),
             elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded,
+                  color: Colors.white, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
           body: ListView(
             padding: const EdgeInsets.all(16),
@@ -37,12 +73,7 @@ class InventoryScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF2C2C2E).withOpacity(0.1),
-                      const Color(0xFF2C2C2E).withOpacity(0.1),
-                    ],
-                  ),
+                  color: const Color(0xFF2C2C2E).withOpacity(0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: const Color(0xFF2C2C2E).withOpacity(0.3),
@@ -91,9 +122,7 @@ class InventoryScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
                   child: Center(
                     child: Text(
@@ -119,14 +148,14 @@ class InventoryScreen extends StatelessWidget {
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.08),
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: provider.isLoading ? null : () => provider.applyCustomPreset(cp.id),
+                        onTap: provider.isLoading
+                            ? null
+                            : () => provider.applyCustomPreset(cp.id),
                         borderRadius: BorderRadius.circular(16),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -136,9 +165,7 @@ class InventoryScreen extends StatelessWidget {
                                 width: 50,
                                 height: 50,
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF2C2C2E), Color(0xFF2C2C2E)],
-                                  ),
+                                  color: Colors.white.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -191,7 +218,6 @@ class InventoryScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // КНОПКА СОЗДАНИЯ
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -201,7 +227,7 @@ class InventoryScreen extends StatelessWidget {
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Создать кастомный пресет'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFFFFFFF),
+                    foregroundColor: Colors.white,
                     side: const BorderSide(color: Color(0xFF2C2C2E), width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -227,18 +253,9 @@ class InventoryScreen extends StatelessWidget {
 
               Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF2C2C2E),
-                      const Color(0xFF2C2C2E).withOpacity(0.8),
-                    ],
-                  ),
+                  color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.08),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Column(
                   children: [
@@ -284,7 +301,6 @@ class InventoryScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ✅ КНОПКА ДОБАВИТЬ СВОЙ ИНВЕНТАРЬ
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -295,10 +311,7 @@ class InventoryScreen extends StatelessWidget {
                   label: const Text('Добавить свой инвентарь'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFFF4538),
-                    side: BorderSide(
-                      color: const Color(0xFF2C2C2E),
-                      width: 1.5,
-                    ),
+                    side: const BorderSide(color: Color(0xFF2C2C2E), width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -312,14 +325,9 @@ class InventoryScreen extends StatelessWidget {
               // СЧЕТЧИК
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF2C2C2E).withOpacity(0.15),
-                        const Color(0xFF2C2C2E).withOpacity(0.15),
-                      ],
-                    ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: const Color(0xFFFF4538).withOpacity(0.3),
@@ -354,28 +362,12 @@ class InventoryScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: selected
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF2C2C2E), Color(0xFF2C2C2E)],
-              )
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF2C2C2E),
-                  const Color(0xFF2C2C2E).withOpacity(0.8),
-                ],
-              ),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selected
-              ? const Color(0xFFFF4538)
-              : Colors.white.withOpacity(0.08),
+          color: selected ? const Color(0xFFFF4538) : Colors.white.withOpacity(0.08),
           width: selected ? 2 : 1,
         ),
-       
       ),
       child: Material(
         color: Colors.transparent,
@@ -408,8 +400,8 @@ class InventoryScreen extends StatelessWidget {
                     children: [
                       Text(
                         equipmentPresetTitle(preset),
-                        style: TextStyle(
-                          color: selected ? Colors.white : Colors.white,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -441,18 +433,14 @@ class InventoryScreen extends StatelessWidget {
     );
   }
 
-  // ✅ ДИАЛОГ ДОБАВЛЕНИЯ СВОЕГО ИНВЕНТАРЯ
   Future<void> _addCustomEquipmentDialog(BuildContext context) async {
-  final provider = context.read<ProfileProvider>();
-
-  await showDialog(
-    context: context,
-    builder: (ctx) {
-      return _AddEquipmentDialog(provider: provider, parentContext: context);
-    },
-  );
-}
-
+    final provider = context.read<ProfileProvider>();
+    await showDialog(
+      context: context,
+      builder: (ctx) =>
+          _AddEquipmentDialog(provider: provider, parentContext: context),
+    );
+  }
 
   Future<void> _createCustomPresetDialog(BuildContext context) async {
     final provider = context.read<ProfileProvider>();
@@ -567,9 +555,9 @@ class InventoryScreen extends StatelessWidget {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 side: BorderSide(
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                    color: Colors.white.withOpacity(0.3)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -594,7 +582,8 @@ class InventoryScreen extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00D9FF),
                                 foregroundColor: const Color(0xFF0A0E21),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -621,6 +610,7 @@ class InventoryScreen extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
 class _PremiumBlockTitle extends StatelessWidget {
   final String text;
   const _PremiumBlockTitle(this.text);
@@ -638,6 +628,8 @@ class _PremiumBlockTitle extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────
 class _AddEquipmentDialog extends StatefulWidget {
   final ProfileProvider provider;
   final BuildContext parentContext;
@@ -670,9 +662,7 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -684,9 +674,7 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1C1C1E), Color(0xFF1C1C1E)],
-                    ),
+                    color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -736,9 +724,8 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
+                  borderSide:
+                      BorderSide(color: Colors.white.withOpacity(0.1)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -757,9 +744,7 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
+                      side: BorderSide(color: Colors.white.withOpacity(0.3)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -784,15 +769,10 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                         return;
                       }
 
-                      // Закрываем диалог
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
+                      if (context.mounted) Navigator.of(context).pop();
 
-                      // Добавляем оборудование
                       await widget.provider.addCustomEquipment(name);
 
-                      // Показываем успешное уведомление с задержкой
                       await Future.delayed(const Duration(milliseconds: 150));
                       if (widget.parentContext.mounted) {
                         ScaffoldMessenger.of(widget.parentContext).showSnackBar(
@@ -805,8 +785,8 @@ class _AddEquipmentDialogState extends State<_AddEquipmentDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2E),
-                      foregroundColor: const Color(0xFF2C2C2E),
+                      backgroundColor: const Color(0xFFFF4538),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

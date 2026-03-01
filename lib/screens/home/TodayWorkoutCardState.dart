@@ -34,56 +34,100 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   }
 
   // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
-  Future<void> _loadWorkoutPlan() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Получаем текущую дату в формате "2026-02-28"
-    final String todayDate = DateTime.now().toIso8601String().split('T')[0];
-    
-    // Проверяем сохраненную дату и сохраненный YAML
-    final String? cachedDate = prefs.getString('workout_date');
-    final String? cachedYaml = prefs.getString('workout_yaml');
+  // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
+Future<void> _loadWorkoutPlan() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String todayDate = DateTime.now().toIso8601String().split('T')[0];
+  final String? cachedDate = prefs.getString('workout_date');
+  final String? cachedYaml = prefs.getString('workout_yaml');
 
-    // Если данные есть и они за сегодня — используем кэш
-    if (cachedDate == todayDate && cachedYaml != null) {
-      debugPrint("Используем кэшированную тренировку за $todayDate");
-      _parseAndSetState(cachedYaml);
-    } else {
-      debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
+  if (cachedDate == todayDate && cachedYaml != null) {
+    debugPrint("Используем кэшированную тренировку за $todayDate");
+    // Пробуем распарсить — если битый, сбрасываем и качаем заново
+    final bool valid = _tryParseAndSetState(cachedYaml);
+    if (!valid) {
+      debugPrint("Кэш битый — сбрасываем и качаем заново...");
+      await prefs.remove('workout_date');
+      await prefs.remove('workout_yaml');
       await _fetchFromNetwork(prefs, todayDate);
     }
+  } else {
+    debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
+    await _fetchFromNetwork(prefs, todayDate);
   }
+}
+
+// Загрузка по сети (n8n)
+Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
+  try {
+    final response = await http.post(
+      Uri.parse(StringApi.apiUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': 'test@fitflow.local',
+        'user_id': 1
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final String yamlString = data['workout']['content'];
+
+      // Валидируем YAML перед сохранением — битый не пишем
+      try {
+        loadYaml(yamlString);
+      } catch (e) {
+        debugPrint('API вернул битый YAML, в кэш не сохраняем: $e');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      await prefs.setString('workout_date', todayDate);
+      await prefs.setString('workout_yaml', yamlString);
+
+      _tryParseAndSetState(yamlString);
+    } else {
+      setState(() => _isLoading = false);
+      debugPrint('Ошибка сервера: ${response.statusCode}');
+    }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    debugPrint('Ошибка сети: $e');
+  }
+}
+
+// Парсинг YAML — возвращает true если успешно, false если битый
+bool _tryParseAndSetState(String yamlString) {
+  try {
+    final yamlMap = loadYaml(yamlString);
+
+    setState(() {
+      _workoutName = yamlMap['workout_name'] ?? 'Тренировка на сегодня';
+      _difficulty  = yamlMap['difficulty']    ?? 'medium';
+      _calories    = yamlMap['estimated_calories']    ?? 0;
+      _durationMinutes = yamlMap['estimated_duration_min'] ?? 0;
+
+      _exercises = [];
+      if (yamlMap['exercises'] != null) {
+        for (var ex in yamlMap['exercises']) {
+          _exercises.add({
+            'name':    ex['name'].toString(),
+            'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
+          });
+        }
+      }
+      _isLoading = false;
+    });
+
+    return true; // успешно
+  } catch (e) {
+    debugPrint('Ошибка парсинга YAML: $e');
+    return false; // битый
+  }
+}
 
   // Загрузка по сети (n8n)
-  Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
-    try {
-      final response = await http.post(
-        Uri.parse(StringApi.apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': 'test@fitflow.local', // Замените на реальные данные авторизованного юзера
-          'user_id': 1
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String yamlString = data['workout']['content'];
-        
-        // Сохраняем в кэш новую дату и YAML
-        await prefs.setString('workout_date', todayDate);
-        await prefs.setString('workout_yaml', yamlString);
-
-        _parseAndSetState(yamlString);
-      } else {
-        setState(() => _isLoading = false);
-        debugPrint('Ошибка сервера: ${response.statusCode}');
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      debugPrint('Ошибка сети: $e');
-    }
-  }
+  
 
   // Парсинг YAML и обновление UI
   void _parseAndSetState(String yamlString) {
