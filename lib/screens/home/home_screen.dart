@@ -176,7 +176,7 @@ Widget build(BuildContext context) {
     onRefresh: () async {
       context.read<HealthProvider>().initHealthData();
       context.read<WorkoutProvider>().initWorkouts();
-      context.read<NutritionProvider>().initMeals();
+      context.read<NutritionProvider>().init();
     },
     backgroundColor: const Color(0xFF1D1E33),
     color: const Color(0xFF6C5CE7),

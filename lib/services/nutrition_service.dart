@@ -1,73 +1,43 @@
-import '../models/meal.dart';
-import '../data/mock_data.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class NutritionService {
-  static final NutritionService _instance = NutritionService._internal();
+class NutritionApi {
+  static const String _baseUrl = 'http://10.0.2.2:5678/webhook';
+  static const String _defaultUserId = '1';
 
-  factory NutritionService() {
-    return _instance;
-  }
+  Future<Map<String, dynamic>> analyzeFood(String foodText) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/narution'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: utf8.encode(jsonEncode({
+          'user_id': _defaultUserId,
+          'message': foodText,
+          'food_text': foodText,
+        })),
+      );
 
-  NutritionService._internal();
+      debugPrint('>>> nutrition статус: ${response.statusCode}');
+      debugPrint('>>> nutrition ответ: ${response.body}');
 
-  List<Meal> _meals = [];
-
-  Future<void> initMeals() async {
-    _meals = MockData.getMockMeals();
-  }
-
-  List<Meal> getMeals() => _meals;
-
-  Future<Meal> analyzeFoodImage(String imagePath) async {
-    await Future.delayed(Duration(seconds: 2));
-
-    final mockMeal = Meal(
-      id: 'meal_${DateTime.now().millisecondsSinceEpoch}',
-      name: 'Бутерброд с колбасой',
-      description: 'Хлеб, колбаса, сыр, помидор',
-      calories: 420,
-      protein: 18,
-      carbs: 35,
-      fats: 22,
-      fiber: 2,
-      sugar: 3,
-      consumedAt: DateTime.now(),
-      mealType: 'snack',
-      imageUrl: imagePath,
-    );
-
-    _meals.add(mockMeal);
-    return mockMeal;
-  }
-
-  String getNutritionRecommendation(Meal meal) {
-    if (meal.sugar > 30) {
-      return 'Много сладкого в этом блюде. Стресс? Может заменим на что-то полезное?';
-    } else if (meal.protein < 10) {
-      return 'Тебе не хватает белка. Добавим курицу или рыбу?';
-    } else if (meal.fats > 30) {
-      return 'Жира многовато. Выбери что-нибудь полегче?';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final json = data is List ? data.first : data;
+        return json as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('>>> nutrition exception: $e');
     }
-    return 'Хороший выбор! Этот прием пищи отлично подходит к твоим целям.';
-  }
 
-  Future<List<String>> scanFridge(List<String> ingredients) async {
-    await Future.delayed(Duration(seconds: 1));
-
-    const recipes = [
-      'Курица с овощами',
-      'Омлет с беконом',
-      'Салат из помидоров и огурцов',
-      'Суп из курицы',
-      'Гарнир из риса',
-    ];
-
-    return recipes;
-  }
-
-  double calculateTotalCalories(DateTime date) {
-    return _meals
-        .where((m) => m.consumedAt.day == date.day && m.consumedAt.month == date.month)
-        .fold(0.0, (sum, meal) => sum + meal.calories);
+    // Фолбэк если сервер недоступен
+    return {
+      'meal_name': foodText,
+      'calories': 0,
+      'protein_g': 0,
+      'fat_g': 0,
+      'carbs_g': 0,
+      'ai_message': 'Не удалось получить данные от сервера',
+    };
   }
 }
