@@ -13,7 +13,6 @@ class WorkoutSessionScreen extends StatefulWidget {
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool _started = false;
 
-  // Моки упражнений (потом из провайдера)
   final List<WorkoutExercise> _exercises = const [
     WorkoutExercise(
       id: 'bench_press',
@@ -42,8 +41,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     WorkoutExercise(
       id: 'incline_db_press',
       name: 'Жим гантелей на наклонной скамье',
-      description:
-          'Упражнение для верхней части груди и передних дельт.',
+      description: 'Упражнение для верхней части груди и передних дельт.',
       instructions:
           '• Установите скамью под углом 30–45°.\n'
           '• Лягте и поднимите гантели над грудью.\n'
@@ -52,7 +50,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       benefits:
           '• Акцент на верхнюю часть грудных.\n'
           '• Развивает силу плечевого пояса.',
-      muscles: '• Верхняя часть грудных мышц.\n• Передние дельтовидные.\n• Трицепсы.',
+      muscles:
+          '• Верхняя часть грудных мышц.\n• Передние дельтовидные.\n• Трицепсы.',
       tags: ['Гантели', 'Грудь', 'Плечи'],
       sets: 3,
       reps: 8,
@@ -87,18 +86,17 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
+        backgroundColor: const Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Тренировка',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
         ),
       ),
       body: Column(
@@ -109,7 +107,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1D1E33),
+                color: const Color(0xFF2C2C2E),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -118,7 +116,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   const Text(
                     'Неделя 1. Грудь · Плечи',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFFFFFFFF),
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -127,12 +125,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   Row(
                     children: [
                       const Icon(Icons.access_time_rounded,
-                          color: Colors.white70, size: 16),
+                          color: Color(0xFFAEAEB2), size: 16),
                       const SizedBox(width: 4),
                       Text(
                         '~ $_totalMinutes мин',
                         style: const TextStyle(
-                          color: Colors.white70,
+                          color: Color(0xFFAEAEB2),
                           fontSize: 13,
                         ),
                       ),
@@ -169,7 +167,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     child: const Text(
                       'Завершить тренировку',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: Color(0xFFAEAEB2),
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -185,24 +183,22 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         MaterialPageRoute(
                           builder: (_) => WorkoutPlayerScreen(
                             exercises: _exercises,
-                            initialIndex: 0, 
+                            initialIndex: 0,
                           ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: const Color(0xFF6C5CE7),
+                      backgroundColor: const Color(0xFFFF4538),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     child: Text(
-                      _started
-                          ? 'Продолжить тренировку'
-                          : 'Начать тренировку',
+                      _started ? 'Продолжить тренировку' : 'Начать тренировку',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFFFFFFFF),
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -221,7 +217,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       BuildContext context, WorkoutExercise ex, int index) {
     return InkWell(
       onTap: () {
-        // ОБЗОР упражнения
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -233,7 +228,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1D1E33),
+          color: const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
@@ -241,12 +236,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                color: Colors.black,
+                color: const Color(0xFF1D1E33),
                 width: 60,
                 height: 60,
                 child: const Icon(
                   Icons.fitness_center_rounded,
-                  color: Colors.white,
+                  color: Color(0xFFFF4538),
                   size: 32,
                 ),
               ),
@@ -259,7 +254,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   Text(
                     ex.name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFFFFFFFF),
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -269,7 +264,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     '~ ${ex.estimatedMinutes} мин, '
                     '${ex.sets} сета x ${ex.weight} кг x ${ex.reps} повт.',
                     style: const TextStyle(
-                      color: Colors.white70,
+                      color: Color(0xFFAEAEB2),
                       fontSize: 12,
                     ),
                   ),
@@ -277,7 +272,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                color: Colors.white54, size: 22),
+                color: Color(0xFFAEAEB2), size: 22),
           ],
         ),
       ),

@@ -12,13 +12,12 @@ class ExerciseDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0E21),
+        backgroundColor: const Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -34,7 +33,7 @@ class ExerciseDetailScreen extends StatelessWidget {
             // Картинка / иконка сверху
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF1D1E33),
+                color: const Color(0xFF2C2C2E),
                 borderRadius: BorderRadius.circular(24),
               ),
               padding: const EdgeInsets.all(16),
@@ -43,11 +42,11 @@ class ExerciseDetailScreen extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    color: Colors.black,
+                    color: const Color(0xFF2C2C2E),
                     child: const Center(
                       child: Icon(
                         Icons.fitness_center_rounded,
-                        color: Colors.white,
+                        color: Color(0xFFFF4538),
                         size: 80,
                       ),
                     ),
@@ -61,7 +60,7 @@ class ExerciseDetailScreen extends StatelessWidget {
               child: Text(
                 exercise.name,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFFFFFFF),
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -100,13 +99,17 @@ class ExerciseDetailScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1D1E33),
+                        color: const Color(0xFF2C2C2E),
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: const Color(0xFFFF4538).withOpacity(0.4),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
                         t,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFFAEAEB2),
                           fontSize: 13,
                         ),
                       ),
@@ -136,7 +139,7 @@ class ExerciseDetailScreen extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        color: Colors.white,
+        color: Color(0xFFFFFFFF),
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
@@ -147,7 +150,7 @@ class ExerciseDetailScreen extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        color: Colors.white,
+        color: Color(0xFFAEAEB2),
         fontSize: 14,
         height: 1.4,
       ),
@@ -160,7 +163,7 @@ class ExerciseDetailScreen extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF1D1E33),
+          color: const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -168,7 +171,7 @@ class ExerciseDetailScreen extends StatelessWidget {
             Text(
               value,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFFFFFFFF),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -177,7 +180,7 @@ class ExerciseDetailScreen extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                color: Colors.white70,
+                color: Color(0xFFAEAEB2),
                 fontSize: 11,
               ),
             ),

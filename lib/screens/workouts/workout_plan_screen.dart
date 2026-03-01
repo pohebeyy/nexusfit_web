@@ -6,9 +6,10 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../providers/workout_provider.dart';
 import '../../models/activity_day.dart';
 import '../ai_coach/chat_screen.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yaml/yaml.dart';
 import 'package:startap/screens/workouts/workout_session_screen.dart';
-
+import 'dart:convert';
 enum WorkoutSource { templates, ai }
 
 class WorkoutPlanScreen extends StatefulWidget {
@@ -24,12 +25,82 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   bool _isExercisesExpanded = false;
+  List<Map<String, String>> _cachedExercises = [];
+  String _cachedWorkoutName = '';
 
   @override
   void initState() {
     super.initState();
     _initializeActivityData();
+    _loadOrFetchTodayWorkout();
   }
+  Future<void> _loadOrFetchTodayWorkout() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String todayKey = DateTime.now().toIso8601String().split('T')[0];
+
+  // Читаем весь 30-дневный словарь
+  final String? rawJson = prefs.getString('calendar_workouts');
+  Map<String, dynamic> calendarCache = rawJson != null
+      ? jsonDecode(rawJson) as Map<String, dynamic>
+      : {};
+
+  // Чистим записи старше 30 дней
+  final cutoff = DateTime.now().subtract(const Duration(days: 30));
+  calendarCache.removeWhere((dateStr, _) {
+    final d = DateTime.tryParse(dateStr);
+    return d == null || d.isBefore(cutoff);
+  });
+
+  if (calendarCache.containsKey(todayKey)) {
+    // Уже есть в 30-дневном кэше
+    _applyCalendarEntry(calendarCache[todayKey]);
+  } else {
+    // Берём из суточного кэша TodayWorkoutCard (workout_yaml)
+    final String? todayDate = prefs.getString('workout_date');
+    final String? todayYaml = prefs.getString('workout_yaml');
+
+    if (todayDate == todayKey && todayYaml != null) {
+      final entry = _parseYamlToEntry(todayYaml);
+      if (entry != null) {
+        calendarCache[todayKey] = entry;
+        await prefs.setString('calendar_workouts', jsonEncode(calendarCache));
+        _applyCalendarEntry(entry);
+      }
+    }
+  }
+}
+// Парсим YAML → Map для сохранения в 30-дневный кэш
+Map<String, dynamic>? _parseYamlToEntry(String yamlString) {
+  try {
+    final yamlMap = loadYaml(yamlString);
+    final List<Map<String, String>> exercises = [];
+    if (yamlMap['exercises'] != null) {
+      for (var ex in yamlMap['exercises']) {
+        exercises.add({
+          'name': ex['name'].toString(),
+          'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
+        });
+      }
+    }
+    return {
+      'workout_name': yamlMap['workout_name'] ?? 'Тренировка',
+      'exercises': exercises,
+    };
+  } catch (e) {
+    debugPrint('Ошибка парсинга YAML для календаря: $e');
+    return null;
+  }
+}
+
+// Применяем данные из кэша в UI
+void _applyCalendarEntry(dynamic entry) {
+  setState(() {
+    _cachedWorkoutName = entry['workout_name'] ?? '';
+    _cachedExercises = List<Map<String, String>>.from(
+      (entry['exercises'] as List).map((e) => Map<String, String>.from(e)),
+    );
+  });
+}
 
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -353,14 +424,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     }
 
     // Список упражнений (захардкожено, потом можно в ActivityDay добавить)
-    final exercises = [
-      'Приседание со штангой - 4x10',
-      'Жим ногами - 3x12',
-      'Разгибание ног - 3x15',
-      'Выпады с гантелями - 3x12',
-      'Подъем на икры - 4x15',
-      'Пресс: скручивания - 3x20',
-    ];
+    final exercises = _cachedExercises.isNotEmpty
+    ? _cachedExercises.map((e) => '${e['name']} - ${e['display']}').toList()
+    : <String>['Упражнения загружаются...'];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10),

@@ -71,13 +71,13 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
     if (rpe <= 4) return const Color(0xFF4CAF50);
     if (rpe <= 6) return const Color(0xFF00D9FF);
     if (rpe <= 8) return const Color(0xFFFFA726);
-    return const Color(0xFFFF5252);
+    return const Color(0xFFFF4538);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       body: SafeArea(
         child: Column(
           children: [
@@ -88,8 +88,8 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                 children: [
                   Text(
                     '${widget.exerciseNumber} / ${widget.totalExercises}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                    style: const TextStyle(
+                      color: Color(0xFFAEAEB2),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -101,13 +101,13 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00D9FF).withOpacity(0.15),
+                      color: const Color(0xFFFF4538).withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Оценка RPE',
-                      style: const TextStyle(
-                        color: Color(0xFF00D9FF),
+                      style: TextStyle(
+                        color: Color(0xFFFF4538),
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -123,7 +123,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    
+
                     // Animated Icon
                     ScaleTransition(
                       scale: _scaleAnimation,
@@ -153,7 +153,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     const Text(
                       'Насколько тяжёлым было\nупражнение?',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFFFFFFFF),
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
                         height: 1.3,
@@ -166,8 +166,8 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     // Exercise Name
                     Text(
                       widget.exercise.name,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                      style: const TextStyle(
+                        color: Color(0xFFAEAEB2),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -180,7 +180,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
+                        color: const Color(0xFF2C2C2E),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: _getRpeColor(_selectedRpe).withOpacity(0.3),
@@ -188,7 +188,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: _getRpeColor(_selectedRpe).withOpacity(0.2),
+                            color: _getRpeColor(_selectedRpe).withOpacity(0.15),
                             blurRadius: 20,
                             spreadRadius: 2,
                           ),
@@ -199,10 +199,10 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
+                              const Text(
                                 'Шкала RPE',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Color(0xFFFFFFFF),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -219,7 +219,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                                 child: Text(
                                   '$_selectedRpe / 10',
                                   style: const TextStyle(
-                                    color: Color(0xFF0A0E27),
+                                    color: Color(0xFFFFFFFF),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -227,14 +227,15 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                               ),
                             ],
                           ),
-                          
+
                           const SizedBox(height: 20),
 
                           // RPE Buttons Grid
                           GridView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 5,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
@@ -244,7 +245,7 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                             itemBuilder: (context, index) {
                               final value = index + 1;
                               final isSelected = value == _selectedRpe;
-                              
+
                               return GestureDetector(
                                 onTap: () {
                                   setState(() => _selectedRpe = value);
@@ -261,13 +262,14 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                                             end: Alignment.bottomRight,
                                             colors: [
                                               _getRpeColor(value),
-                                              _getRpeColor(value).withOpacity(0.7),
+                                              _getRpeColor(value)
+                                                  .withOpacity(0.7),
                                             ],
                                           )
                                         : null,
                                     color: isSelected
                                         ? null
-                                        : const Color(0xFF0A0E27),
+                                        : const Color(0xFF1D1E33),
                                     border: Border.all(
                                       color: isSelected
                                           ? Colors.transparent
@@ -290,8 +292,8 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                                       '$value',
                                       style: TextStyle(
                                         color: isSelected
-                                            ? const Color(0xFF0A0E27)
-                                            : Colors.white,
+                                            ? const Color(0xFFFFFFFF)
+                                            : const Color(0xFFAEAEB2),
                                         fontSize: 20,
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -312,13 +314,14 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                               color: _getRpeColor(_selectedRpe).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: _getRpeColor(_selectedRpe).withOpacity(0.3),
+                                color:
+                                    _getRpeColor(_selectedRpe).withOpacity(0.3),
                               ),
                             ),
                             child: Text(
                               _getRpeDescription(_selectedRpe),
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                              style: const TextStyle(
+                                color: Color(0xFFFFFFFF),
                                 fontSize: 14,
                                 height: 1.5,
                                 fontWeight: FontWeight.w600,
@@ -336,25 +339,25 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
+                        color: const Color(0xFF2C2C2E),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0xFF00D9FF).withOpacity(0.2),
+                          color: const Color(0xFFFF4538).withOpacity(0.2),
                         ),
                       ),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.lightbulb_outline_rounded,
-                            color: const Color(0xFF00D9FF),
+                            color: Color(0xFFFF4538),
                             size: 24,
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
+                          const Expanded(
                             child: Text(
                               'Оценка RPE помогает AI адаптировать\nтвой план под текущее состояние',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Color(0xFFAEAEB2),
                                 fontSize: 12,
                                 height: 1.4,
                               ),
@@ -377,9 +380,9 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFAEAEB2),
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: const Color(0xFFAEAEB2).withOpacity(0.3),
                           width: 1.5,
                         ),
                         shape: RoundedRectangleBorder(
@@ -402,17 +405,17 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, _selectedRpe),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _getRpeColor(_selectedRpe),
-                        foregroundColor: const Color(0xFF0A0E27),
+                        backgroundColor: const Color(0xFFFF4538),
+                        foregroundColor: const Color(0xFFFFFFFF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         elevation: 4,
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Text(
                             'Продолжить',
                             style: TextStyle(

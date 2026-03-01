@@ -6,7 +6,7 @@ class WorkoutCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF1D1E33),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -14,12 +14,13 @@ class WorkoutCompleteScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.celebration_rounded, color: Colors.greenAccent, size: 64),
+              const Icon(Icons.celebration_rounded,
+                  color: Color(0xFFFF4538), size: 64),
               const SizedBox(height: 16),
               const Text(
                 'ТРЕНИРОВКА ЗАВЕРШЕНА',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFFFFFFF),
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -29,25 +30,31 @@ class WorkoutCompleteScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1D1E33),
+                  color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
+                  border: Border.all(
+                      color: const Color(0xFFFF4538).withOpacity(0.3)),
                 ),
                 child: Column(
                   children: [
                     const Text(
                       'Ноги (квадрицепс + ягодицы)',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 20),
+                        Icon(Icons.check_circle_rounded,
+                            color: Color(0xFFFF4538), size: 20),
                         SizedBox(width: 6),
                         Text(
                           'Все упражнения выполнены',
-                          style: TextStyle(color: Colors.greenAccent, fontSize: 13),
+                          style: TextStyle(
+                              color: Color(0xFFFF4538), fontSize: 13),
                         ),
                       ],
                     ),
@@ -63,21 +70,23 @@ class WorkoutCompleteScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0A0E21),
+                        color: const Color(0xFF1D1E33),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.greenAccent.withOpacity(0.2)),
+                        border: Border.all(
+                            color: const Color(0xFFFF4538).withOpacity(0.2)),
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.psychology_rounded, color: Colors.greenAccent, size: 18),
+                              Icon(Icons.psychology_rounded,
+                                  color: Color(0xFFFF4538), size: 18),
                               SizedBox(width: 8),
                               Text(
                                 'РЕЗУЛЬТАТ:',
                                 style: TextStyle(
-                                  color: Colors.greenAccent,
+                                  color: Color(0xFFFF4538),
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -87,7 +96,10 @@ class WorkoutCompleteScreen extends StatelessWidget {
                           SizedBox(height: 8),
                           Text(
                             '"Отличная сессия! Ты выполнил план на 100%. Благодаря этому ты приблизился к своей цели на 1.2%"',
-                            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+                            style: TextStyle(
+                                color: Color(0xFFAEAEB2),
+                                fontSize: 12,
+                                height: 1.5),
                           ),
                         ],
                       ),
@@ -97,7 +109,10 @@ class WorkoutCompleteScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Text(
                       'СТАТИСТИКА:',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     _statRow('• Общий объём:', '15 тонн'),
@@ -115,12 +130,14 @@ class WorkoutCompleteScreen extends StatelessWidget {
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF6C5CE7),
+                        backgroundColor: const Color(0xFFFF4538),
+                        foregroundColor: const Color(0xFFFFFFFF),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ЗАВЕРШИТЬ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ЗАВЕРШИТЬ',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -128,12 +145,15 @@ class WorkoutCompleteScreen extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () {},
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white30),
+                        foregroundColor: const Color(0xFFFFFFFF),
+                        side: BorderSide(
+                            color: const Color(0xFFAEAEB2).withOpacity(0.4)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ДЕТАЛИ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ДЕТАЛИ',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -151,8 +171,14 @@ class WorkoutCompleteScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: const TextStyle(
+                  color: Color(0xFFAEAEB2), fontSize: 12)),
+          Text(value,
+              style: const TextStyle(
+                  color: Color(0xFFFFFFFF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );

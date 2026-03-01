@@ -165,7 +165,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
   Future<void> _showWorkoutCompletedSheet() {
     return showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       isScrollControlled: true,
       isDismissible: false,
       shape: const RoundedRectangleBorder(
@@ -189,7 +189,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.24),
+                    color: const Color(0xFFAEAEB2).withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -198,16 +198,11 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF00D9FF).withOpacity(0.2),
-                        const Color(0xFF7C3AED).withOpacity(0.2),
-                      ],
-                    ),
+                    color: const Color(0xFFFF4538).withOpacity(0.15),
                   ),
                   child: const Icon(
                     Icons.check_circle_rounded,
-                    color: Color(0xFF00D9FF),
+                    color: Color(0xFFFF4538),
                     size: 48,
                   ),
                 ),
@@ -215,7 +210,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                 const Text(
                   '🎉 Тренировка завершена',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFFFFFFFF),
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
@@ -224,10 +219,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A2E),
+                    color: const Color(0xFF2C2C2E),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF00D9FF).withOpacity(0.3),
+                      color: const Color(0xFFFF4538).withOpacity(0.3),
                     ),
                   ),
                   child: Column(
@@ -235,17 +230,17 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Упражнений:',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Color(0xFFAEAEB2),
                               fontSize: 14,
                             ),
                           ),
                           Text(
                             '${widget.exercises.length}',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFFFFFFFF),
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -256,17 +251,17 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Общее время:',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Color(0xFFAEAEB2),
                               fontSize: 14,
                             ),
                           ),
                           Text(
                             _formatDuration(_elapsed),
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFFFFFFFF),
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -277,10 +272,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   'Neuro‑Collider обновит твой план\nс учётом ответов по RPE',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Color(0xFFAEAEB2),
                     fontSize: 13,
                     height: 1.5,
                   ),
@@ -292,8 +287,8 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(ctx).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D9FF),
-                      foregroundColor: const Color(0xFF0A0E27),
+                      backgroundColor: const Color(0xFFFF4538),
+                      foregroundColor: const Color(0xFFFFFFFF),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -316,13 +311,15 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     final total = widget.exercises.length;
     final progress = (_currentIndex + 1) / total;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF1C1C1E),
       body: SafeArea(
         child: Column(
           children: [
@@ -398,10 +395,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
               child: Container(
                 height: 280,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A2E),
+                  color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: const Color(0xFF00D9FF).withOpacity(0.2),
+                    color: const Color(0xFF2C2C2E).withOpacity(0.2),
                     width: 1.5,
                   ),
                 ),
@@ -437,10 +434,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                 width: double.infinity,
                 margin: const EdgeInsets.symmetric(horizontal: 16.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A2E),
+                  color: const Color(0xFF2C2C2E),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: const Color(0xFF00D9FF).withOpacity(0.2),
+                    color: const Color(0xFF2C2C2E).withOpacity(0.2),
                     width: 1.5,
                   ),
                 ),
@@ -468,7 +465,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00D9FF).withOpacity(0.15),
+                            color: const Color(0xFFFF4538).withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -476,14 +473,14 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                             children: [
                               Icon(
                                 Icons.info_outline_rounded,
-                                color: const Color(0xFF00D9FF),
+                                color: const Color(0xFFFFFFFFF),
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Рекомендуемый вес: ${_currentExercise.weight} кг',
                                 style: const TextStyle(
-                                  color: Color(0xFF00D9FF),
+                                  color: Color(0xFFFFFFFFF),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -568,8 +565,8 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                         child: ElevatedButton(
                           onPressed: _onCompleteSetPressed,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00D9FF),
-                            foregroundColor: const Color(0xFF0A0E27),
+                            backgroundColor: const Color(0xFFFF4538),
+                            foregroundColor: const Color(0xFFFFFFFF),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -613,20 +610,20 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0E27),
+        color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: const Color(0xFFFF4538).withOpacity(0.3),
         ),
       ),
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF00D9FF), size: 24),
+          Icon(icon, color: const Color(0xFFFF4538), size: 24),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFFFFFFFF),
               fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
@@ -634,8 +631,8 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+            style: const TextStyle(
+              color: Color(0xFFAEAEB2),
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
@@ -660,23 +657,18 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
         height: 110,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _isTimerRunning
-                  ? const Color(0xFF00D9FF)
-                  : const Color(0xFF00D9FF).withOpacity(0.3),
-              _isTimerRunning
-                  ? const Color(0xFF7C3AED)
-                  : const Color(0xFF7C3AED).withOpacity(0.3),
-            ],
+          border: Border.all(
+            color: _isTimerRunning
+                ? const Color(0xFFFF4538)
+                : const Color(0xFFFF4538).withOpacity(0.3),
+            width: 3,
           ),
+          color: const Color(0xFF2C2C2E),
         ),
         child: Container(
           margin: const EdgeInsets.all(4),
           decoration: const BoxDecoration(
-            color: Color(0xFF0A0E27),
+            color: Color(0xFF2C2C2E),
             shape: BoxShape.circle,
           ),
           child: Column(
@@ -684,22 +676,22 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
             children: [
               Icon(
                 _isTimerRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: Colors.white,
+                color: const Color(0xFFFF4538),
                 size: 28,
               ),
               const SizedBox(height: 4),
               Text(
                 text,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFFFFFFF),
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Text(
+              const Text(
                 'Отдых',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Color(0xFFAEAEB2),
                   fontSize: 10,
                 ),
               ),
@@ -721,10 +713,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27),
+          color: const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFF00D9FF).withOpacity(0.2),
+            color: const Color(0xFFFF4538).withOpacity(0.3),
             width: 1.5,
           ),
         ),
@@ -735,14 +727,14 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
               children: [
                 Icon(
                   icon,
-                  color: const Color(0xFF00D9FF),
+                  color: const Color(0xFFFF4538),
                   size: 16,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                  style: const TextStyle(
+                    color: Color(0xFFAEAEB2),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -750,7 +742,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
                 const Spacer(),
                 Icon(
                   Icons.edit_rounded,
-                  color: Colors.white.withOpacity(0.4),
+                  color: const Color(0xFFFF4538),
                   size: 16,
                 ),
               ],
@@ -759,7 +751,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
             Text(
               value,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFFFFFFFF),
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -769,6 +761,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
       ),
     );
   }
+
 
   Future<double?> _editNumberDialog({
     required String title,
