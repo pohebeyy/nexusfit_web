@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/sleep_screen.dart';
 
 
@@ -471,17 +473,34 @@ class _FlexibilityScreenState extends State<FlexibilityScreen> {
             color: canContinue ? null : const Color(0xFF1A1F3A),
             
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SleepScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем общую гибкость
+                        context.read<OnboardingProvider>().setFlexibilityLevel(_overallFlexibility!);
+                        
+                        // Сохраняем проблемные зоны (если они выбраны)
+                        if (_bodyPartFlexibility.isNotEmpty) {
+                          // Преобразуем Map<String, String?> в Map<String, String> (убираем null значения)
+                          final Map<String, String> cleanedMap = {};
+                          _bodyPartFlexibility.forEach((key, value) {
+                            if (value != null) {
+                              cleanedMap[key] = value;
+                            }
+                          });
+                          context.read<OnboardingProvider>().setProblemAreas(cleanedMap);
+                        }
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SleepScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/path_b/b2_health_screening_screen.dart';
 
 /// B1: Ручной ввод базовых параметров тела
@@ -328,9 +330,23 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
                       ]
                     : null,
               ),
-              child: ElevatedButton(
+                            child: ElevatedButton(
                 onPressed: isValid
                     ? () {
+                        // 1. Парсим значения из текстовых полей
+                        final age = int.tryParse(_ageController.text) ?? 0;
+                        final height = double.tryParse(_heightController.text) ?? 0.0;
+                        final weight = double.tryParse(_weightController.text) ?? 0.0;
+
+                        // 2. Сохраняем в глобальный провайдер
+                        // (Убедись, что в OnboardingProvider есть соответствующие методы)
+                        final provider = context.read<OnboardingProvider>();
+                        provider.setGender(_gender);
+                        provider.setAge(age);
+                        provider.setHeight(height);
+                        provider.setCurrentWeight(weight); // Обрати внимание, что вес мы используем дальше в приложении
+
+                        // 3. Переходим на следующий экран
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -339,6 +355,7 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
                         );
                       }
                     : null,
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,

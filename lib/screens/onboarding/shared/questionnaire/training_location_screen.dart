@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/experience_screen.dart';
 
 
@@ -436,17 +438,24 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
                   ]
                 : null,
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ExperienceScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем место тренировок в провайдер
+                        if (_selectedLocation != null) {
+                          context.read<OnboardingProvider>().setTrainingLocation(_selectedLocation!);
+                        }
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ExperienceScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,

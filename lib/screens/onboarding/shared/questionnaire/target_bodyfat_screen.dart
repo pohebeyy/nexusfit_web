@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart' show ReadContext;
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/target_zones_screen.dart';
 
 
@@ -533,17 +535,24 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
             
                 
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TargetZonesScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем целевой % жира в провайдер
+                        if (_selectedTarget != null) {
+                          context.read<OnboardingProvider>().setTargetBodyFat(_selectedTarget!);
+                        }
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TargetZonesScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,

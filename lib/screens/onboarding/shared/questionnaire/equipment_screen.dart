@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/flexibility_screen.dart';
 
 
@@ -481,9 +483,13 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
                       ]
                     : null,
               ),
-              child: ElevatedButton(
+                            child: ElevatedButton(
                 onPressed: canContinue
                     ? () {
+                        // Сохраняем список оборудования в провайдер
+                        context.read<OnboardingProvider>().setEquipment(List.from(_selectedEquipment));
+
+                        // Переходим на следующий экран
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -492,6 +498,7 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
                         );
                       }
                     : null,
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,

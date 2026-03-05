@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/goal_screen.dart';
 
 /// A4: Скрининг здоровья - проверка ограничений и противопоказаний
@@ -436,10 +438,23 @@ class _A4HealthScreeningScreenState extends State<A4HealthScreeningScreen> {
                       ]
                     : null,
               ),
-              child: ElevatedButton(
+                            child: ElevatedButton(
                 onPressed: canContinue
                     ? () {
-                        // Здесь можно сохранить данные, включая текст из _otherIssueController
+                        // 1. Собираем данные
+                        List<String> finalIssues = List.from(_selectedIssues);
+                        
+                        // Если выбрано "Другое", добавляем текст, который ввел юзер
+                        if (_selectedIssues.contains('other') && _otherIssueController.text.isNotEmpty) {
+                          // Можно убрать 'other' из списка и заменить его на реальный текст
+                          finalIssues.remove('other'); 
+                          finalIssues.add('Другое: ${_otherIssueController.text.trim()}');
+                        }
+
+                        // 2. Сохраняем в Provider
+                        context.read<OnboardingProvider>().setHealthIssues(finalIssues);
+
+                        // 3. Переходим на следующий экран
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -448,6 +463,7 @@ class _A4HealthScreeningScreenState extends State<A4HealthScreeningScreen> {
                         );
                       }
                     : null,
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,

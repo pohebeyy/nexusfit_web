@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/target_weight_screen.dart';
 
 
@@ -419,17 +421,24 @@ class _GoalScreenState extends State<GoalScreen> {
                   ]
                 : null,
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TargetWeightScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем выбранную цель в провайдер
+                        if (_selectedGoal != null) {
+                          context.read<OnboardingProvider>().setGoal(_selectedGoal!);
+                        }
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TargetWeightScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFFF4538),
               shadowColor: Colors.transparent,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/your_strategy_screen.dart';
 
 
@@ -432,9 +434,13 @@ class _DietRestrictionsScreenState extends State<DietRestrictionsScreen> {
                 color: canContinue ? null : const Color(0xFF1A1F3A),
                 
               ),
-              child: ElevatedButton(
+                            child: ElevatedButton(
                 onPressed: canContinue
                     ? () {
+                        // Сохраняем ограничения по питанию в Provider
+                        context.read<OnboardingProvider>().setDietRestrictions(List.from(_selectedRestrictions));
+
+                        // Переходим на финальный экран стратегии
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -443,6 +449,7 @@ class _DietRestrictionsScreenState extends State<DietRestrictionsScreen> {
                         );
                       }
                     : null,
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,

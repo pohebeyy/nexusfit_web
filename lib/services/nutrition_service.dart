@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class NutritionApi {
-  static const String _baseUrl = 'http://10.0.2.2:5678/webhook';
+  static const String _baseUrl = 'https://n8n.nexusfit.ru/webhook';
   static const String _defaultUserId = '1';
 
   Future<Map<String, dynamic>> analyzeFood(String foodText) async {

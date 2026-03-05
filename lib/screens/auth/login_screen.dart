@@ -4,12 +4,14 @@ import 'package:startap/screens/auth/ForgotPasswordScreen.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
+
 
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
@@ -19,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _animationController.forward();
   }
 
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -41,20 +45,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
+
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
+      
+      // Debug print для отладки
+      debugPrint('Login attempt: ${_emailController.text.trim()}');
       
       final success = await authProvider.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
+      debugPrint('Login result: success=$success, error=${authProvider.error}');
+
       if (success && mounted) {
-        // Переход на главный экран
         Navigator.of(context).pushReplacementNamed('/home');
       } else if (mounted) {
-        // Показываем ошибку
         final errorMessage = authProvider.error ?? 'Ошибка входа';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -69,24 +77,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
-  /// Преобразование Firebase ошибок в понятные сообщения
+
+  /// Обработка ошибок от n8n API
   String _getErrorMessage(String error) {
-    if (error.contains('user-not-found')) {
+    final errorLower = error.toLowerCase();
+    
+    if (errorLower.contains('invalid_credentials') || 
+        errorLower.contains('неверный') ||
+        errorLower.contains('wrong-password')) {
+      return 'Неверный email или пароль';
+    } else if (errorLower.contains('user-not-found')) {
       return 'Пользователь не найден';
-    } else if (error.contains('wrong-password')) {
-      return 'Неверный пароль';
-    } else if (error.contains('invalid-email')) {
+    } else if (errorLower.contains('invalid-email')) {
       return 'Неверный формат email';
-    } else if (error.contains('user-disabled')) {
+    } else if (errorLower.contains('user-disabled')) {
       return 'Учетная запись отключена';
-    } else if (error.contains('too-many-requests')) {
+    } else if (errorLower.contains('too-many-requests')) {
       return 'Слишком много попыток входа. Попробуйте позже';
-    } else if (error.contains('network')) {
+    } else if (errorLower.contains('network') || 
+               errorLower.contains('socket') ||
+               errorLower.contains('connection') ||
+               errorLower.contains('подключения') ||
+               errorLower.contains('failed to fetch')) {
       return 'Проблема с подключением. Проверьте интернет';
     } else {
       return error;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       ),
     );
   }
+
 
   Widget _buildHeader() {
     return Column(
@@ -171,6 +190,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       ],
     );
   }
+
 
   Widget _buildEmailField() {
     return Column(
@@ -231,6 +251,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       ],
     );
   }
+
 
   Widget _buildPasswordField() {
     return Column(
@@ -302,6 +323,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+
   Widget _buildForgotPassword() {
     return Align(
       alignment: Alignment.centerRight,
@@ -329,6 +351,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+
   Widget _buildLoginButton() {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
@@ -347,13 +370,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: ElevatedButton(
             onPressed: authProvider.isLoading ? null : _login,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF4538),
-              
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              
+             
             ),
             child: authProvider.isLoading
                 ? const SizedBox(
@@ -378,6 +401,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       },
     );
   }
+
 
   Widget _buildDivider() {
     return Row(
@@ -422,6 +446,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+
   Widget _buildSocialButtons() {
     return Row(
       children: [
@@ -458,6 +483,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+
   Widget _buildSocialButton({
     required IconData icon,
     required String label,
@@ -481,7 +507,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           children: [
             Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
-            Text(
+                       Text(
               label,
               style: const TextStyle(
                 color: Colors.white,
@@ -494,6 +520,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       ),
     );
   }
+
 
   Widget _buildRegisterPrompt() {
     return Row(
@@ -521,7 +548,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: const Text(
             'Зарегистрироваться',
             style: TextStyle(
-              color: Color(0xFFAEAEB2),
+              color: Color(0xFF00D9FF),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

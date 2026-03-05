@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 import 'a3_confirmation_screen.dart';
 
 /// A2: AI-анализ и редактирование всех параметров тела
@@ -37,6 +40,15 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
   final _thighController = TextEditingController(text: '55');
   final _hipsController = TextEditingController(text: '95');
   
+  // ТЕКСТЫ ОТ НЕЙРОСЕТИ (по умолчанию стоят заглушки, они перезапишутся)
+  String _aiComment = 'Твоему типу сложно набрать массу, но с правильным подходом результаты будут отличными';
+  String _aiRecommendations = 'Фокус на силовых упражнениях с большими весами. Увеличить калорийность рациона на 300-500 ккал';
+  String _aiProblems = '1. Низкий % мышечной массы\n2. Слабое развитие верха спины\n3. Недостаточная гибкость';
+  String _aiStrengths = '1. Хороший обмен веществ\n2. Быстрое восстановление\n3. Низкий % жира';
+  String _aiSummary = 'Потенциал высокий, но нужна систематичность и правильное питание. При регулярных тренировках результат будет через 8-12 недель';
+
+
+
   // Расширяемые секции
   final Map<String, bool> _expandedSections = {
     'comment': false,
@@ -49,13 +61,97 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
   @override
   void initState() {
     super.initState();
-    // Симуляция AI-анализа (2 секунды)
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isAnalyzing = false);
-      }
-    });
+    _analyzeImage();
   }
+
+Future<void> _analyzeImage() async {
+    try {
+      setState(() {
+        _isAnalyzing = true;
+      });
+
+      final bytes = await File(widget.photoPath).readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/analyze-photo');
+      
+      print('Отправляем фото на расширенный анализ...');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'image_base64': base64Image,
+          'mime_type': 'image/jpeg',
+        }),
+      ).timeout(
+        const Duration(seconds: 40), // Даем чуть больше времени из-за текста
+        onTimeout: () {
+          throw Exception('Превышено время ожидания ответа от AI');
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['error'] != null) {
+          throw Exception(data['error']);
+        }
+
+        if (mounted) {
+          setState(() {
+            // Заполняем цифры
+            _gender = data['gender'] ?? 'male';
+            _ageController.text = data['age']?.toString() ?? '25';
+            _heightController.text = data['height']?.toString() ?? '175';
+            _weightController.text = data['weight']?.toString() ?? '70';
+            _bodyFatController.text = data['bodyFat']?.toString() ?? '18';
+            _bodyType = data['bodyType'] ?? 'mesomorph';
+
+            _neckController.text = data['neck']?.toString() ?? '38';
+            _shouldersController.text = data['shoulders']?.toString() ?? '115';
+            _chestController.text = data['chest']?.toString() ?? '95';
+            _waistController.text = data['waist']?.toString() ?? '80';
+            _bicepsController.text = data['biceps']?.toString() ?? '32';
+            
+            // ЗАПОЛНЯЕМ ТЕКСТЫ!
+            _aiComment = data['comment'] ?? _aiComment;
+            _aiRecommendations = data['recommendations'] ?? _aiRecommendations;
+            _aiProblems = data['problems'] ?? _aiProblems;
+            _aiStrengths = data['strengths'] ?? _aiStrengths;
+            _aiSummary = data['summary'] ?? _aiSummary;
+
+            _isAnalyzing = false;
+          });
+        }
+      } else {
+        throw Exception('Ошибка сервера n8n: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка при анализе: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('AI-анализ прошел с ошибкой. Заполните данные вручную.'),
+            backgroundColor: const Color(0xFFFF4538),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        setState(() {
+          _isAnalyzing = false; 
+        });
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
 
   @override
   void dispose() {
@@ -162,39 +258,39 @@ class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
               _buildMeasurementsSection(),
               const SizedBox(height: 24),
               _buildExpandableSection(
-                'comment',
-                'Комментарий',
-                'Твоему типу сложно набрать массу, но с правильным подходом результаты будут отличными',
-                Icons.comment_outlined,
-              ),
-              const SizedBox(height: 12),
-              _buildExpandableSection(
-                'recommendations',
-                'Рекомендации',
-                'Фокус на силовых упражнениях с большими весами. Увеличить калорийность рациона на 300-500 ккал',
-                Icons.lightbulb_outline,
-              ),
-              const SizedBox(height: 12),
-              _buildExpandableSection(
-                'problems',
-                'Основные проблемы',
-                '1. Низкий % мышечной массы\n2. Слабое развитие верха спины\n3. Недостаточная гибкость',
-                Icons.warning_amber_outlined,
-              ),
-              const SizedBox(height: 12),
-              _buildExpandableSection(
-                'strengths',
-                'Сильные стороны',
-                '1. Хороший обмен веществ\n2. Быстрое восстановление\n3. Низкий % жира',
-                Icons.star_outline,
-              ),
-              const SizedBox(height: 12),
-              _buildExpandableSection(
-                'summary',
-                'Итог',
-                'Потенциал высокий, но нужна систематичность и правильное питание. При регулярных тренировках результат будет через 8-12 недель',
-                Icons.assessment_outlined,
-              ),
+  'comment',
+  'Комментарий',
+  _aiComment, // <-- переменная вместо текста
+  Icons.comment_outlined,
+),
+const SizedBox(height: 12),
+_buildExpandableSection(
+  'recommendations',
+  'Рекомендации',
+  _aiRecommendations, // <-- переменная вместо текста
+  Icons.lightbulb_outline,
+),
+const SizedBox(height: 12),
+_buildExpandableSection(
+  'problems',
+  'Основные проблемы',
+  _aiProblems, // <-- переменная вместо текста
+  Icons.warning_amber_outlined,
+),
+const SizedBox(height: 12),
+_buildExpandableSection(
+  'strengths',
+  'Сильные стороны',
+  _aiStrengths, // <-- переменная вместо текста
+  Icons.star_outline,
+),
+const SizedBox(height: 12),
+_buildExpandableSection(
+  'summary',
+  'Итог',
+  _aiSummary, // <-- переменная вместо текста
+  Icons.assessment_outlined,
+),
               const SizedBox(height: 24),
             ],
           ),

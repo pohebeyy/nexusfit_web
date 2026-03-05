@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'target_bodyfat_screen.dart';
 
 /// Shared: Выбор целевого веса
@@ -554,17 +556,24 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
             color: canContinue ? null : const Color(0xFF1A1F3A),
             
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TargetBodyfatScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем целевой вес в Provider
+                        if (_targetWeight != null) {
+                          context.read<OnboardingProvider>().setTargetWeight(_targetWeight!);
+                        }
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TargetBodyfatScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFFF4538),
               

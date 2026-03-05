@@ -1,4 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'dart:math' as math;
 
 import 'package:startap/screens/home/home_screen.dart';
@@ -25,7 +31,9 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
   late Animation<double> _cardsScale;
   late Animation<double> _listFade;
 
-  // Данные пользователя (Mock)
+  bool _isLoading = true; // Пока true — показываем лоадер
+
+  // Данные пользователя (будем заполнять из провайдера/AI)
   final Map<String, dynamic> _userStrategy = {
     'currentWeight': 80.0,
     'targetWeight': 90.0,
@@ -40,31 +48,26 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
   void initState() {
     super.initState();
 
-    // 1. Основной контроллер появления элементов
     _mainController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2500),
     );
 
-    // 2. Контроллер отрисовки графика
     _graphController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
 
-    // 3. Контроллер пульсации кнопки
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
-    // 4. Контроллер для счетчиков чисел
+
     _counterController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 1500),
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
     );
 
-    // Настройка анимаций
     _headerFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _mainController,
@@ -93,14 +96,145 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
       ),
     );
 
-    // Запуск последовательности
-    _playAnimationSequence();
+    // Запускаем сбор данных/запрос к AI при старте экрана
+    _fetchStrategyFromAI();
   }
 
+  Future<void> _fetchStrategyFromAI() async {
+  final provider = context.read<OnboardingProvider>();
+
+  // 1. Берем базовые данные для расчетов графиков
+  // currentWeight берем через геттер провайдера
+  final currentWeight = provider.currentWeight ?? 80.0;
+  
+  // targetWeight берем через геттер провайдера (а не через provider.data)
+  final targetWeight = provider.targetWeight ?? 75.0; 
+  
+  final heightCm = provider.data.height ?? 175.0;
+  final h = heightCm / 100;
+  final bmi = h > 0 ? currentWeight / (h * h) : 24.5;
+
+  // 2. Достаем email и пароль пользователя
+  final prefs = await SharedPreferences.getInstance();
+  final userEmail = prefs.getString('user_email') ?? 'test@example.com';
+  final userPassword = prefs.getString('user_password') ?? '123456';
+
+  // 3. Формируем полную "посылку"
+  final requestData = {
+    'email': userEmail,
+    'password': userPassword,
+    // В OnboardingData нет поля name, поэтому пока ставим заглушку
+    'name': 'Пользователь', 
+    'goalText': provider.data.goal ?? 'general_fitness',
+    // В OnboardingData нет bodyType (мы его определяли только по фото). Заглушка:
+    'body_type': 'mesomorph', 
+    'experience': provider.experienceLevel ?? 'beginner', // Через геттер
+    'equipment': provider.equipment ?? ['собственный вес'], // Через геттер
+    'training_location': provider.trainingLocation ?? 'gym', // Через геттер
+    
+    // sleepData у нас это Map<String, dynamic>, достаем часы (если есть) или дефолт 8
+    'sleep_target_hours': provider.sleepData?['duration'] != null 
+        ? int.tryParse(provider.sleepData!['duration'].toString().split('-').first) ?? 8 
+        : 8, 
+        
+    'diet_restrictions': provider.dietRestrictions ?? [], // Через геттер
+    'injuries': provider.data.healthIssues ?? [],
+    'priority_zones': provider.targetZones ?? [], // Через геттер
+    
+    // Доп данные для математики на сервере
+    'weightKg': currentWeight,
+    'targetWeightKg': targetWeight,
+    'heightCm': heightCm,
+    'gender': provider.data.gender ?? 'male',
+    // age в провайдере у тебя сделан отдельной переменной, но геттера для него нет. 
+    // Давай добавим его или временно поставим 25. Пока ставим 25.
+    'age': 25, 
+  };
+
+  // ... дальше твой try-catch с http.post
+
+
+  try {
+    // 4. Отправляем запрос в наш боевой n8n (Путь Б)
+    // ВНИМАНИЕ: Замени URL на свой реальный Production-вебхук n8n!
+    final url = Uri.parse('https://n8n.nexusfit.ru/webhook/reguserstrategy'); 
+    
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestData),
+    );
+
+    if (!mounted) return;
+
+    if (response.statusCode == 200) {
+      // 5. Парсим успешный ответ от n8n
+      final responseData = jsonDecode(response.body);
+      final strategy = responseData['strategy'];
+
+      setState(() {
+        _userStrategy['currentWeight'] = currentWeight;
+        _userStrategy['targetWeight'] = targetWeight;
+        _userStrategy['bmi'] = bmi;
+        _userStrategy['experience'] = provider.data.experience ?? 'Новичок';
+        
+        // Подставляем данные, которые прислал n8n
+        _userStrategy['metabolism'] = strategy['metabolism'] ?? 'Средний';
+        _userStrategy['bodyType'] = strategy['bodyType'] ?? 'Мезоморф';
+        _userStrategy['weeks'] = strategy['weeks'] ?? 12;
+
+        _isLoading = false;
+      });
+    } else {
+      // Если сервер вернул ошибку, ставим fallback (запасные) значения
+      _setFallbackStrategy(currentWeight, targetWeight, bmi, provider);
+    }
+  } catch (e) {
+    // Если вообще нет интернета или сервер упал
+    if (mounted) {
+      _setFallbackStrategy(currentWeight, targetWeight, bmi, provider);
+    }
+  }
+
+  // Запускаем красивые анимации!
+  _playAnimationSequence();
+}
+
+
+
+// Вспомогательный метод на случай сбоя сети
+void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi, OnboardingProvider provider) {
+  setState(() {
+    _userStrategy['currentWeight'] = currentWeight;
+    _userStrategy['targetWeight'] = targetWeight;
+    _userStrategy['bmi'] = bmi;
+    _userStrategy['experience'] = provider.data.experience ?? 'Новичок';
+    _userStrategy['metabolism'] = 'Средний (Оффлайн)';
+    _userStrategy['bodyType'] = 'Мезоморф';
+    
+    // Считаем недели грубо на телефоне
+    int weeks = (currentWeight - targetWeight).abs() * 1.5 ~/ 1;
+    _userStrategy['weeks'] = weeks < 4 ? 4 : (weeks > 24 ? 24 : weeks);
+    
+    _isLoading = false;
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
   Future<void> _playAnimationSequence() async {
-    await _mainController.forward(); // Появляется заголовок
-    _graphController.forward();      // Рисуется график
-    _counterController.forward();    // Крутятся цифры
+    await _mainController.forward();
+    _graphController.forward();
+    _counterController.forward();
   }
 
   @override
@@ -114,6 +248,40 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Экран загрузки, пока ждем AI/n8n
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF1C1C1E),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: Color(0xFF00D9FF)),
+              const SizedBox(height: 24),
+              Text(
+                'ИИ анализирует твои данные...',
+                style: TextStyle(
+                  color: const Color(0xFFB0B5C0),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Формируем персональную стратегию',
+                style: TextStyle(
+                  color: const Color(0xFFB0B5C0).withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Основной контент
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
       body: Stack(
@@ -265,28 +433,46 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
                 icon: Icons.speed,
                 title: 'BMI',
                 content: AnimatedCounter(
-                    value: _userStrategy['bmi'], 
-                    suffix: '', 
-                    controller: _counterController
+                  value: _userStrategy['bmi'],
+                  suffix: '',
+                  controller: _counterController,
                 ),
                 color: const Color(0xFF00FF88),
               ),
               _buildStatCard(
                 icon: Icons.local_fire_department,
                 title: 'МЕТАБОЛИЗМ',
-                content: Text(_userStrategy['metabolism'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                content: Text(
+                  _userStrategy['metabolism'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 color: const Color(0xFFFF5252),
               ),
               _buildStatCard(
                 icon: Icons.bar_chart,
                 title: 'ОПЫТ',
-                content: Text(_userStrategy['experience'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                content: Text(
+                  _userStrategy['experience'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 color: const Color(0xFF00D9FF),
               ),
               _buildStatCard(
                 icon: Icons.flag,
                 title: 'ДО ЦЕЛИ',
-                content: Text('~${_userStrategy['weeks']} недель', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                content: Text(
+                  '~${_userStrategy['weeks']} недель',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 color: const Color(0xFFE040FB),
               ),
             ],
@@ -370,16 +556,22 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF00D9FF).withOpacity(0.2)),
+          border: Border.all(
+            color: const Color(0xFF00D9FF).withOpacity(0.2),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFF00D9FF), size: 20),
-                const SizedBox(width: 8),
-                const Text(
+              children: const [
+                Icon(
+                  Icons.auto_awesome,
+                  color: Color(0xFF00D9FF),
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
                   'КЛЮЧЕВЫЕ ФАКТОРЫ УСПЕХА',
                   style: TextStyle(
                     color: Colors.white,
@@ -419,7 +611,11 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
         children: [
           Container(
             margin: const EdgeInsets.only(top: 2),
-            child: Icon(Icons.check_circle, color: const Color(0xFF00FF88), size: 16),
+            child: const Icon(
+              Icons.check_circle,
+              color: Color(0xFF00FF88),
+              size: 16,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -468,7 +664,7 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
         animation: _pulseController,
         builder: (context, child) {
           return Transform.scale(
-            scale: 1.0 + (_pulseController.value * 0.03), // Легкая пульсация
+            scale: 1.0 + (_pulseController.value * 0.03),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -477,16 +673,15 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                
               ),
               child: ElevatedButton(
                 onPressed: () {
-                   Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const HomeScreen(),
-                      ),
-                    );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const HomeScreen(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
@@ -536,40 +731,26 @@ class StrategyGraphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final path = Path();
-    
     // Координаты
     final startY = size.height * 0.8;
     final endY = size.height * 0.2;
     final width = size.width;
 
-    // Кривая Безье для плавности
-    path.moveTo(0, startY);
-    
-    // Рисуем часть пути в зависимости от прогресса
-    // Для простоты используем квадратичную кривую
-    final controlX = width * 0.5;
-    final controlY = startY; // Прогиб вниз для эффекта "разгона"
-
-    // В реальном проекте здесь нужна сложная математика для частичного рисования кривой
-    // Здесь мы упростим: рисуем линию до текущего X
-    
     final currentX = width * progress;
-    // Интерполяция Y (линейная для простоты примера, можно заменить на кривую)
     final currentY = startY + (endY - startY) * progress;
 
-    // Рисуем градиент под графиком
-    final fillPath = Path();
-    fillPath.moveTo(0, size.height);
-    fillPath.lineTo(0, startY);
-    fillPath.quadraticBezierTo(
-        currentX * 0.5, 
-        startY + (currentY - startY) * 0.5, // Простая интерполяция
-        currentX, 
-        currentY
-    );
-    fillPath.lineTo(currentX, size.height);
-    fillPath.close();
+    // Градиент под линией
+    final fillPath = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(0, startY)
+      ..quadraticBezierTo(
+        currentX * 0.5,
+        startY + (currentY - startY) * 0.5,
+        currentX,
+        currentY,
+      )
+      ..lineTo(currentX, size.height)
+      ..close();
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
@@ -580,40 +761,55 @@ class StrategyGraphPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, width, size.height));
-      
+
     canvas.drawPath(fillPath, fillPaint);
 
-    // Рисуем саму линию
-    // Для анимации рисования линии используем простой lineTo до текущей точки
-    // (для полноценной кривой нужно использовать PathMetrics)
-    canvas.drawLine(const Offset(0, 0.0) + Offset(0, startY), Offset(currentX, currentY), paint);
+    // Линия
+    canvas.drawLine(
+      Offset(0, startY),
+      Offset(currentX, currentY),
+      paint,
+    );
 
     // Точка старта
     if (progress > 0.0) {
-      canvas.drawCircle(Offset(0, startY), 4, Paint()..color = Colors.white);
+      canvas.drawCircle(
+        Offset(0, startY),
+        4,
+        Paint()..color = Colors.white,
+      );
     }
 
-    // Точка финиша (появляется в конце)
+    // Точка финиша
     if (progress >= 0.95) {
-      // Светящийся эффект
       final glowPaint = Paint()
         ..color = const Color(0xFF00FF88).withOpacity(0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
       canvas.drawCircle(Offset(width, endY), 12, glowPaint);
-      
-      canvas.drawCircle(Offset(width, endY), 6, Paint()..color = const Color(0xFF00FF88));
-      
-      // Текст финиша
+
+      canvas.drawCircle(
+        Offset(width, endY),
+        6,
+        Paint()..color = const Color(0xFF00FF88),
+      );
+
       final textSpan = TextSpan(
         text: '${endVal.toInt()} кг',
-        style: const TextStyle(color: Color(0xFF00FF88), fontWeight: FontWeight.bold, fontSize: 12),
+        style: const TextStyle(
+          color: Color(0xFF00FF88),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
       );
       final textPainter = TextPainter(
         text: textSpan,
         textDirection: TextDirection.ltr,
       );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(width - textPainter.width, endY - 25));
+      textPainter.paint(
+        canvas,
+        Offset(width - textPainter.width, endY - 25),
+      );
     }
   }
 

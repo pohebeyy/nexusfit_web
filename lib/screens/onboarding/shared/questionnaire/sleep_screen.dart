@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/diet_restrictions_screen.dart';
 
 
@@ -633,17 +635,27 @@ class _SleepScreenState extends State<SleepScreen> {
             color: canContinue ? null : const Color(0xFF1A1F3A),
             
           ),
-          child: ElevatedButton(
-            onPressed: canContinue
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DietRestrictionsScreen(),
-                      ),
-                    );
-                  }
-                : null,
+                        child: ElevatedButton(
+                onPressed: canContinue
+                    ? () {
+                        // Сохраняем все данные о сне
+                        context.read<OnboardingProvider>().setSleepData(
+                          duration: _sleepDuration!,
+                          quality: _sleepQuality!,
+                          schedule: _sleepSchedule!,
+                          issues: List.from(_sleepIssues),
+                        );
+
+                        // Переходим на следующий экран
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DietRestrictionsScreen(),
+                          ),
+                        );
+                      }
+                    : null,
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,

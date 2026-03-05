@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bodychart_heatmap/bodychart_heatmap.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 import 'package:startap/screens/onboarding/shared/questionnaire/training_location_screen.dart';
 
 /// Shared: Выбор целевых зон тела для акцента (ИДЕАЛЬНАЯ КАЛИБРОВКА)
@@ -645,9 +647,14 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
             ),
             child: Material(
               color: Colors.transparent,
-              child: InkWell(
+                            child: InkWell(
                 onTap: canContinue
                     ? () {
+                        // Сохраняем список выбранных зон в Provider
+                        // Преобразуем Set<String> в List<String>
+                        context.read<OnboardingProvider>().setTargetZones(_selectedZones.toList());
+
+                        // Переходим на следующий экран
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -656,6 +663,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                         );
                       }
                     : null,
+
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),

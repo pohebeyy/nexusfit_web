@@ -1,61 +1,93 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/data/UserModel.dart';
 
-import '../services/auth_service.dart';
-
 class AuthProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
-
   UserModel? _user;
   bool _isLoading = false;
   String? _error;
+  String? _token;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _user != null || _token != null;
 
   AuthProvider() {
     _initAuth();
   }
 
-  void _initAuth() {
-    _authService.authStateChanges.listen((User? firebaseUser) {
-      if (firebaseUser != null) {
-        _user = UserModel(
-          id: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          name: firebaseUser.displayName ?? '',
-        );
-      } else {
-        _user = null;
-      }
-      notifyListeners();
-    });
+  void _initAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    final userId = prefs.getInt('user_id');
+    final userEmail = prefs.getString('user_email');
+    final userName = prefs.getString('user_name');
+    
+    if (_token != null && userId != null) {
+      _user = UserModel(
+        id: userId.toString(),
+        email: userEmail ?? '',
+        name: userName ?? '',
+      );
+    }
+    notifyListeners();
   }
 
   Future<bool> signUp({
-    required String email,
-    required String password,
-    required String name,
+    required String email, 
+    required String password, 
+    required String name
   }) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
 
-      await _authService.signUp(
-        email: email,
-        password: password,
-        name: name,
+    try {
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/reguser');
+      
+      print('Отправляем запрос на: $url'); 
+      print('Данные: email=$email, name=$name');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+          'name': name,
+          'goal': 'general_fitness',
+          'body_type': 'mesomorph',
+          'experience': 'beginner',
+          'equipment': ['собственный вес']
+        }),
       );
 
+      print('Статус код от сервера: ${response.statusCode}');
+      print('Ответ от сервера: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          _isLoading = false;
+          notifyListeners();
+          return true; 
+        } else {
+          _error = data['message'] ?? 'Ошибка регистрации';
+        }
+      } else {
+        _error = 'Ошибка регистрации. Сервер вернул: ${response.statusCode}';
+      }
+      
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
+
     } catch (e) {
-      _error = e.toString();
+      print('КРИТИЧЕСКАЯ ОШИБКА: $e'); 
+      _error = 'Ошибка соединения с сервером: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -71,16 +103,58 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      await _authService.signIn(
-        email: email,
-        password: password,
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/login');
+      
+      print('Отправка запроса на вход: $url');
+      print('Email: $email');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'password': password,
+        }),
       );
+
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        if (data['success'] == true) {
+          // Сохраняем токен и данные пользователя
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', data['token']);
+          await prefs.setString('user_email', data['user']['email']);
+          await prefs.setString('user_name', data['user']['name'] ?? '');
+          await prefs.setInt('user_id', data['user']['id']);
+          
+          _token = data['token'];
+          _user = UserModel(
+            id: data['user']['id'].toString(),
+            email: data['user']['email'],
+            name: data['user']['name'] ?? '',
+          );
+          
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } else {
+          _error = data['message'] ?? 'Неверный email или пароль';
+        }
+      } else {
+        _error = 'Ошибка сервера: ${response.statusCode}';
+      }
 
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
+      
     } catch (e) {
-      _error = e.toString();
+      print('Ошибка при входе: $e');
+      _error = 'Ошибка подключения: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -88,7 +162,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _authService.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_email');
+    await prefs.remove('user_name');
+    await prefs.remove('user_id');
+    
+    _token = null;
     _user = null;
     notifyListeners();
   }
@@ -99,8 +179,9 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      await _authService.resetPassword(email);
-
+      // TODO: Добавить endpoint для сброса пароля в n8n
+      await Future.delayed(const Duration(seconds: 1));
+      
       _isLoading = false;
       notifyListeners();
       return true;
