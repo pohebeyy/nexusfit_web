@@ -1,15 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:startap/screens/workouts/WorkoutPlayerScreen.dart';
-import 'package:startap/widgets/appnar.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yaml/yaml.dart';
+
+import 'package:startap/widgets/appnar.dart';
 import '../../providers/workout_provider.dart';
 import '../../models/activity_day.dart';
 import '../ai_coach/chat_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:yaml/yaml.dart';
-import 'package:startap/screens/workouts/workout_session_screen.dart';
-import 'dart:convert';
+import 'workout_session_screen.dart';
+
 enum WorkoutSource { templates, ai }
 
 class WorkoutPlanScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   bool _isExercisesExpanded = false;
+
   List<Map<String, String>> _cachedExercises = [];
   String _cachedWorkoutName = '';
 
@@ -34,139 +36,202 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     _initializeActivityData();
     _loadOrFetchTodayWorkout();
   }
+
+  // ================== РАБОТА С КЭШЕМ ТРЕНИРОВОК ==================
+
   Future<void> _loadOrFetchTodayWorkout() async {
-  final prefs = await SharedPreferences.getInstance();
-  final String todayKey = DateTime.now().toIso8601String().split('T')[0];
+    final prefs = await SharedPreferences.getInstance();
+    final String todayKey = DateTime.now().toIso8601String().split('T')[0];
 
-  // Читаем весь 30-дневный словарь
-  final String? rawJson = prefs.getString('calendar_workouts');
-  Map<String, dynamic> calendarCache = rawJson != null
-      ? jsonDecode(rawJson) as Map<String, dynamic>
-      : {};
+    // Читаем весь 30-дневный словарь
+    final String? rawJson = prefs.getString('calendar_workouts');
+    Map<String, dynamic> calendarCache = rawJson != null
+        ? jsonDecode(rawJson) as Map<String, dynamic>
+        : {};
 
-  // Чистим записи старше 30 дней
-  final cutoff = DateTime.now().subtract(const Duration(days: 30));
-  calendarCache.removeWhere((dateStr, _) {
-    final d = DateTime.tryParse(dateStr);
-    return d == null || d.isBefore(cutoff);
-  });
+    // Чистим записи старше 30 дней
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    calendarCache.removeWhere((dateStr, _) {
+      final d = DateTime.tryParse(dateStr);
+      return d == null || d.isBefore(cutoff);
+    });
 
-  if (calendarCache.containsKey(todayKey)) {
-    // Уже есть в 30-дневном кэше
-    _applyCalendarEntry(calendarCache[todayKey]);
-  } else {
-    // Берём из суточного кэша TodayWorkoutCard (workout_yaml)
-    final String? todayDate = prefs.getString('workout_date');
-    final String? todayYaml = prefs.getString('workout_yaml');
+    if (calendarCache.containsKey(todayKey)) {
+      _applyCalendarEntry(calendarCache[todayKey]);
+    } else {
+      final String? todayDate = prefs.getString('workout_date');
+      final String? todayYaml = prefs.getString('workout_yaml');
 
-    if (todayDate == todayKey && todayYaml != null) {
-      final entry = _parseYamlToEntry(todayYaml);
-      if (entry != null) {
-        calendarCache[todayKey] = entry;
-        await prefs.setString('calendar_workouts', jsonEncode(calendarCache));
-        _applyCalendarEntry(entry);
+      if (todayDate == todayKey && todayYaml != null) {
+        final entry = _parseYamlToEntry(todayYaml);
+        if (entry != null) {
+          calendarCache[todayKey] = entry;
+          await prefs.setString(
+            'calendar_workouts',
+            jsonEncode(calendarCache),
+          );
+          _applyCalendarEntry(entry);
+        }
       }
     }
   }
-}
-// Парсим YAML → Map для сохранения в 30-дневный кэш
-Map<String, dynamic>? _parseYamlToEntry(String yamlString) {
-  try {
-    final yamlMap = loadYaml(yamlString);
-    final List<Map<String, String>> exercises = [];
-    if (yamlMap['exercises'] != null) {
-      for (var ex in yamlMap['exercises']) {
-        exercises.add({
-          'name': ex['name'].toString(),
-          'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
-        });
-      }
-    }
-    return {
-      'workout_name': yamlMap['workout_name'] ?? 'Тренировка',
-      'exercises': exercises,
-    };
-  } catch (e) {
-    debugPrint('Ошибка парсинга YAML для календаря: $e');
-    return null;
-  }
-}
 
-// Применяем данные из кэша в UI
-void _applyCalendarEntry(dynamic entry) {
-  setState(() {
-    _cachedWorkoutName = entry['workout_name'] ?? '';
-    _cachedExercises = List<Map<String, String>>.from(
-      (entry['exercises'] as List).map((e) => Map<String, String>.from(e)),
-    );
-  });
-}
+  Map<String, dynamic>? _parseYamlToEntry(String yamlString) {
+    try {
+      final yamlMap = loadYaml(yamlString);
+      final List<Map<String, String>> exercises = [];
+      if (yamlMap['exercises'] != null) {
+        for (var ex in yamlMap['exercises']) {
+          exercises.add({
+            'name': ex['name'].toString(),
+            'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
+          });
+        }
+      }
+      return {
+        'workout_name': yamlMap['workout_name'] ?? 'Тренировка',
+        'exercises': exercises,
+      };
+    } catch (e) {
+      debugPrint('Ошибка парсинга YAML для календаря: $e');
+      return null;
+    }
+  }
+
+  void _applyCalendarEntry(dynamic entry) {
+    setState(() {
+      _cachedWorkoutName = entry['workout_name'] ?? '';
+      _cachedExercises = List<Map<String, String>>.from(
+        (entry['exercises'] as List).map(
+          (e) => Map<String, String>.from(e as Map),
+        ),
+      );
+    });
+  }
 
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  void _initializeActivityData() {
+  // ================== ИНИЦИАЛИЗАЦИЯ ДАННЫХ ДЛЯ КАЛЕНДАРЯ ==================
+
+  Future<void> _initializeActivityData() async {
     _activityData.clear();
+
+    final prefs = await SharedPreferences.getInstance();
+    final String? rawJson = prefs.getString('calendar_workouts');
     final today = _normalize(DateTime.now());
 
-    // Вчера (выполнено)
-    final yesterday = today.subtract(const Duration(days: 1));
-    _activityData[yesterday] = ActivityDay(
-      date: yesterday,
-      steps: 11000,
-      caloriesBurned: 500,
-      activeMinutes: 50,
-      distance: 6.2,
-      isCompleted: true,
-      workoutName: 'Ноги (квадрицепс + ягодицы)',
-    );
+    if (rawJson == null) {
+      _generateEveryOtherDayPlan(today);
+      setState(() {});
+      return;
+    }
 
-    // Позавчера (пропущено)
-    final twoDaysAgo = today.subtract(const Duration(days: 2));
-    _activityData[twoDaysAgo] = ActivityDay(
-      date: twoDaysAgo,
-      steps: 0,
-      caloriesBurned: 0,
-      activeMinutes: 0,
-      distance: 0,
-      isCompleted: false,
-      workoutName: 'Спина + Бицепс',
-      skipped: true,
-    );
+    final Map<String, dynamic> calendarCache =
+        jsonDecode(rawJson) as Map<String, dynamic>;
 
-    // Сегодня
-    _activityData[today] = ActivityDay(
-      date: today,
-      steps: 8500,
-      caloriesBurned: 420,
-      activeMinutes: 50,
-      distance: 4.8,
-      isCompleted: false,
-      workoutName: 'Спина + Бицепс',
-    );
+    // 1) Реальные сохранённые тренировки
+    for (final entry in calendarCache.entries) {
+      final dateStr = entry.key;
+      final data = entry.value as Map<String, dynamic>;
+      final dt = DateTime.tryParse(dateStr);
+      if (dt == null) continue;
 
-    // Завтра
-    final tomorrow = today.add(const Duration(days: 1));
-    _activityData[tomorrow] = ActivityDay(
-      date: tomorrow,
-      steps: 8500,
-      caloriesBurned: 420,
-      activeMinutes: 50,
-      distance: 4.8,
-      isCompleted: false,
-      workoutName: 'Ноги (квадрицепс + ягодицы)',
-    );
+      final n = _normalize(dt);
+      final isPast = n.isBefore(today);
 
-    // Через 3 дня
-    final inThreeDays = today.add(const Duration(days: 3));
-    _activityData[inThreeDays] = ActivityDay(
-      date: inThreeDays,
-      steps: 0,
-      caloriesBurned: 350,
-      activeMinutes: 45,
-      distance: 0,
-      isCompleted: false,
-      workoutName: 'Грудь + Трицепс',
-    );
+      _activityData[n] = ActivityDay(
+        date: n,
+        steps: isPast ? 8000 : 0,
+        caloriesBurned: 400,
+        activeMinutes: 45,
+        distance: 4.0,
+        isCompleted: isPast,
+        skipped: false,
+        workoutName: data['workout_name'] ?? 'Тренировка',
+      );
+    }
+
+    // 2) Достраиваем тренировку "через день" вокруг сегодняшнего
+    _fillEveryOtherDayAround(today);
+
+    setState(() {});
+  }
+
+  void _generateEveryOtherDayPlan(DateTime today) {
+    final workouts = [
+      'Спина + Бицепс',
+      'Ноги (квадрицепс + ягодицы)',
+      'Грудь + Трицепс',
+      'Плечи + Core',
+    ];
+
+    int idx = 0;
+    for (int offset = -14; offset <= 14; offset += 2) {
+      final d = _normalize(today.add(Duration(days: offset)));
+      final isPast = d.isBefore(today);
+
+      _activityData[d] = ActivityDay(
+        date: d,
+        steps: isPast ? 9000 : 0,
+        caloriesBurned: 400,
+        activeMinutes: 45,
+        distance: 4.0,
+        isCompleted: isPast,
+        skipped: false,
+        workoutName: workouts[idx % workouts.length],
+      );
+      idx++;
+    }
+  }
+
+  void _fillEveryOtherDayAround(DateTime today) {
+    final workouts = [
+      'Спина + Бицепс',
+      'Ноги (квадрицепс + ягодицы)',
+      'Грудь + Трицепс',
+      'Плечи + Core',
+    ];
+
+    final dates = _activityData.keys.toList()..sort();
+    if (dates.isEmpty) {
+      _generateEveryOtherDayPlan(today);
+      return;
+    }
+
+    int baseIndex = dates.indexWhere((d) => d == today);
+    if (baseIndex == -1) {
+      dates.sort((a, b) => (a.difference(today).inDays).abs().compareTo(
+            (b.difference(today).inDays).abs(),
+          ));
+      baseIndex = 0;
+    }
+    final baseDate = dates[baseIndex];
+    final baseWorkout =
+        _activityData[baseDate]?.workoutName ?? workouts[0];
+
+    final existing = Set<DateTime>.from(_activityData.keys.map(_normalize));
+
+    int patternIdx = workouts.indexOf(baseWorkout);
+    if (patternIdx < 0) patternIdx = 0;
+
+    for (int offset = -14; offset <= 14; offset += 2) {
+      final d = _normalize(today.add(Duration(days: offset)));
+      if (existing.contains(d)) continue;
+
+      final isPast = d.isBefore(today);
+
+      _activityData[d] = ActivityDay(
+        date: d,
+        steps: isPast ? 9000 : 0,
+        caloriesBurned: 400,
+        activeMinutes: 45,
+        distance: 4.0,
+        isCompleted: isPast,
+        skipped: false,
+        workoutName:
+            workouts[(patternIdx + offset ~/ 2).abs() % workouts.length],
+      );
+    }
   }
 
   ActivityDay? _getActivityForDay(DateTime day) {
@@ -180,7 +245,8 @@ void _applyCalendarEntry(dynamic entry) {
       _focusedDay = focusedDay;
     });
   }
-  
+
+  // ================== BUILD ==================
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +254,8 @@ void _applyCalendarEntry(dynamic entry) {
     final selNorm = _normalize(_selectedDay);
     final isToday = selNorm == today;
     final activity = _getActivityForDay(selNorm);
-    final hasWorkout = activity != null && activity.caloriesBurned > 0;
+    final hasWorkout =
+        activity != null && activity.caloriesBurned > 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
@@ -203,20 +270,14 @@ void _applyCalendarEntry(dynamic entry) {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ИСТОЧНИК
-                      
                       const SizedBox(height: 24),
-
-                      // КАЛЕНДАРЬ
                       _buildCalendarCard(),
                       const SizedBox(height: 24),
-
-                      // КАРТОЧКА ВЫБРАННОГО ДНЯ
                       if (hasWorkout)
-                        _buildSelectedWorkoutCard(activity!, isToday)
+                        _buildSelectedWorkoutCard(
+                            activity!, isToday)
                       else
                         _buildEmptyDayCard(),
-
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -229,72 +290,7 @@ void _applyCalendarEntry(dynamic entry) {
     );
   }
 
-  Widget _buildSourceToggle() {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1D1E33),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _sourceChip(
-              label: 'Шаблоны',
-              value: WorkoutSource.templates,
-              icon: Icons.view_module_rounded,
-            ),
-            const SizedBox(width: 6),
-            _sourceChip(
-              label: 'Тренировки ИИ',
-              value: WorkoutSource.ai,
-              icon: Icons.psychology_rounded,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sourceChip({
-    required String label,
-    required WorkoutSource value,
-    required IconData icon,
-  }) {
-    final isSelected = _source == value;
-    return GestureDetector(
-      onTap: () => setState(() => _source = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)])
-              : null,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Icon(icon,
-                size: 16,
-                color: isSelected ? Colors.white : Colors.grey[400]),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[400],
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ================== UI Виджеты ==================
 
   Widget _buildCalendarCard() {
     return Container(
@@ -303,112 +299,97 @@ void _applyCalendarEntry(dynamic entry) {
         color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2E),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: TableCalendar(
-              // Начало календаря (например, с прошлого года)
-              firstDay: DateTime.utc(2024, 1, 1),
-              
-              // ИСПРАВЛЕНИЕ: Ставим дату далеко в будущем (2030 год)
-              lastDay: DateTime.utc(2030, 12, 31),
-              
-              focusedDay: _focusedDay,
-              selectedDayPredicate: (d) => isSameDay(d, _selectedDay),
-              calendarFormat: CalendarFormat.month,
-              onDaySelected: _onDaySelected,
-              onPageChanged: (fd) => setState(() => _focusedDay = fd),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-                leftChevronIcon: Icon(Icons.chevron_left_rounded,
-                    color: Colors.white),
-                rightChevronIcon: Icon(Icons.chevron_right_rounded,
-                    color: Colors.white),
-              ),
-              daysOfWeekStyle: DaysOfWeekStyle(
-                weekdayStyle:
-                    TextStyle(color: Colors.grey[400], fontSize: 11),
-                weekendStyle:
-                    TextStyle(color: Colors.grey[400], fontSize: 11),
-              ),
-              calendarStyle: CalendarStyle(
-                outsideDaysVisible: false,
-                defaultTextStyle: const TextStyle(color: Colors.white),
-                weekendTextStyle: const TextStyle(color: Colors.white70),
-                todayDecoration: BoxDecoration(
-                  color: const Color(0xFF6C5CE7).withOpacity(0.35),
-                  shape: BoxShape.circle,
-                ),
-                selectedDecoration: const BoxDecoration(
-                  color: Color(0xFFFF4538),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              calendarBuilders: CalendarBuilders(
-                markerBuilder: (context, date, _) {
-                  final a = _getActivityForDay(date);
-                  if (a == null || a.caloriesBurned <= 0) return null;
-
-                  final today = _normalize(DateTime.now());
-                  final n = _normalize(date);
-
-                  Color color;
-                  if (n.isBefore(today)) {
-                    color = a.skipped
-                        ? const Color(0xFFFF6B6B)
-                        : const Color(0xFF51CF66);
-                  } else {
-                    color = const Color(0xFF51CF66);
-                  }
-
-                  return Positioned(
-                    top: 2,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.6),
-                            blurRadius: 3,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+      child: TableCalendar(
+        firstDay: DateTime.utc(2024, 1, 1),
+        lastDay: DateTime.utc(2030, 12, 31),
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (d) => isSameDay(d, _selectedDay),
+        calendarFormat: CalendarFormat.month,
+        onDaySelected: _onDaySelected,
+        onPageChanged: (fd) => setState(() => _focusedDay = fd),
+        headerStyle: const HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
-        ],
+          leftChevronIcon:
+              Icon(Icons.chevron_left_rounded, color: Colors.white),
+          rightChevronIcon:
+              Icon(Icons.chevron_right_rounded, color: Colors.white),
+        ),
+        daysOfWeekStyle: DaysOfWeekStyle(
+          weekdayStyle:
+              TextStyle(color: Colors.grey[400], fontSize: 11),
+          weekendStyle:
+              TextStyle(color: Colors.grey[400], fontSize: 11),
+        ),
+        calendarStyle: CalendarStyle(
+          outsideDaysVisible: false,
+          defaultTextStyle:
+              const TextStyle(color: Colors.white),
+          weekendTextStyle:
+              const TextStyle(color: Colors.white70),
+          todayDecoration: BoxDecoration(
+            color: const Color(0xFF6C5CE7).withOpacity(0.35),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: const BoxDecoration(
+            color: Color(0xFFFF4538),
+            shape: BoxShape.circle,
+          ),
+        ),
+        calendarBuilders: CalendarBuilders(
+          markerBuilder: (context, date, _) {
+            final a = _getActivityForDay(date);
+            if (a == null || a.caloriesBurned <= 0) return null;
+
+            final today = _normalize(DateTime.now());
+            final n = _normalize(date);
+
+            Color color;
+            if (n.isBefore(today)) {
+              color = a.skipped
+                  ? const Color(0xFFFF6B6B)
+                  : const Color(0xFF51CF66);
+            } else {
+              color = const Color(0xFF51CF66);
+            }
+
+            return Positioned(
+              top: 2,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.6),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-
-      Widget _buildSelectedWorkoutCard(ActivityDay activity, bool isToday) {
-    // Определяем статус
+  Widget _buildSelectedWorkoutCard(
+      ActivityDay activity, bool isToday) {
     String statusText = 'ЗАПЛАНИРОВАНО';
     Color statusColor = const Color(0xFF2C2C2E);
     IconData statusIcon = Icons.calendar_today_rounded;
 
     final today = _normalize(DateTime.now());
     final activityDate = _normalize(activity.date);
-    
+
     if (activityDate.isBefore(today)) {
       if (activity.skipped) {
         statusText = 'ПРОПУЩЕНО';
@@ -420,13 +401,14 @@ void _applyCalendarEntry(dynamic entry) {
         statusIcon = Icons.check_circle_rounded;
       }
     } else if (isToday) {
-       statusText = 'СЕГОДНЯ';
+      statusText = 'СЕГОДНЯ';
     }
 
-    // Список упражнений (захардкожено, потом можно в ActivityDay добавить)
     final exercises = _cachedExercises.isNotEmpty
-    ? _cachedExercises.map((e) => '${e['name']} - ${e['display']}').toList()
-    : <String>['Упражнения загружаются...'];
+        ? _cachedExercises
+            .map((e) => '${e['name']} - ${e['display']}')
+            .toList()
+        : <String>['Упражнения загружаются...'];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -435,17 +417,21 @@ void _applyCalendarEntry(dynamic entry) {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF2C2C2E), 
-            statusColor.withOpacity(0.12)
+            const Color(0xFF2C2C2E),
+            statusColor.withOpacity(0.12),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: statusColor.withOpacity(0.4), width: 1.2),
+        border: Border.all(
+          color: statusColor.withOpacity(0.4),
+          width: 1.2,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             // Хедер
             Row(
@@ -454,14 +440,17 @@ void _applyCalendarEntry(dynamic entry) {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius:
+                        BorderRadius.circular(16),
                   ),
-                  child: Icon(statusIcon, color: statusColor, size: 26),
+                  child: Icon(statusIcon,
+                      color: statusColor, size: 26),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         statusText,
@@ -486,266 +475,229 @@ void _applyCalendarEntry(dynamic entry) {
                 ),
               ],
             ),
-            
             const SizedBox(height: 16),
-            
             // Метрики
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
               children: [
-                _buildCompactMetric(Icons.access_time, '${activity.activeMinutes} мин'),
-                _buildCompactMetric(Icons.local_fire_department_rounded, '${activity.caloriesBurned} ккал'),
+                _buildCompactMetric(
+                  Icons.access_time,
+                  '${activity.activeMinutes} мин',
+                ),
+                _buildCompactMetric(
+                  Icons.local_fire_department_rounded,
+                  '${activity.caloriesBurned} ккал',
+                ),
                 Row(
                   children: [
-                    ...List.generate(3, (i) => const Icon(Icons.star_rounded, size: 14, color: Colors.amberAccent)),
+                    ...List.generate(
+                      3,
+                      (i) => const Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: Colors.amberAccent,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    const Text('Средняя', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const Text(
+                      'Средняя',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            // AI ИНСАЙТ (для сегодняшнего дня или прошедших)
-            if (isToday) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2C2C2E),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFF4538).withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.psychology_rounded, color: Color(0xFFFF4538), size: 20),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Не страшно! В этот день у тебя было мало энергии (спал 4ч). Нейросеть перенесла эту тренировку на завтра.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ] else if (activity.isCompleted) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0E21),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF51CF66).withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.emoji_events_rounded, color: Color(0xFF51CF66), size: 20),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Отличная работа! Ты выполнил все упражнения на 100%. Прогресс к цели: +1.2%',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ] else if (activity.skipped) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0E21),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFF6B6B).withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFF6B6B), size: 20),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Ничего страшного! Я скорректировал план на неделю. Сегодня восстановись.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // СПИСОК УПРАЖНЕНИЙ (раскрывающийся)
+            // Список упражнений
             GestureDetector(
               onTap: () {
                 setState(() {
-                  _isExercisesExpanded = !_isExercisesExpanded;
+                  _isExercisesExpanded =
+                      !_isExercisesExpanded;
                 });
               },
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12),
+                  color:
+                      Colors.white.withOpacity(0.05),
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white12,
+                  ),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .spaceBetween,
                       children: [
                         const Text(
                           'Список упражнений',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                            fontWeight:
+                                FontWeight.w700,
                           ),
                         ),
                         Icon(
-                          _isExercisesExpanded ? Icons.expand_less : Icons.expand_more,
+                          _isExercisesExpanded
+                              ? Icons.expand_less
+                              : Icons.expand_more,
                           color: Colors.white70,
                         ),
                       ],
                     ),
                     if (_isExercisesExpanded) ...[
                       const SizedBox(height: 12),
-                      ...exercises.asMap().entries.map((e) {
-                        final idx = e.key;
-                        final ex = e.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${idx + 1}',
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                      ...exercises.asMap().entries.map(
+                        (e) {
+                          final idx = e.key;
+                          final ex = e.value;
+                          return Padding(
+                            padding:
+                                const EdgeInsets.only(
+                                    bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration:
+                                      BoxDecoration(
+                                    color: statusColor
+                                        .withOpacity(
+                                            0.2),
+                                    shape:
+                                        BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${idx + 1}',
+                                      style: TextStyle(
+                                        color:
+                                            statusColor,
+                                        fontSize: 11,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  ex,
-                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                const SizedBox(
+                                    width: 10),
+                                Expanded(
+                                  child: Text(
+                                    ex,
+                                    style:
+                                        const TextStyle(
+                                      color:
+                                          Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Статистика для прошедших
-            if (activity.isCompleted) ...[
-               Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                 children: [
-                   _buildStatColumn('Шаги', '${activity.steps}', Colors.blueAccent),
-                   _buildStatColumn('Дистанция', '${activity.distance} км', Colors.greenAccent),
-                   _buildStatColumn('Сделано', '6/6', Colors.purpleAccent),
-                 ],
-               ),
-               const SizedBox(height: 16),
-            ],
-
-            // КНОПКИ
+            // Кнопки
             if (isToday) ...[
               ElevatedButton(
                 onPressed: () {
+                  final title = activity.workoutName.isNotEmpty
+                      ? activity.workoutName
+                      : (_cachedWorkoutName
+                              .isNotEmpty
+                          ? _cachedWorkoutName
+                          : 'Тренировка');
+                  final exercises =
+                      _cachedExercises;
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>  WorkoutSessionScreen(),
+                      builder: (_) =>
+                          WorkoutSessionScreen(
+                        title: title,
+                        exercises: exercises,
+                      ),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4538),
-                  foregroundColor: const Color(0xFF0A0E21),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  minimumSize: const Size(double.infinity, 0),
+                  backgroundColor:
+                      const Color(0xFFFF4538),
+                  foregroundColor:
+                      const Color(0xFF0A0E21),
+                  padding:
+                      const EdgeInsets.symmetric(
+                          vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                  minimumSize:
+                      const Size(double.infinity, 0),
                   elevation: 0,
                 ),
-                child: const Text('НАЧАТЬ ТРЕНИРОВКУ', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text(
+                  'НАЧАТЬ ТРЕНИРОВКУ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ChatScreen(),
+                    ),
+                  );
                 },
-                icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                label: const Text('Изменить план (AI)'),
+                icon: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Изменить план (AI)',
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  minimumSize: const Size(double.infinity, 0),
-                ),
-              ),
-            ] else if (activityDate.isAfter(today)) ...[
-              // Для будущих дней просто инфо
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00E5FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFF00E5FF), size: 18),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Тренировка запланирована на этот день.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else if (activity.skipped) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B6B).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFF6B6B).withOpacity(0.3)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.cancel_rounded, color: Color(0xFFFF6B6B), size: 18),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Тренировка была пропущена.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ),
-                  ],
+                  side: BorderSide(
+                    color: Colors.white
+                        .withOpacity(0.3),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(
+                          vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                  minimumSize:
+                      const Size(double.infinity, 0),
                 ),
               ),
             ],
@@ -755,31 +707,25 @@ void _applyCalendarEntry(dynamic entry) {
     );
   }
 
-  // Вспомогательные виджеты
   Widget _buildCompactMetric(IconData icon, String text) {
     return Row(
       children: [
         Icon(icon, color: Colors.white70, size: 16),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }
-
-  Widget _buildStatColumn(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
-      ],
-    );
-  }
-
-
 
   Widget _buildEmptyDayCard() {
-    return Container( 
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -807,72 +753,6 @@ void _applyCalendarEntry(dynamic entry) {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMiniStats(ActivityDay activity) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _miniStat('Время', '${activity.activeMinutes} мин',
-            Icons.timer_rounded),
-        _miniStat(
-            'Калории', '${activity.caloriesBurned} ккал',
-            Icons.local_fire_department_rounded),
-        _miniStat('Дистанция', '${activity.distance.toStringAsFixed(1)} км',
-            Icons.route_rounded),
-      ],
-    );
-  }
-
-  Widget _miniStat(String title, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(height: 4),
-            Text(title,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                )),
-            const SizedBox(height: 2),
-            Text(value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style:
-                  const TextStyle(color: Colors.white70, fontSize: 12)),
-          Text(value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              )),
-        ],
       ),
     );
   }

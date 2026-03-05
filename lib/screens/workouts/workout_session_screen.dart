@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:startap/screens/workouts/WorkoutPlayerScreen.dart';
-import 'exercise_detail_screen.dart';
 import 'workout_exercise.dart';
+import 'exercise_detail_screen.dart';
+import 'WorkoutPlayerScreen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
-  const WorkoutSessionScreen({super.key});
+  final String title;
+  final List<Map<String, String>> exercises;
+
+  const WorkoutSessionScreen({
+    super.key,
+    required this.title,
+    required this.exercises,
+  });
 
   @override
   State<WorkoutSessionScreen> createState() => _WorkoutSessionScreenState();
@@ -12,73 +19,60 @@ class WorkoutSessionScreen extends StatefulWidget {
 
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool _started = false;
+  late final List<WorkoutExercise> _exercises;
 
-  final List<WorkoutExercise> _exercises = const [
-    WorkoutExercise(
-      id: 'bench_press',
-      name: 'Жим штанги лёжа',
-      description:
-          'Упражнение для груди с использованием штанги на горизонтальной скамье.',
-      instructions:
-          '• Лягте ровно на скамью, ноги крепко на земле.\n'
-          '• Возьмитесь за штангу верхним хватом, руки чуть шире плеч.\n'
-          '• Снимите штангу со стойки и держите её прямо над грудью.\n'
-          '• Медленно опускайте штангу вниз к груди.\n'
-          '• Сделайте паузу, затем выжмите её обратно.',
-      benefits:
-          '• Нацеливается на грудные мышцы, плечи и трицепсы.\n'
-          '• Увеличивает силу верхней части тела.',
-      muscles:
-          '• Грудные мышцы.\n'
-          '• Дельтовидные мышцы.\n'
-          '• Трицепсы.',
-      tags: ['Сила', 'Штанга', 'Грудь'],
-      sets: 4,
-      reps: 8,
-      weight: 30,
-      estimatedMinutes: 9,
-    ),
-    WorkoutExercise(
-      id: 'incline_db_press',
-      name: 'Жим гантелей на наклонной скамье',
-      description: 'Упражнение для верхней части груди и передних дельт.',
-      instructions:
-          '• Установите скамью под углом 30–45°.\n'
-          '• Лягте и поднимите гантели над грудью.\n'
-          '• Медленно опускайте гантели к бокам груди.\n'
-          '• Выжмите гантели вверх, сводя их над грудью.',
-      benefits:
-          '• Акцент на верхнюю часть грудных.\n'
-          '• Развивает силу плечевого пояса.',
-      muscles:
-          '• Верхняя часть грудных мышц.\n• Передние дельтовидные.\n• Трицепсы.',
-      tags: ['Гантели', 'Грудь', 'Плечи'],
-      sets: 3,
-      reps: 8,
-      weight: 18,
-      estimatedMinutes: 6,
-    ),
-    WorkoutExercise(
-      id: 'pec_deck',
-      name: 'Жим на тренажере "Пек Дек"',
-      description:
-          'Изолирующее упражнение на грудные мышцы с использованием тренажёра.',
-      instructions:
-          '• Сядьте в тренажёр, спина прижата к спинке.\n'
-          '• Возьмитесь за рукояти на уровне груди.\n'
-          '• Сводите руки перед собой, чувствуя сокращение груди.\n'
-          '• Медленно возвращайтесь в исходное положение.',
-      benefits:
-          '• Хорошо изолирует грудные мышцы.\n'
-          '• Подходит новичкам и для добивания груди в конце.',
-      muscles: '• Большая грудная мышца.\n• Малая грудная мышца.',
-      tags: ['Тренажёр', 'Грудь'],
-      sets: 3,
-      reps: 12,
-      weight: 22,
-      estimatedMinutes: 7,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+
+    // Мапим данные из плана (имя + display) в WorkoutExercise
+    _exercises = widget.exercises.isNotEmpty
+        ? widget.exercises.map((e) {
+            final name = e['name'] ?? 'Упражнение';
+            final display = e['display'] ?? '';
+            return WorkoutExercise(
+              id: name,
+              name: name,
+              description: display,
+              instructions: '',
+              benefits: '',
+              muscles: '',
+              tags: const [],
+              sets: 3,
+              reps: 10,
+              weight: 0,
+              estimatedMinutes: 5,
+            );
+          }).toList()
+        :
+        // если вдруг список пустой — одна заглушка
+        [
+            const WorkoutExercise(
+              id: 'default',
+              name: 'Жим штанги лёжа',
+              description:
+                  'Упражнение для груди с использованием штанги на горизонтальной скамье.',
+              instructions:
+                  '• Лягте ровно на скамью, ноги крепко на земле.\n'
+                  '• Возьмитесь за штангу верхним хватом, руки чуть шире плеч.\n'
+                  '• Снимите штангу со стойки и держите её прямо над грудью.\n'
+                  '• Медленно опускайте штангу вниз к груди.\n'
+                  '• Сделайте паузу, затем выжмите её обратно.',
+              benefits:
+                  '• Нацеливается на грудные мышцы, плечи и трицепсы.\n'
+                  '• Увеличивает силу верхней части тела.',
+              muscles:
+                  '• Грудные мышцы.\n'
+                  '• Дельтовидные мышцы.\n'
+                  '• Трицепсы.',
+              tags: ['Сила', 'Штанга', 'Грудь'],
+              sets: 4,
+              reps: 8,
+              weight: 30,
+              estimatedMinutes: 9,
+            ),
+          ];
+  }
 
   int get _totalMinutes =>
       _exercises.fold(0, (sum, e) => sum + e.estimatedMinutes);
@@ -91,12 +85,16 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         backgroundColor: const Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon:
+              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Тренировка',
-          style: TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Color(0xFFFFFFFF),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: Column(
@@ -113,9 +111,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Неделя 1. Грудь · Плечи',
-                    style: TextStyle(
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
                       color: Color(0xFFFFFFFF),
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -144,7 +142,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           // СПИСОК УПРАЖНЕНИЙ
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               itemCount: _exercises.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
@@ -196,7 +195,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                       ),
                     ),
                     child: Text(
-                      _started ? 'Продолжить тренировку' : 'Начать тренировку',
+                      _started
+                          ? 'Продолжить тренировку'
+                          : 'Начать тренировку',
                       style: const TextStyle(
                         color: Color(0xFFFFFFFF),
                         fontSize: 15,

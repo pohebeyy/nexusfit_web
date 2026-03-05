@@ -6,4 +6,5 @@ class StringApi {
   static String stat  = '$_base/stat';
   static String profileGet    = '$_base/profile';
   static String profileUpdate = '$_base/profilepost';
+  static String apiPhoto = '$_base/photo';
 }

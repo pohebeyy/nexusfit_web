@@ -6,6 +6,9 @@ import 'package:startap/providers/nutrition_provider.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:startap/services/photo_service.dart';
+
+
 class NutritionDashboard extends StatefulWidget {
   const NutritionDashboard({Key? key}) : super(key: key);
 
@@ -252,29 +255,71 @@ Future<void> _saveToCache() async {
   }
 
   Future<void> _handlePhoto(ImageSource src, {required String mealType}) async {
-    final image = await _picker.pickImage(source: src);
-    if (image == null) return;
-    setState(() => _selectedImage = File(image.path));
+  final image = await _picker.pickImage(
+    source: src,
+    maxWidth: 1024,
+    maxHeight: 1024,
+    imageQuality: 70,
+  );
+  if (image == null) return;
+
+  final imageFile = File(image.path);
+  setState(() => _selectedImage = imageFile);
+
+  // Показать загрузку
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation(Color(0xFFFF4538)),
+      ),
+    ),
+  );
+
+  // Отправить фото на API
+  final result = await PhotoService.analyzePhoto(imageFile);
+
+  if (context.mounted) Navigator.pop(context); // убрать загрузку
+
+  if (result != null && context.mounted) {
+    final now = TimeOfDay.now();
+    final entry = {
+      'name': result['meal_name'] ?? 'Блюдо',
+      'desc': result['ai_message'] ?? '',
+      'calories': (result['calories'] as num?)?.toInt() ?? 0,
+      'protein': (result['protein'] as num?)?.toInt() ?? 0,
+      'fat': (result['fats'] as num?)?.toInt() ?? 0,
+      'carb': (result['carbs'] as num?)?.toInt() ?? 0,
+      'dt': '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+      'emoji': '📸',
+      'mealType': mealType,
+    };
+
     await showDialog(
       context: context,
-      builder: (ctx) => FoodAnalyzeDialog(
-        image: _selectedImage!,
-        scenario: "tracker",
-        analysis: {
-          'name': 'Блюдо',
-          'desc': '',
-          'calories': 0,
-          'protein': 0,
-          'fat': 0,
-          'carb': 0,
-          'dt': TimeOfDay.now(),
-          'emoji': '🍽️',
+      builder: (dialogCtx) => FoodConfirmDialog(
+        analysis: entry,
+        image: imageFile,
+        onSave: (e) {
+          _addToMeal(mealType, e);
+          final provider = context.read<NutritionProvider>();
+          provider.addMeal(result);
         },
-        onSave: (e) => _addToMeal(mealType, e),
       ),
     );
-    setState(() => _selectedImage = null);
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Не удалось распознать блюдо. Попробуйте ещё раз.'),
+        backgroundColor: Color(0xFFFF4538),
+      ),
+    );
   }
+
+  setState(() => _selectedImage = null);
+}
+
 
   Future<void> _showAddForMeal(String mealType) async {
     final input = await showModalBottomSheet<String>(
@@ -923,8 +968,13 @@ class _PremiumTileButton extends StatelessWidget {
 class FoodConfirmDialog extends StatelessWidget {
   final Map<String, dynamic> analysis;
   final Function(Map<String, dynamic>) onSave;
+  final File? image;
 
-  const FoodConfirmDialog({required this.analysis, required this.onSave});
+  const FoodConfirmDialog({
+    required this.analysis,
+    required this.onSave,
+    this.image,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -943,17 +993,28 @@ class FoodConfirmDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 72, height: 72,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.2),
+                // Фото или эмодзи
+                if (image != null)
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(20),
+                    child: Image.file(image!,
+                        height: 140,
+                        width: double.infinity,
+                        fit: BoxFit.cover),
+                  )
+                else
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF4538).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Text(analysis['emoji'] ?? '🍽️',
+                          style: const TextStyle(fontSize: 36)),
+                    ),
                   ),
-                  child: Center(
-                    child: Text(analysis['emoji'] ?? '🍽️',
-                        style: const TextStyle(fontSize: 36)),
-                  ),
-                ),
                 const SizedBox(height: 16),
                 Text(analysis['name'] ?? '',
                     style: const TextStyle(
@@ -971,10 +1032,13 @@ class FoodConfirmDialog extends StatelessWidget {
                           height: 1.5)),
                 ],
                 const SizedBox(height: 20),
-                _analyzeBar('Калории', analysis['calories'] ?? 0, 600, Colors.deepOrange),
-                _analyzeBar('Белки', analysis['protein'] ?? 0, 40, Colors.pinkAccent),
+                _analyzeBar(
+                    'Калории', analysis['calories'] ?? 0, 600, Colors.deepOrange),
+                _analyzeBar(
+                    'Белки', analysis['protein'] ?? 0, 40, Colors.pinkAccent),
                 _analyzeBar('Жиры', analysis['fat'] ?? 0, 40, Colors.orange),
-                _analyzeBar('Углеводы', analysis['carb'] ?? 0, 70, Colors.lightBlueAccent),
+                _analyzeBar(
+                    'Углеводы', analysis['carb'] ?? 0, 70, Colors.lightBlueAccent),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -986,9 +1050,11 @@ class FoodConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                    icon:
+                        const Icon(Icons.check_circle_outline_rounded, size: 20),
                     label: const Text('Добавить',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                        style:
+                            TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     onPressed: () {
                       onSave(analysis);
                       Navigator.pop(context);
@@ -1025,7 +1091,8 @@ class FoodConfirmDialog extends StatelessWidget {
                 height: 7,
                 width: percent * 120,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color, color.withOpacity(0.5)]),
+                  gradient:
+                      LinearGradient(colors: [color, color.withOpacity(0.5)]),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -1040,6 +1107,7 @@ class FoodConfirmDialog extends StatelessWidget {
     );
   }
 }
+
 
 class FoodAnalyzeDialog extends StatelessWidget {
   final File image;
