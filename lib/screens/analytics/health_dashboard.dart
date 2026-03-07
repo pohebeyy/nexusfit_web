@@ -4,6 +4,8 @@ import 'package:startap/models/stat_response.dart';
 import 'package:startap/services/stat_service.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({Key? key}) : super(key: key);
@@ -17,49 +19,79 @@ class _HealthDashboardState extends State<HealthDashboard> {
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
 
+  // Оставляем вашу хардкоженную почту, чтобы ничего не ломать
   static const String _userEmail = 'akk@gmail.com';
 
   StatResponse? _stats;
   bool _statsLoading = true;
   final Map<String, StatResponse> _dayStatsCache = {};
-
-  @override
-void initState() {
-  super.initState();
-  final today = _normalize(DateTime.now());
-  _selectedDay = today;
-  
-  _loadStats(); // Загружаем статистику за месяц
-  _loadDayStats(today); // СРАЗУ загружаем статистику за сегодняшний день!
-}
-
+  final Map<String, Map<String, int>> _dailyActivityCache = {}; 
+    @override
+  void initState() {
+    super.initState();
+    final today = _normalize(DateTime.now());
+    _selectedDay = today;
+    
+    _loadStats();
+    _loadDayStats(today); 
+    _loadDailyActivity(today); // ДОБАВЛЕНО
+  }
 
   Future<void> _loadStats() async {
+    // ВАЖНО: Тут мы вызываем запрос за МЕСЯЦ.
+    // Если ваш сервис теперь не принимает email, уберите _userEmail из скобок.
+    // Я оставлю так, как было изначально.
     final stats = await StatService.fetchMonthStats(_userEmail);
     setState(() {
       _stats = stats;
       _statsLoading = false;
     });
   }
+    Future<void> _loadDailyActivity(DateTime day) async {
+    final key = day.toIso8601String().split('T')[0];
+    final isToday = isSameDay(day, DateTime.now());
+
+    if (!isToday && _dailyActivityCache.containsKey(key)) return;
+
+    try {
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/day-stats?email=$_userEmail&date=$key');
+      final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          setState(() {
+            _dailyActivityCache[key] = {
+              'active_minutes': data['active_minutes'] ?? 0,
+              'active_calories': data['active_calories'] ?? 0,
+              'workouts_completed': data['workouts']?['completed'] ?? 0,
+              'workouts_total': data['workouts']?['total'] ?? 0,
+            };
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Ошибка загрузки активности: $e');
+    }
+  }
 
   Future<void> _loadDayStats(DateTime day) async {
-  final key = day.toIso8601String().split('T')[0];
-  
-  // Проверяем, является ли выбранный день сегодняшним
-  final isToday = isSameDay(day, DateTime.now());
-  
-  // Если это не сегодняшний день и он уже есть в кэше — используем кэш
-  if (!isToday && _dayStatsCache.containsKey(key)) {
-    return;
+    final key = day.toIso8601String().split('T')[0];
+    
+    // Проверяем, является ли выбранный день сегодняшним
+    final isToday = isSameDay(day, DateTime.now());
+    
+    // Если это не сегодняшний день и он уже есть в кэше — используем кэш
+    if (!isToday && _dayStatsCache.containsKey(key)) {
+      return;
+    }
+    
+    // Для сегодняшнего дня (или новых дней) всегда скачиваем свежие данные
+    final stats = await StatService.fetchDayStats(_userEmail, day);
+    if (stats != null) {
+      setState(() => _dayStatsCache[key] = stats);
+    }
   }
-  
-  // Для сегодняшнего дня (или новых дней) всегда скачиваем свежие данные
-  final stats = await StatService.fetchDayStats(_userEmail, day);
-  if (stats != null) {
-    setState(() => _dayStatsCache[key] = stats);
-  }
-}
-
 
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -111,10 +143,17 @@ void initState() {
       );
     }
 
+        final activityStats = _dailyActivityCache[key];
+
     final sleepHours = dayStats.sleepAvgHours.toInt();
     final calories = dayStats.totalCalories;
-    final workoutsCompleted = dayStats.workoutsCompleted;
-    final workoutsTotal = dayStats.workoutsTotal;
+    
+    // БЕРЕМ ДАННЫЕ ИЗ НОВОГО КЭША АКТИВНОСТИ (или ставим нули, если еще не загрузилось)
+    final workoutsCompleted = activityStats?['workouts_completed'] ?? dayStats.workoutsCompleted;
+    final workoutsTotal = activityStats?['workouts_total'] ?? dayStats.workoutsTotal;
+    final workoutDuration = activityStats?['active_minutes'] ?? dayStats.workoutsAvgDuration.toInt();
+    final workoutCalories = activityStats?['active_calories'] ?? (dayStats.workoutsTotalMinutes * 7);
+
 
     return DayAnalytics(
       date: day,
@@ -125,10 +164,9 @@ void initState() {
       isAvailable: true,
       workoutStatus: workoutsCompleted > 0 ? 'Выполнена' : 'Пропущена',
       workoutName: 'Тренировка',
-      workoutDuration: dayStats.workoutsAvgDuration.toInt(),
-      workoutCalories: dayStats.workoutsTotalMinutes * 7,
-      workoutInsight:
-          'Выполнено: $workoutsCompleted из $workoutsTotal тренировок.',
+      workoutDuration: workoutDuration,
+      workoutCalories: workoutCalories,
+      workoutInsight: 'Выполнено: $workoutsCompleted из $workoutsTotal тренировок.',
       sleepHours: sleepHours,
       sleepGoal: 8,
       sleepInsight: sleepHours >= 7
@@ -136,8 +174,7 @@ void initState() {
           : 'Мало сна. ${sleepHours}ч — ниже нормы.',
       caloriesIntake: calories,
       caloriesGoal: 2500,
-      caloriesInsight:
-          'За день: $calories ккал. Приёмов пищи: ${dayStats.totalMeals}.',
+      caloriesInsight: 'За день: $calories ккал. Приёмов пищи: ${dayStats.totalMeals}.',
       muscleGroupsWorked: workoutsCompleted > 0
           ? ['Квадрицепс', 'Ягодицы', 'Икры']
           : [],
@@ -176,8 +213,7 @@ void initState() {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
-                        child: CircularProgressIndicator(
-                            color: Color(0xFFFF4538)),
+                        child: CircularProgressIndicator(color: Color(0xFFFF4538)),
                       ),
                     )
                   else if (_stats != null)
@@ -276,38 +312,38 @@ void initState() {
               CalendarFormat.week: 'Неделя',
               CalendarFormat.month: 'Месяц',
             },
-            onDaySelected: (selectedDay, focusedDay) async { // <-- Добавлено async
-  final selNorm = _normalize(selectedDay);
-  final isPassedOrToday = !selNorm.isAfter(today);
-  
-  if (isPassedOrToday) {
-    if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
-      // Если кликнули на тот же день — закрываем карточки
-      setState(() {
-        _selectedDay = null;
-        _focusedDay = focusedDay;
-      });
-    } else {
-      // Если кликнули на новый день:
-      // 1. Сначала меняем выделенный день
-      setState(() {
-        _selectedDay = selectedDay;
-        _focusedDay = focusedDay;
-      });
-      
-      // 2. ЖДЁМ загрузку данных (await)
-      await _loadDayStats(selectedDay);
-    }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Анализ будет доступен после завершения дня'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Color(0xFFFF4538),
-      ),
-    );
-  }
-},
+                        onDaySelected: (selectedDay, focusedDay) async {
+              final selNorm = _normalize(selectedDay);
+              final isPassedOrToday = !selNorm.isAfter(today);
+              
+              if (isPassedOrToday) {
+                if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
+                  setState(() {
+                    _selectedDay = null;
+                    _focusedDay = focusedDay;
+                  });
+                } else {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                  // Грузим всё параллельно
+                  await Future.wait([
+                    _loadDayStats(selectedDay),
+                    _loadDailyActivity(selectedDay), // ДОБАВЛЕНО
+                  ]);
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(
+    content: Text('Анализ будет доступен после завершения дня'),
+    duration: Duration(seconds: 2),
+    backgroundColor: Color(0xFFFF4538),
+  ),
+);
+
+              }
+            },
 
             onPageChanged: (fd) => setState(() => _focusedDay = fd),
             headerStyle: HeaderStyle(
@@ -369,8 +405,7 @@ void initState() {
                   : CalendarFormat.week;
             }),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(20),
@@ -439,9 +474,7 @@ void initState() {
         ),
         Text('${day.day}',
             style: TextStyle(
-                color: isToday
-                    ? const Color(0xFFFF4538)
-                    : Colors.white,
+                color: isToday ? const Color(0xFFFF4538) : Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.w700)),
       ],
@@ -465,11 +498,9 @@ void initState() {
           _buildWorkoutCard(analytics),
           const SizedBox(height: 18),
           _buildSleepCard(analytics),
-          
           const SizedBox(height: 18),
           _buildNutritionCard(analytics),
           const SizedBox(height: 18),
-          
           if (analytics.muscleGroupsWorked.isNotEmpty) ...[
             _buildMuscleHeatmap(analytics),
             const SizedBox(height: 18),
@@ -514,9 +545,7 @@ void initState() {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  isPositive
-                      ? Icons.trending_up_rounded
-                      : Icons.trending_down_rounded,
+                  isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
                   color: const Color(0xFFFF4538),
                   size: 26,
                 ),
@@ -553,8 +582,7 @@ void initState() {
             decoration: BoxDecoration(
               color: const Color(0xFF1C1C1E),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: const Color(0xFFFF4538).withOpacity(0.2)),
+              border: Border.all(color: const Color(0xFFFF4538).withOpacity(0.2)),
             ),
             child: Text(analytics.message,
                 style: const TextStyle(
@@ -584,8 +612,7 @@ void initState() {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF4538).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: const Color(0xFFFF4538).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFFFF4538).withOpacity(0.3)),
                 ),
                 child: const Icon(Icons.fitness_center_rounded,
                     color: Color(0xFFFF4538), size: 22),
@@ -599,21 +626,16 @@ void initState() {
                         fontWeight: FontWeight.w700)),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isCompleted
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent)
+                  color: (isCompleted ? Colors.greenAccent : Colors.orangeAccent)
                       .withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   analytics.workoutStatus,
                   style: TextStyle(
-                      color: isCompleted
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
+                      color: isCompleted ? Colors.greenAccent : Colors.orangeAccent,
                       fontSize: 11,
                       fontWeight: FontWeight.w700),
                 ),
@@ -664,8 +686,7 @@ void initState() {
   }
 
   Widget _buildSleepCard(DayAnalytics analytics) {
-    final percent =
-        (analytics.sleepHours / analytics.sleepGoal * 100).toInt();
+    final percent = (analytics.sleepHours / analytics.sleepGoal * 100).toInt();
     final isSufficient = percent >= 75;
 
     return Container(
@@ -685,8 +706,7 @@ void initState() {
                 decoration: BoxDecoration(
                   color: Colors.purpleAccent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: Colors.purpleAccent.withOpacity(0.3)),
+                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
                 ),
                 child: const Icon(Icons.nightlight_rounded,
                     color: Colors.purpleAccent, size: 22),
@@ -700,21 +720,16 @@ void initState() {
                         fontWeight: FontWeight.w700)),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isSufficient
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent)
+                  color: (isSufficient ? Colors.greenAccent : Colors.orangeAccent)
                       .withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   isSufficient ? 'Норма' : 'Дефицит',
                   style: TextStyle(
-                      color: isSufficient
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
+                      color: isSufficient ? Colors.greenAccent : Colors.orangeAccent,
                       fontSize: 11,
                       fontWeight: FontWeight.w700),
                 ),
@@ -753,8 +768,7 @@ void initState() {
               value: (analytics.sleepHours / analytics.sleepGoal).clamp(0, 1),
               minHeight: 8,
               backgroundColor: Colors.white.withOpacity(0.08),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                  Colors.purpleAccent),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.purpleAccent),
             ),
           ),
           const SizedBox(height: 14),
@@ -782,10 +796,9 @@ void initState() {
   }
 
   Widget _buildNutritionCard(DayAnalytics analytics) {
-    final percent =
-        analytics.caloriesGoal > 0
-            ? (analytics.caloriesIntake / analytics.caloriesGoal * 100).toInt()
-            : 0;
+    final percent = analytics.caloriesGoal > 0
+        ? (analytics.caloriesIntake / analytics.caloriesGoal * 100).toInt()
+        : 0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -804,8 +817,7 @@ void initState() {
                 decoration: BoxDecoration(
                   color: Colors.orangeAccent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: Colors.orangeAccent.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orangeAccent.withOpacity(0.3)),
                 ),
                 child: const Icon(Icons.restaurant_rounded,
                     color: Colors.orangeAccent, size: 22),
@@ -819,18 +831,13 @@ void initState() {
                         fontWeight: FontWeight.w700)),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.orangeAccent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  percent > 110
-                      ? 'Профицит'
-                      : percent < 90
-                          ? 'Дефицит'
-                          : 'Норма',
+                  percent > 110 ? 'Профицит' : percent < 90 ? 'Дефицит' : 'Норма',
                   style: const TextStyle(
                       color: Colors.orangeAccent,
                       fontSize: 11,
@@ -872,12 +879,10 @@ void initState() {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: (analytics.caloriesIntake / analytics.caloriesGoal)
-                  .clamp(0, 1.5),
+              value: (analytics.caloriesIntake / analytics.caloriesGoal).clamp(0, 1.5),
               minHeight: 8,
               backgroundColor: Colors.white.withOpacity(0.08),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                  Colors.orangeAccent),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
             ),
           ),
           const SizedBox(height: 14),
@@ -914,8 +919,7 @@ void initState() {
       decoration: BoxDecoration(
         color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: Colors.greenAccent.withOpacity(0.2), width: 1.5),
+        border: Border.all(color: Colors.greenAccent.withOpacity(0.2), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -928,8 +932,7 @@ void initState() {
                 decoration: BoxDecoration(
                   color: Colors.greenAccent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: Colors.greenAccent.withOpacity(0.3)),
+                  border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
                 ),
                 child: const Icon(Icons.health_and_safety_rounded,
                     color: Colors.greenAccent, size: 22),
@@ -947,11 +950,9 @@ void initState() {
             spacing: 8,
             runSpacing: 8,
             children: muscleGroups.map((group) {
-              final isWorked =
-                  analytics.muscleGroupsWorked.contains(group);
+              final isWorked = analytics.muscleGroupsWorked.contains(group);
               return Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isWorked
                       ? Colors.greenAccent.withOpacity(0.15)
@@ -966,13 +967,9 @@ void initState() {
                 ),
                 child: Text(group,
                     style: TextStyle(
-                        color: isWorked
-                            ? Colors.greenAccent
-                            : const Color(0xFFAEAEB2),
+                        color: isWorked ? Colors.greenAccent : const Color(0xFFAEAEB2),
                         fontSize: 12,
-                        fontWeight: isWorked
-                            ? FontWeight.w700
-                            : FontWeight.w500)),
+                        fontWeight: isWorked ? FontWeight.w700 : FontWeight.w500)),
               );
             }).toList(),
           ),

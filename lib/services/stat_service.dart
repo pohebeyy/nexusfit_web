@@ -26,28 +26,18 @@ class StatService {
         // Проверка на пустой ответ сервера
         if (response.body.trim().isEmpty) return null;
 
-        // --- ДОБАВЛЕНО ДЛЯ ОТЛАДКИ ---
-        // Это покажет в консоли Flutter (Debug Console), какой JSON реально приходит!
-        debugPrint('ОТВЕТ СЕРВЕРА (${body['period']} / ${body['date'] ?? ''}): ${response.body}');
-        // -----------------------------
-
+        // Декодируем как Map (объект), а не List (список)
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         
         if (data['success'] == true) {
           return StatResponse.fromJson(data);
-        } else {
-          debugPrint('Сервер вернул success: false. Данные: $data');
         }
-      } else {
-        debugPrint('Ошибка сервера: статус ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Stat error (_fetch): $e');
+      debugPrint('Stat error: $e');
     }
     return null;
   }
-
-  // Функция для записи активности (работает так же, как ваш скрипт в PowerShell)
   static Future<bool> logActivity({
     required String email,
     required int userId,
@@ -76,16 +66,40 @@ class StatService {
         body: jsonEncode(body),
       );
 
-      // ДОБАВЛЕНО ДЛЯ ОТЛАДКИ
-      debugPrint('ОТВЕТ ПРИ ЗАПИСИ АКТИВНОСТИ: ${response.body}');
-
       if (response.statusCode == 200) {
+        // Успешно, сервер вернул: {"success": true, ... }
         return true; 
       }
       return false;
     } catch (e) {
-      debugPrint('Ошибка при отправке активности: $e');
+      print('Ошибка при отправке активности: $e');
       return false;
     }
   }
+  static Future<Map<String, int>?> fetchDailyActivity(String email, DateTime date) async {
+    final dateStr = date.toIso8601String().split('T')[0];
+    try {
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/day-stats?email=$email&date=$dateStr');
+      final response = await http.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          // Возвращаем только минуты и калории
+          return {
+            'active_minutes': data['active_minutes'] ?? 0,
+            'active_calories': data['active_calories'] ?? 0,
+            'workouts_completed': data['workouts']?['completed'] ?? 0,
+          };
+        }
+      }
+    } catch (e) {
+      debugPrint('Ошибка получения активности: $e');
+    }
+    return null;
+  }
+
 }
