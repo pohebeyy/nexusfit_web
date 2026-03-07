@@ -108,7 +108,8 @@ Future<void> _saveToCache() async {
   
   
   // 3. ДОБАВЬТЕ ЭТУ СТРОКУ, чтобы отправлять данные в n8n!
-  WaterService.logWater('akk@gmail.com', ml); 
+  WaterService.logWater(ml);
+
 }
 
   void _changeWaterGoal() {
@@ -188,11 +189,7 @@ Future<void> _saveToCache() async {
   _saveToCache(); // ← сохраняем
 }
 
-  String _getMealTypeByTime(TimeOfDay t) {
-    if (t.hour >= 5 && t.hour < 12) return 'breakfast';
-    if (t.hour >= 12 && t.hour < 17) return 'lunch';
-    return 'dinner';
-  }
+  
 
   void _addManual({required String mealType}) {
     showModalBottomSheet(

@@ -14,6 +14,8 @@ class StatResponse {
   final int workoutsCompleted;
   final double workoutsAvgDuration;
   final int workoutsTotalMinutes;
+  final int activeMinutes;
+  final int activeCalories;
 
   StatResponse({
     required this.period,
@@ -31,9 +33,11 @@ class StatResponse {
     required this.workoutsCompleted,
     required this.workoutsAvgDuration,
     required this.workoutsTotalMinutes,
+    required this.activeMinutes,
+    required this.activeCalories,
   });
 
-    factory StatResponse.fromJson(Map<String, dynamic> json) {
+  factory StatResponse.fromJson(Map<String, dynamic> json) {
     final nutrition = json['nutrition'] as Map<String, dynamic>? ?? {};
     final water = json['water'] as Map<String, dynamic>? ?? {};
     final sleep = json['sleep'] as Map<String, dynamic>? ?? {};
@@ -42,7 +46,7 @@ class StatResponse {
     return StatResponse(
       period: json['period'] ?? 'month',
       date: json['date'] ?? '',
-      // Исправляем ключи здесь: добавляем подчеркивания!
+      
       totalCalories: (nutrition['total_calories'] as num?)?.toInt() ?? 0,
       avgCaloriesPerMeal: (nutrition['avg_calories_per_meal'] as num?)?.toDouble() ?? 0.0,
       totalMeals: (nutrition['total_meals'] as num?)?.toInt() ?? 0,
@@ -59,7 +63,10 @@ class StatResponse {
       workoutsCompleted: (workouts['completed'] as num?)?.toInt() ?? 0,
       workoutsAvgDuration: (workouts['avg_duration'] as num?)?.toDouble() ?? 0.0,
       workoutsTotalMinutes: (workouts['total_minutes'] as num?)?.toInt() ?? 0,
+      
+      // ИСПРАВЛЕНО ЗДЕСЬ: теперь эти два поля не будут вызывать ошибку типов
+      activeMinutes: (json['active_minutes'] as num?)?.toInt() ?? 0, 
+      activeCalories: (json['calories'] as num?)?.toInt() ?? (json['active_calories'] as num?)?.toInt() ?? 0, 
     );
   }
-
 }

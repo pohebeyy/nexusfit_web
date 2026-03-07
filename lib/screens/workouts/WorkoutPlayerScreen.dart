@@ -1,6 +1,10 @@
 // workout_player_screen.dart
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:startap/providers/workout_provider.dart';
 import 'package:startap/screens/workouts/workout_exercise.dart';
@@ -30,18 +34,21 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
   late Ticker _ticker;
   Duration _elapsed = Duration.zero;
   bool _isTimerRunning = false;
-
+  DateTime? _startTime;
+  List<int> _rpeHistory = [];
   @override
   void initState() {
     super.initState();
-
     _currentIndex = widget.initialIndex;
     _currentExercise = widget.exercises[_currentIndex];
+    
+    // Засекаем время старта тренировки
+    _startTime = DateTime.now();
 
-    _ticker = createTicker((elapsed) {
+    _ticker = createTicker((elapsedTimer) {
       if (_isTimerRunning) {
         setState(() {
-          _elapsed = elapsed;
+          _elapsed = elapsedTimer;
         });
       }
     });
@@ -73,8 +80,114 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
   }
 
   bool get _isLastExercise => _currentIndex == widget.exercises.length - 1;
+        Future<void> _finishAndSaveWorkout() async {
+    try {
+      // 1. Считаем реальную продолжительность
+      final duration = DateTime.now().difference(_startTime ?? DateTime.now());
+      int activeMinutes = duration.inMinutes;
+      
+      // --- ТЕСТОВЫЙ БЛОК: Искусственно увеличиваем время ---
+      if (activeMinutes < 5) {
+        activeMinutes = 45; 
+        debugPrint('ТЕСТ: Искусственно установили время на 45 минут');
+      }
+      // ---------------------------------------------------
 
-  Future<void> _onCompleteSetPressed() async {
+      // 2. Считаем средний RPE
+      double avgRpe = 5.0;
+      if (_rpeHistory.isNotEmpty) {
+        avgRpe = _rpeHistory.reduce((a, b) => a + b) / _rpeHistory.length;
+      }
+
+      // 3. Вычисляем калории
+      int caloriesBurned = ((avgRpe * 1.2) * activeMinutes).round();
+      int avgHeartRate = (100 + (avgRpe * 7)).round();
+
+      // 4. Получаем ЛОКАЛЬНУЮ дату
+      final localDate = DateTime.now();
+      // Форматируем именно как YYYY-MM-DD
+      final formattedDate = "${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}";
+
+      // 5. Отправляем в n8n на вебхук /activty
+      final prefs = await SharedPreferences.getInstance();
+      
+      // 2. Достаем почту из кэша (если её там нет, ставим 'akk@gmail.com' как дефолт)
+      final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+
+      // 3. Логируем, какую именно почту мы сейчас будем использовать
+      debugPrint('Текущая почта для отправки активности: $userEmail');
+
+      // 4. Отправляем в n8n на вебхук /activty
+      final response = await http.post(
+        Uri.parse('https://n8n.nexusfit.ru/webhook/activty'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': userEmail, // <--- Подставляем переменную с почтой
+          'userId': 1,
+          'steps': 0,
+          'active_calories': caloriesBurned, 
+          'active_minutes': activeMinutes,
+          'heart_rate_avg': avgHeartRate,
+          'date': formattedDate
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('Статистика сохранена: $caloriesBurned ккал за $activeMinutes мин. RPE: $avgRpe, Дата: $formattedDate');
+      } else {
+        debugPrint('Ошибка HTTP: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Ошибка сети: $e');
+    }
+  }
+
+
+
+
+  // ОБНОВЛЕННЫЙ МЕТОД КНОПКИ ЗАВЕРШЕНИЯ ПОДХОДА/УПРАЖНЕНИЯ
+  Future<void> onCompleteSetPressed() async {
+    _stopTimer();
+    
+    // Переход на экран RPE
+    final rpe = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RpeRatingScreen(
+          exercise: _currentExercise,
+          exerciseNumber: _currentIndex + 1,
+          totalExercises: widget.exercises.length,
+        ),
+      ),
+    );
+    
+    if (rpe == null) return;
+
+    // Сохраняем выбранный RPE в историю для финального подсчета калорий
+    _rpeHistory.add(rpe);
+
+    // (ваш код сохранения RPE в локальный провайдер остается тут)
+    // final provider = context.read<WorkoutProvider>(); ...
+
+    if (_isLastExercise) {
+      // ЕСЛИ ЭТО ПОСЛЕДНЕЕ УПРАЖНЕНИЕ -> ОТПРАВЛЯЕМ СТАТИСТИКУ
+      // Показываем крутилку/ждем отправки (в фоне)
+      await _finishAndSaveWorkout(); 
+      
+      // Показываем финальный экран
+      await _showWorkoutCompletedSheet();
+      
+      if (mounted) Navigator.pop(context);
+    } else {
+      // ПЕРЕХОД К СЛЕДУЮЩЕМУ УПРАЖНЕНИЮ
+      setState(() {
+        _currentIndex++;
+        _currentExercise = widget.exercises[_currentIndex];
+        _elapsed = Duration.zero; // Сброс таймера
+      });
+    }
+  }
+    Future<void> _onCompleteSetPressed() async {
     _stopTimer();
 
     // Переход на отдельный экран RPE
@@ -91,7 +204,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
 
     if (rpe == null) return; // Юзер вернулся назад
 
-    // Сохраняем RPE
+    // Сохраняем RPE в историю для подсчета калорий
+    _rpeHistory.add(rpe); // <--- ЭТО ВАЖНО ДОБАВИТЬ
+
+    // Сохраняем RPE в провайдер
     final provider = context.read<WorkoutProvider>();
     final sessionId = widget.session?.id;
     if (sessionId != null) {
@@ -105,6 +221,10 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
 
     // Проверяем - последнее упражнение?
     if (_isLastExercise) {
+      // --- ВЫЗЫВАЕМ НАШУ ФУНКЦИЮ СОХРАНЕНИЯ СЮДА ---
+      await _finishAndSaveWorkout(); 
+      // -------------------------------------------
+
       await _showWorkoutCompletedSheet();
       if (mounted) Navigator.pop(context);
     } else {
@@ -116,6 +236,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
       });
     }
   }
+
 
   Future<void> _onBackPressed() async {
     _stopTimer();

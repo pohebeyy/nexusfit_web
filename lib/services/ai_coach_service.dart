@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../models/chat_message.dart';
 import '../models/deep_link_action.dart';
 
 class AICoachService {

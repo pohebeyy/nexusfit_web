@@ -4,8 +4,6 @@ import 'dart:math';
 
 // Импортируй ActivityDay если используешь аналитику/прогресс.
 
-import 'package:flutter/material.dart';
-import 'dart:math';
 
 class WeeklyOverviewCalendar extends StatefulWidget {
   final VoidCallback? onOpenStats;
@@ -17,14 +15,7 @@ class WeeklyOverviewCalendar extends StatefulWidget {
 }
 
 class _WeeklyOverviewCalendarState extends State<WeeklyOverviewCalendar> {
-  final List<List<double>> _dailyProgress = List.generate(
-    7, 
-    (index) => [
-      Random().nextDouble(),
-      Random().nextDouble(),
-      Random().nextDouble(),
-    ]
-  );
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -110,64 +101,7 @@ class _WeeklyOverviewCalendarState extends State<WeeklyOverviewCalendar> {
 
 
 // Рисовалка для 3-х кругов
-class _ThreeRingsPainter extends CustomPainter {
-  final List<double> progressValues; // [0.5, 0.8, 0.3]
-  final List<Color> colors;
-  final Color backgroundColor;
 
-  _ThreeRingsPainter({
-    required this.progressValues,
-    required this.colors,
-    required this.backgroundColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = size.width / 2;
-    // Толщина линии кольца
-    final strokeWidth = 2.5; 
-    // Промежуток между кольцами
-    final gap = 1.5;
-
-    for (int i = 0; i < 3; i++) {
-      if (i >= progressValues.length) break;
-
-      final radius = maxRadius - (i * (strokeWidth + gap));
-      final progress = progressValues[i].clamp(0.0, 1.0);
-      final color = colors[i % colors.length];
-
-      // Фон кольца (тусклый)
-      final bgPaint = Paint()
-        ..color = backgroundColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-
-      canvas.drawCircle(center, radius, bgPaint);
-
-      // Активное кольцо
-      final activePaint = Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-
-      // Рисуем дугу (начинаем с -90 градусов, т.е. сверху)
-      // 2 * pi * progress = угол в радианах
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -pi / 2, 
-        2 * pi * progress, 
-        false, 
-        activePaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
 
 
 class _ExpandedCalendarSheet extends StatefulWidget {

@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:yaml/yaml.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:startap/screens/home/adaptiom_sheet.dart';
-import 'package:startap/screens/home/home_screen.dart';
 import 'package:startap/screens/workouts/workout_plan_screen.dart';
 import 'package:startap/services/api/StringApi.dart';
 
@@ -22,7 +20,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
 
   // Динамические переменные
   String _workoutName = 'Загрузка...';
-  String _difficulty = 'Определяется';
+  String _difficulty = 'medium';
   int _calories = 0;
   int _durationMinutes = 0;
   List<Map<String, String>> _exercises = [];
@@ -34,127 +32,163 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   }
 
   // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
-  // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
-Future<void> _loadWorkoutPlan() async {
-  final prefs = await SharedPreferences.getInstance();
-  final String todayDate = DateTime.now().toIso8601String().split('T')[0];
-  final String? cachedDate = prefs.getString('workout_date');
-  final String? cachedYaml = prefs.getString('workout_yaml');
+  Future<void> _loadWorkoutPlan() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String todayDate = DateTime.now().toIso8601String().split('T')[0];
+    final String? cachedDate = prefs.getString('workout_date');
+    final String? cachedYaml = prefs.getString('workout_yaml');
 
-  if (cachedDate == todayDate && cachedYaml != null) {
-    debugPrint("Используем кэшированную тренировку за $todayDate");
-    // Пробуем распарсить — если битый, сбрасываем и качаем заново
-    final bool valid = _tryParseAndSetState(cachedYaml);
-    if (!valid) {
-      debugPrint("Кэш битый — сбрасываем и качаем заново...");
-      await prefs.remove('workout_date');
-      await prefs.remove('workout_yaml');
+    if (cachedDate == todayDate && cachedYaml != null) {
+      debugPrint("Используем кэшированную тренировку за $todayDate");
+      // Пробуем распарсить — если битый, сбрасываем и качаем заново
+      final bool valid = _tryParseAndSetState(cachedYaml);
+      if (!valid) {
+        debugPrint("Кэш битый — сбрасываем и качаем заново...");
+        await prefs.remove('workout_date');
+        await prefs.remove('workout_yaml');
+        await _fetchFromNetwork(prefs, todayDate);
+      }
+    } else {
+      debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
       await _fetchFromNetwork(prefs, todayDate);
     }
-  } else {
-    debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
-    await _fetchFromNetwork(prefs, todayDate);
   }
-}
-
-// Загрузка по сети (n8n)
-Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
-  try {
-    final response = await http.post(
-      Uri.parse(StringApi.apiUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': 'akk@gmail.com',
-        'user_id': 1
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final String yamlString = data['workout']['content'];
-
-      // Валидируем YAML перед сохранением — битый не пишем
-      try {
-        loadYaml(yamlString);
-      } catch (e) {
-        debugPrint('API вернул битый YAML, в кэш не сохраняем: $e');
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      await prefs.setString('workout_date', todayDate);
-      await prefs.setString('workout_yaml', yamlString);
-
-      _tryParseAndSetState(yamlString);
-    } else {
-      setState(() => _isLoading = false);
-      debugPrint('Ошибка сервера: ${response.statusCode}');
-    }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    debugPrint('Ошибка сети: $e');
-  }
-}
-
-// Парсинг YAML — возвращает true если успешно, false если битый
-bool _tryParseAndSetState(String yamlString) {
-  try {
-    final yamlMap = loadYaml(yamlString);
-
-    setState(() {
-      _workoutName = yamlMap['workout_name'] ?? 'Тренировка на сегодня';
-      _difficulty  = yamlMap['difficulty']    ?? 'medium';
-      _calories    = yamlMap['estimated_calories']    ?? 0;
-      _durationMinutes = yamlMap['estimated_duration_min'] ?? 0;
-
-      _exercises = [];
-      if (yamlMap['exercises'] != null) {
-        for (var ex in yamlMap['exercises']) {
-          _exercises.add({
-            'name':    ex['name'].toString(),
-            'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
-          });
-        }
-      }
-      _isLoading = false;
-    });
-
-    return true; // успешно
-  } catch (e) {
-    debugPrint('Ошибка парсинга YAML: $e');
-    return false; // битый
-  }
-}
 
   // Загрузка по сети (n8n)
-  
-
-  // Парсинг YAML и обновление UI
-  void _parseAndSetState(String yamlString) {
+    Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
     try {
-      final yamlMap = loadYaml(yamlString);
+      // --- ДОСТАЕМ ПОЧТУ ИЗ КЭША ---
+      final String userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+      debugPrint('Запрос тренировки (main) для почты: $userEmail');
+      // -----------------------------
 
+      final response = await http.post(
+        Uri.parse(StringApi.apiUrl), // Убедитесь, что это URL для вебхука /main
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': userEmail, // Подставляем найденную почту
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        // Проверяем успешность
+        if (data['success'] == true) {
+          
+          // 1. Сохраняем весь календарь на месяц для экрана WorkoutPlanScreen
+          if (data['month_calendar'] != null) {
+            final monthCalendar = data['month_calendar'];
+            await prefs.setString('calendar_workouts', jsonEncode(monthCalendar));
+          }
+
+          // 2. Достаем сегодняшнюю тренировку
+          final todayWorkout = data['today_workout'];
+          if (todayWorkout != null) {
+            await prefs.setString('workout_date', todayDate);
+            
+            // Сохраним в старый ключ JSON в виде строки
+            final workoutString = jsonEncode(todayWorkout);
+            await prefs.setString('workout_yaml', workoutString);
+
+            _parseJsonAndSetState(todayWorkout);
+          } else {
+            // Если на сегодня тренировки нет (выходной день)
+            setState(() {
+              _workoutName = 'День отдыха';
+              _difficulty = 'easy';
+              _calories = 0;
+              _durationMinutes = 0;
+              _exercises = [];
+              _isLoading = false;
+            });
+          }
+
+        } else {
+          setState(() => _isLoading = false);
+          debugPrint('Ошибка сервера: ${data['error']}');
+        }
+      } else {
+        setState(() => _isLoading = false);
+        debugPrint('Ошибка HTTP: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('Ошибка сети: $e');
+    }
+  }
+
+
+  // Парсинг JSON в стейт виджета
+  bool _parseJsonAndSetState(dynamic workoutData) {
+    try {
       setState(() {
-        _workoutName = yamlMap['workout_name'] ?? 'Тренировка на сегодня';
-        _difficulty = yamlMap['difficulty'] ?? 'medium';
-        _calories = yamlMap['estimated_calories'] ?? 0;
-        _durationMinutes = yamlMap['estimated_duration_min'] ?? 0;
+        _workoutName = workoutData['workout_name'] ?? 'Тренировка на сегодня';
+        _difficulty  = workoutData['difficulty']    ?? 'medium';
+        
+        _calories = int.tryParse(workoutData['calories']?.toString() ?? '0') ?? 0;
+        _durationMinutes = int.tryParse(workoutData['duration_min']?.toString() ?? '0') ?? 0;
 
         _exercises = [];
-        if (yamlMap['exercises'] != null) {
-          for (var ex in yamlMap['exercises']) {
+        if (workoutData['exercises'] != null) {
+          for (var ex in workoutData['exercises']) {
             _exercises.add({
-              'name': ex['name'].toString(),
-              'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
+              'name':    ex['name']?.toString() ?? 'Упражнение',
+              'display': ex['display_string']?.toString() ?? '${ex['reps']} x ${ex['sets']}',
             });
           }
         }
         _isLoading = false;
       });
+
+      return true; // успешно
     } catch (e) {
-      debugPrint('Ошибка парсинга YAML: $e');
-      setState(() => _isLoading = false);
+      debugPrint('Ошибка парсинга JSON тренировки: $e');
+      return false; // битый
     }
+  }
+
+  // Обновляем старый метод, чтобы он понимал, что в кэше теперь лежит JSON, а не YAML
+  bool _tryParseAndSetState(String cachedData) {
+    try {
+      final jsonData = jsonDecode(cachedData);
+      return _parseJsonAndSetState(jsonData);
+    } catch (e) {
+      debugPrint('Ошибка парсинга кэша: $e');
+      return false;
+    }
+  }
+
+  // ==================== UI МЕТОДЫ ====================
+
+  Future<void> _showAdaptationSheet(BuildContext context) async {
+    // ЖДЕМ РЕЗУЛЬТАТ ИЗ ШТОРКИ (true если адаптировано, null если просто закрыли)
+    final bool? isAdapted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const AdaptationSheet(),
+    );
+
+    // ЕСЛИ УСПЕШНО — ПЕРЕЗАГРУЖАЕМ ТРЕНИРОВКУ ИЗ КЭША
+    if (isAdapted == true) {
+      setState(() => _isLoading = true);
+      await _loadWorkoutPlan();
+    }
+  }
+
+  Widget _buildDot() {
+    return Container(
+      width: 4,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.grey[600],
+        shape: BoxShape.circle,
+      ),
+    );
   }
 
   @override
@@ -333,29 +367,6 @@ bool _tryParseAndSetState(String yamlString) {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDot() {
-    return Container(
-      width: 4,
-      height: 4,
-      decoration: BoxDecoration(
-        color: Colors.grey[600],
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  void _showAdaptationSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1D1E33),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const AdaptationSheet(),
     );
   }
 }

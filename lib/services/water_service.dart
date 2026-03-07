@@ -1,17 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:startap/services/api/StringApi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WaterService {
-  static Future<bool> logWater(String email, int amountMl) async {
+  static Future<bool> logWater(int amountMl) async {
     try {
+      // --- ДОСТАЕМ ПОЧТУ ИЗ КЭША ---
+      final prefs = await SharedPreferences.getInstance();
+      final String userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+      debugPrint('Текущая почта для записи воды: $userEmail');
+      // -----------------------------
+
       final response = await http.post(
-        // Замените на реальный URL вашего вебхука воды, если он отличается от StringApi.water
         Uri.parse('https://n8n.nexusfit.ru/webhook/water'), 
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email,
+          'email': userEmail, // Подставляем почту из кэша
           'amount_ml': amountMl,
           'date': DateTime.now().toIso8601String().split('T')[0]
         }),

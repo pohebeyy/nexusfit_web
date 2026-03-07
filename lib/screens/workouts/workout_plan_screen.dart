@@ -43,71 +43,51 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     final prefs = await SharedPreferences.getInstance();
     final String todayKey = DateTime.now().toIso8601String().split('T')[0];
 
-    // Читаем весь 30-дневный словарь
+    // Читаем весь 30-дневный словарь, который был сохранен в TodayWorkoutCard
     final String? rawJson = prefs.getString('calendar_workouts');
     Map<String, dynamic> calendarCache = rawJson != null
         ? jsonDecode(rawJson) as Map<String, dynamic>
         : {};
 
-    // Чистим записи старше 30 дней
+    // Чистим старые записи (старше 30 дней)
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
     calendarCache.removeWhere((dateStr, _) {
       final d = DateTime.tryParse(dateStr);
       return d == null || d.isBefore(cutoff);
     });
 
+    // Если на сегодня есть тренировка в кэше — применяем её
     if (calendarCache.containsKey(todayKey)) {
       _applyCalendarEntry(calendarCache[todayKey]);
     } else {
-      final String? todayDate = prefs.getString('workout_date');
-      final String? todayYaml = prefs.getString('workout_yaml');
-
-      if (todayDate == todayKey && todayYaml != null) {
-        final entry = _parseYamlToEntry(todayYaml);
-        if (entry != null) {
-          calendarCache[todayKey] = entry;
-          await prefs.setString(
-            'calendar_workouts',
-            jsonEncode(calendarCache),
-          );
-          _applyCalendarEntry(entry);
-        }
-      }
+      // Тренировки на сегодня нет (выходной или план не загружен)
+      setState(() {
+        _cachedWorkoutName = 'День отдыха';
+        _cachedExercises = [];
+      });
     }
   }
 
-  Map<String, dynamic>? _parseYamlToEntry(String yamlString) {
-    try {
-      final yamlMap = loadYaml(yamlString);
-      final List<Map<String, String>> exercises = [];
-      if (yamlMap['exercises'] != null) {
-        for (var ex in yamlMap['exercises']) {
-          exercises.add({
-            'name': ex['name'].toString(),
-            'display': ex['display_string'] ?? '${ex['reps']} x ${ex['sets']}',
-          });
-        }
-      }
-      return {
-        'workout_name': yamlMap['workout_name'] ?? 'Тренировка',
-        'exercises': exercises,
-      };
-    } catch (e) {
-      debugPrint('Ошибка парсинга YAML для календаря: $e');
-      return null;
-    }
-  }
-
-  void _applyCalendarEntry(dynamic entry) {
+    void _applyCalendarEntry(dynamic entry) {
+    if (entry == null || entry is! Map) return;
+    
     setState(() {
-      _cachedWorkoutName = entry['workout_name'] ?? '';
-      _cachedExercises = List<Map<String, String>>.from(
-        (entry['exercises'] as List).map(
-          (e) => Map<String, String>.from(e as Map),
-        ),
-      );
+      _cachedWorkoutName = entry['workout_name']?.toString() ?? 'Тренировка';
+      
+      _cachedExercises = [];
+      if (entry['exercises'] != null && entry['exercises'] is List) {
+        for (var ex in (entry['exercises'] as List)) {
+          if (ex is Map) {
+            _cachedExercises.add({
+              'name': ex['name']?.toString() ?? 'Упражнение',
+              'display': ex['display_string']?.toString() ?? '${ex['reps']} x ${ex['sets']}',
+            });
+          }
+        }
+      }
     });
   }
+
 
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -120,6 +100,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     final String? rawJson = prefs.getString('calendar_workouts');
     final today = _normalize(DateTime.now());
 
+    // Если кэш абсолютно пустой (пользователь еще не дождался загрузки на главном экране)
     if (rawJson == null) {
       _generateEveryOtherDayPlan(today);
       setState(() {});
@@ -129,7 +110,8 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     final Map<String, dynamic> calendarCache =
         jsonDecode(rawJson) as Map<String, dynamic>;
 
-    // 1) Реальные сохранённые тренировки
+    // 1) Заполняем данные из реального плана от ИИ (из n8n)
+        // 1) Заполняем данные из реального плана от ИИ (из n8n)
     for (final entry in calendarCache.entries) {
       final dateStr = entry.key;
       final data = entry.value as Map<String, dynamic>;
@@ -139,23 +121,40 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
       final n = _normalize(dt);
       final isPast = n.isBefore(today);
 
+      // ПАРСИМ УПРАЖНЕНИЯ ДЛЯ ЭТОГО ДНЯ
+       List<Map<String, String>> dayExercises = [];
+      if (data['exercises'] != null && data['exercises'] is List) {
+        for (var ex in (data['exercises'] as List)) {
+          if (ex is Map) { // Проверяем, что элемент действительно Map
+            dayExercises.add({
+              'name': ex['name']?.toString() ?? 'Упражнение',
+              'display': ex['display_string']?.toString() ?? '${ex['reps']} x ${ex['sets']}',
+            });
+          }
+        }
+      }
+
       _activityData[n] = ActivityDay(
         date: n,
         steps: isPast ? 8000 : 0,
-        caloriesBurned: 400,
-        activeMinutes: 45,
+        caloriesBurned: int.tryParse(data['calories']?.toString() ?? '400') ?? 400,
+        activeMinutes: int.tryParse(data['duration_min']?.toString() ?? '45') ?? 45,
         distance: 4.0,
         isCompleted: isPast,
         skipped: false,
-        workoutName: data['workout_name'] ?? 'Тренировка',
+        workoutName: data['workout_name']?.toString() ?? 'Тренировка',
+        exercises: dayExercises, // Передаем безопасно собранный список
       );
     }
 
-    // 2) Достраиваем тренировку "через день" вокруг сегодняшнего
-    _fillEveryOtherDayAround(today);
 
+    // 2) Если ИИ сгенерировал дырки (например, дни отдыха), мы их не заполняем заглушками.
+    // Оставляем пустыми, чтобы сработал _buildEmptyDayCard()
+    
     setState(() {});
   }
+
+  
 
   void _generateEveryOtherDayPlan(DateTime today) {
     final workouts = [
@@ -381,8 +380,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     );
   }
 
-  Widget _buildSelectedWorkoutCard(
-      ActivityDay activity, bool isToday) {
+  Widget _buildSelectedWorkoutCard(ActivityDay activity, bool isToday) {
     String statusText = 'ЗАПЛАНИРОВАНО';
     Color statusColor = const Color(0xFF2C2C2E);
     IconData statusIcon = Icons.calendar_today_rounded;
@@ -402,13 +400,14 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
       }
     } else if (isToday) {
       statusText = 'СЕГОДНЯ';
+      statusColor = const Color(0xFFFF4538); // Сделаем карточку "Сегодня" яркой
+      statusIcon = Icons.local_fire_department_rounded;
     }
 
-    final exercises = _cachedExercises.isNotEmpty
-        ? _cachedExercises
-            .map((e) => '${e['name']} - ${e['display']}')
-            .toList()
-        : <String>['Упражнения загружаются...'];
+    // БЕРЕМ УПРАЖНЕНИЯ ИЗ ВЫБРАННОГО ДНЯ (activity), А НЕ ИЗ КЭША СЕГОДНЯ
+    final exercisesList = activity.exercises.isNotEmpty
+        ? activity.exercises.map((e) => '${e['name']} - ${e['display']}').toList()
+        : <String>['Упражнения отсутствуют'];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -557,9 +556,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                         ),
                       ],
                     ),
-                    if (_isExercisesExpanded) ...[
+                     if (_isExercisesExpanded) ...[
                       const SizedBox(height: 12),
-                      ...exercises.asMap().entries.map(
+                      ...exercisesList.asMap().entries.map( // ИСПОЛЬЗУЕМ НОВУЮ ПЕРЕМЕННУЮ exercisesList
                         (e) {
                           final idx = e.key;
                           final ex = e.value;
@@ -621,27 +620,17 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
             // Кнопки
             if (isToday) ...[
               ElevatedButton(
-                onPressed: () {
-                  final title = activity.workoutName.isNotEmpty
-                      ? activity.workoutName
-                      : (_cachedWorkoutName
-                              .isNotEmpty
-                          ? _cachedWorkoutName
-                          : 'Тренировка');
-                  final exercises =
-                      _cachedExercises;
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          WorkoutSessionScreen(
-                        title: title,
-                        exercises: exercises,
-                      ),
-                    ),
-                  );
-                },
+                 onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WorkoutSessionScreen(
+            title: activity.workoutName,
+            exercises: activity.exercises, // ПЕРЕДАЕМ УПРАЖНЕНИЯ ВЫБРАННОГО ДНЯ
+          ),
+        ),
+      );
+    },
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       const Color(0xFFFF4538),

@@ -5,8 +5,9 @@ class ActivityDay {
   final int activeMinutes;
   final double distance;
   final bool isCompleted;
-  final String workoutName;
   final bool skipped;
+  final String workoutName;
+  final List<Map<String, String>> exercises; // НОВОЕ ПОЛЕ
 
   ActivityDay({
     required this.date,
@@ -15,7 +16,8 @@ class ActivityDay {
     required this.activeMinutes,
     required this.distance,
     required this.isCompleted,
-    this.workoutName = 'Тренировка',
-    this.skipped = false,
+    required this.skipped,
+    required this.workoutName,
+    this.exercises = const [], // НОВОЕ ПОЛЕ (по умолчанию пустой список)
   });
 }

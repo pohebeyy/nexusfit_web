@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/screens/home/TodayWorkoutCardState.dart';
-import 'package:startap/screens/profile/profile.dart';
-import 'package:startap/screens/profile/profile_entry.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:startap/widgets/workout_calendar.dart';
-import '../../providers/user_provider.dart';
 import '../../providers/nutrition_provider.dart';
 import '../../providers/workout_provider.dart';
 import '../../providers/health_provider.dart';
@@ -225,68 +222,6 @@ Widget build(BuildContext context) {
   );
 }
 
-
-  
-
-  Widget _buildModernAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 110,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF0A0E21),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          color: const Color(0xFF2C2859),
-        ),
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16, right: 8),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Consumer<UserProvider>(
-              builder: (context, userProvider, _) {
-                final now = DateTime.now();
-                final hour = now.hour;
-                String greeting = 'Доброе утро';
-                if (hour >= 12 && hour < 17) greeting = 'Добрый день';
-                if (hour >= 17) greeting = 'Добрый вечер';
-
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  
-                    const SizedBox(height: 2),
-                    Text(
-                      '$greeting,',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    Text(
-                      userProvider.user?.name ?? 'Спортсмен',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () {
-                ProfileEntry.open(context, fullscreen: true); 
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 
@@ -422,10 +357,7 @@ class SleepFrontCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const slept = '6 ч 30 мин';
-    const goal = '8 ч 0 мин';
-    const deficit = '1 ч 30 мин';
-    const progress = 0.81;
+    
     
     return _BaseFlipCardContainer(
       

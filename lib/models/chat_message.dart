@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'deep_link_action.dart';
 
 enum MessageType { user, ai, system }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startap/services/AdaptationService.dart';
 
 class AdaptationSheet extends StatefulWidget {
   const AdaptationSheet({super.key});
@@ -18,7 +19,7 @@ class _AdaptationSheetState extends State<AdaptationSheet> {
     'Нет инвентаря / оборудования': false,
     'Очень устал (переутомление)': false,
   };
-
+bool _isAdapting = false;
   final TextEditingController _customController = TextEditingController();
   bool _isApplying = false;
 
@@ -30,8 +31,9 @@ class _AdaptationSheetState extends State<AdaptationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    
     final keyboardInsets = MediaQuery.of(context).viewInsets.bottom;
-
+    
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInsets),
       child: SafeArea(
@@ -78,7 +80,7 @@ class _AdaptationSheetState extends State<AdaptationSheet> {
                           labelText: 'Напиши свой вариант',
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
-                          fillColor: const Color(0xFF111325),
+                          fillColor: const Color(0xFFFF6B35),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: const BorderSide(color: Colors.white24),
@@ -125,7 +127,7 @@ class _AdaptationSheetState extends State<AdaptationSheet> {
                       child: ElevatedButton(
                         onPressed: _onApply,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C5CE7),
+                          backgroundColor: const Color(0xFFFF6B35),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -147,36 +149,67 @@ class _AdaptationSheetState extends State<AdaptationSheet> {
     );
   }
 
-  Future<void> _onApply() async {
+    Future<void> _onApply() async {
     setState(() => _isApplying = true);
-    await Future.delayed(const Duration(seconds: 2));
+
+    // 1. Собираем все выбранные чекбоксы в список строк
+    final List<String> selectedIssues = _options.entries
+        .where((entry) => entry.value == true)
+        .map((entry) => entry.key)
+        .toList();
+
+    // 2. Отправляем реальный запрос на адаптацию
+    final success = await AdaptationService.adaptTodayWorkout(
+      email: 'akk@gmail.com', // Замените на реальный email пользователя, если он есть в провайдере
+      circumstances: selectedIssues,
+      customText: _customController.text,
+    );
 
     if (!mounted) return;
     setState(() => _isApplying = false);
 
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1D1E33),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Адаптация применена', style: TextStyle(color: Colors.white)),
-          content: const Text(
-            'План тренировки обновлён. Карточки сна, питания и активности пересчитаны.',
-            style: TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).pop();
-              },
-              child: const Text('ОК', style: TextStyle(color: Color(0xFF6C5CE7))),
+    // 3. Обрабатываем результат
+    if (success) {
+      // Если успешно адаптировали, показываем диалог
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1D1E33),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Color(0xFF51CF66)),
+                SizedBox(width: 8),
+                Text('План адаптирован!', style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
             ),
-          ],
-        );
-      },
-    );
+            content: const Text(
+              'Тренировка на сегодня изменена под твоё текущее состояние.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop(); // Закрываем диалог
+                  Navigator.of(context).pop(true); // Закрываем шторку и ВОЗВРАЩАЕМ true!
+                },
+                child: const Text('ОК', style: TextStyle(color: Color(0xFF6C5CE7))),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // Если произошла ошибка (нет сети, n8n упал и т.д.)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Не удалось адаптировать план. Попробуй позже.'),
+          backgroundColor: Color(0xFFFF6B6B),
+        ),
+      );
+    }
   }
+
 }
