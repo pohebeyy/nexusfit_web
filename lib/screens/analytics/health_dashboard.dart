@@ -6,6 +6,7 @@ import 'package:startap/widgets/appnar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({Key? key}) : super(key: key);
@@ -19,22 +20,27 @@ class _HealthDashboardState extends State<HealthDashboard> {
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
 
-  // Оставляем вашу хардкоженную почту, чтобы ничего не ломать
-  static const String _userEmail = 'akk@gmail.com';
-
+  late String _userEmail;
   StatResponse? _stats;
   bool _statsLoading = true;
   final Map<String, StatResponse> _dayStatsCache = {};
   final Map<String, Map<String, int>> _dailyActivityCache = {}; 
-    @override
+  @override
   void initState() {
     super.initState();
     final today = _normalize(DateTime.now());
     _selectedDay = today;
     
-    _loadStats();
-    _loadDayStats(today); 
-    _loadDailyActivity(today); // ДОБАВЛЕНО
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+    
+    await _loadStats();
+    await _loadDayStats(_selectedDay!); 
+    await _loadDailyActivity(_selectedDay!); // ДОБАВЛЕНО
   }
 
   Future<void> _loadStats() async {

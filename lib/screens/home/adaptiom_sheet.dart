@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/services/AdaptationService.dart';
 
 class AdaptationSheet extends StatefulWidget {
@@ -159,8 +160,11 @@ bool _isAdapting = false;
         .toList();
 
     // 2. Отправляем реальный запрос на адаптацию
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+    
     final success = await AdaptationService.adaptTodayWorkout(
-      email: 'akk@gmail.com', // Замените на реальный email пользователя, если он есть в провайдере
+      email: userEmail,
       circumstances: selectedIssues,
       customText: _customController.text,
     );

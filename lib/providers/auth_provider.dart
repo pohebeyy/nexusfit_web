@@ -71,6 +71,17 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
+          // Сохраняем данные пользователя после успешной регистрации
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_email', email);
+          await prefs.setString('user_name', name);
+          
+          _user = UserModel(
+            id: '', // ID может быть не известен сразу после регистрации
+            email: email,
+            name: name,
+          );
+          
           _isLoading = false;
           notifyListeners();
           return true; 

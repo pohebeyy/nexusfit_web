@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_message.dart';
 import '../services/api/StringApi.dart';
 
@@ -35,12 +36,16 @@ class AICoachProvider with ChangeNotifier {
     notifyListeners(); // Обновляем UI, показываем анимацию загрузки
 
     try {
+      // Получаем email из кеша
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+      
       // 2. Отправляем запрос в n8n
       final response = await http.post(
         Uri.parse(StringApi.apichat),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: jsonEncode({
-          'email': 'akk@gmail.com',
+          'email': userEmail,
           'message': text,
         }),
       );
