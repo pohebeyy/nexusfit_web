@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 
 class NutritionApi {
   static const String _baseUrl = 'https://n8n.nexusfit.ru/webhook';
-  static const String _defaultUserId = '1';
+  
+  // Пока хардкодим почту. Позже вы сможете брать её из SharedPreferences или провайдера авторизации
+  static const String _userEmail = 'akk@gmail.com'; 
 
   Future<Map<String, dynamic>> analyzeFood(String foodText) async {
     try {
@@ -12,9 +14,8 @@ class NutritionApi {
         Uri.parse('$_baseUrl/narution'),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: utf8.encode(jsonEncode({
-          'user_id': _defaultUserId,
-          'message': foodText,
-          'food_text': foodText,
+          'email': _userEmail,     // Оставили только email
+          'food_text': foodText,   // И текст еды
         })),
       );
 
@@ -22,6 +23,11 @@ class NutritionApi {
       debugPrint('>>> nutrition ответ: ${response.body}');
 
       if (response.statusCode == 200) {
+        // Защита от пустого ответа, чтобы избежать краша (FormatException)
+        if (response.body.trim().isEmpty) {
+          throw Exception('Сервер вернул пустой ответ (200 OK)');
+        }
+
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final json = data is List ? data.first : data;
         return json as Map<String, dynamic>;
@@ -30,7 +36,7 @@ class NutritionApi {
       debugPrint('>>> nutrition exception: $e');
     }
 
-    // Фолбэк если сервер недоступен
+    // Фолбэк, если сервер недоступен или выдал ошибку
     return {
       'meal_name': foodText,
       'calories': 0,

@@ -15,7 +15,7 @@ class DayAnalytics {
   final int caloriesGoal;
   final String caloriesInsight;
   final List<String> muscleGroupsWorked;
-
+  
   DayAnalytics({
     required this.date,
     required this.progressToGoal,

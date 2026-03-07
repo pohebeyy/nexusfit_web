@@ -17,18 +17,22 @@ class _HealthDashboardState extends State<HealthDashboard> {
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
 
-  static const String _userEmail = 'user1@fitflow.local';
+  static const String _userEmail = 'akk@gmail.com';
 
   StatResponse? _stats;
   bool _statsLoading = true;
   final Map<String, StatResponse> _dayStatsCache = {};
 
   @override
-  void initState() {
-    super.initState();
-    _selectedDay = _normalize(DateTime.now());
-    _loadStats();
-  }
+void initState() {
+  super.initState();
+  final today = _normalize(DateTime.now());
+  _selectedDay = today;
+  
+  _loadStats(); // Загружаем статистику за месяц
+  _loadDayStats(today); // СРАЗУ загружаем статистику за сегодняшний день!
+}
+
 
   Future<void> _loadStats() async {
     final stats = await StatService.fetchMonthStats(_userEmail);
@@ -39,13 +43,23 @@ class _HealthDashboardState extends State<HealthDashboard> {
   }
 
   Future<void> _loadDayStats(DateTime day) async {
-    final key = day.toIso8601String().split('T')[0];
-    if (_dayStatsCache.containsKey(key)) return;
-    final stats = await StatService.fetchDayStats(_userEmail, day);
-    if (stats != null) {
-      setState(() => _dayStatsCache[key] = stats);
-    }
+  final key = day.toIso8601String().split('T')[0];
+  
+  // Проверяем, является ли выбранный день сегодняшним
+  final isToday = isSameDay(day, DateTime.now());
+  
+  // Если это не сегодняшний день и он уже есть в кэше — используем кэш
+  if (!isToday && _dayStatsCache.containsKey(key)) {
+    return;
   }
+  
+  // Для сегодняшнего дня (или новых дней) всегда скачиваем свежие данные
+  final stats = await StatService.fetchDayStats(_userEmail, day);
+  if (stats != null) {
+    setState(() => _dayStatsCache[key] = stats);
+  }
+}
+
 
   DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -262,31 +276,39 @@ class _HealthDashboardState extends State<HealthDashboard> {
               CalendarFormat.week: 'Неделя',
               CalendarFormat.month: 'Месяц',
             },
-            onDaySelected: (selectedDay, focusedDay) {
-              final selNorm = _normalize(selectedDay);
-              final isPassedOrToday = !selNorm.isAfter(today);
-              if (isPassedOrToday) {
-                setState(() {
-                  if (_selectedDay != null &&
-                      isSameDay(_selectedDay, selectedDay)) {
-                    _selectedDay = null;
-                  } else {
-                    _selectedDay = selectedDay;
-                    _loadDayStats(selectedDay);
-                  }
-                  _focusedDay = focusedDay;
-                });
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('Анализ будет доступен после завершения дня'),
-                    duration: Duration(seconds: 2),
-                    backgroundColor: Color(0xFFFF4538),
-                  ),
-                );
-              }
-            },
+            onDaySelected: (selectedDay, focusedDay) async { // <-- Добавлено async
+  final selNorm = _normalize(selectedDay);
+  final isPassedOrToday = !selNorm.isAfter(today);
+  
+  if (isPassedOrToday) {
+    if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
+      // Если кликнули на тот же день — закрываем карточки
+      setState(() {
+        _selectedDay = null;
+        _focusedDay = focusedDay;
+      });
+    } else {
+      // Если кликнули на новый день:
+      // 1. Сначала меняем выделенный день
+      setState(() {
+        _selectedDay = selectedDay;
+        _focusedDay = focusedDay;
+      });
+      
+      // 2. ЖДЁМ загрузку данных (await)
+      await _loadDayStats(selectedDay);
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Анализ будет доступен после завершения дня'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Color(0xFFFF4538),
+      ),
+    );
+  }
+},
+
             onPageChanged: (fd) => setState(() => _focusedDay = fd),
             headerStyle: HeaderStyle(
               titleTextStyle: const TextStyle(
@@ -443,9 +465,11 @@ class _HealthDashboardState extends State<HealthDashboard> {
           _buildWorkoutCard(analytics),
           const SizedBox(height: 18),
           _buildSleepCard(analytics),
+          
           const SizedBox(height: 18),
           _buildNutritionCard(analytics),
           const SizedBox(height: 18),
+          
           if (analytics.muscleGroupsWorked.isNotEmpty) ...[
             _buildMuscleHeatmap(analytics),
             const SizedBox(height: 18),

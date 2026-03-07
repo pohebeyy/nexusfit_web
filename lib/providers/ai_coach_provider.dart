@@ -40,7 +40,7 @@ class AICoachProvider with ChangeNotifier {
         Uri.parse(StringApi.apichat),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: jsonEncode({
-          'email': 'test@fitflow.local',
+          'email': 'akk@gmail.com',
           'message': text,
         }),
       );

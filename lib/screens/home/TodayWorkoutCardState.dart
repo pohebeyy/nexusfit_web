@@ -64,7 +64,7 @@ Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async 
       Uri.parse(StringApi.apiUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'email': 'test@fitflow.local',
+        'email': 'akk@gmail.com',
         'user_id': 1
       }),
     );

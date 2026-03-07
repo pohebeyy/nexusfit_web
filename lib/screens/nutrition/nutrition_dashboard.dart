@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/providers/nutrition_provider.dart';
+import 'package:startap/services/water_service.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -100,11 +101,14 @@ Future<void> _saveToCache() async {
       _allMeals.fold(0, (s, m) => s + ((m['carb'] as num?)?.toInt() ?? 0));
   int get _caloriesLeft => (caloriesMax - _totalCalories).clamp(0, caloriesMax);
 
-  void _addWater(int ml) {
+  void addWater(int ml) {
   setState(() {
-    waterCurrent = (waterCurrent + ml).clamp(0, waterGoal * 3);
+    waterCurrent = (waterCurrent + ml).clamp(0, waterGoal);
   });
-  _saveToCache(); // ← сохраняем
+  
+  
+  // 3. ДОБАВЬТЕ ЭТУ СТРОКУ, чтобы отправлять данные в n8n!
+  WaterService.logWater('akk@gmail.com', ml); 
 }
 
   void _changeWaterGoal() {
@@ -406,14 +410,14 @@ Future<void> _saveToCache() async {
                     carbMax: carbMax,
                     waterGoal: waterGoal,
                     waterCurrent: waterCurrent,
-                    onAddWater: _addWater,
+                    onAddWater: addWater,
                     onChangeGoal: _changeWaterGoal,
                   ),
                   const SizedBox(height: 16),
                   _WaterIntakeCard(
                     waterCurrent: waterCurrent,
                     waterGoal: waterGoal,
-                    onAddWater: () => showWaterDialog(context, _addWater),
+                    onAddWater: () => showWaterDialog(context, addWater),
                   ),
                   const SizedBox(height: 24),
                   Padding(

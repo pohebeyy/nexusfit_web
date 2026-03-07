@@ -21,10 +21,17 @@ class StatService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      
       if (response.statusCode == 200) {
-        final List<dynamic> list = jsonDecode(response.body);
-        final data = list[0] as Map<String, dynamic>;
-        if (data['success'] == true) return StatResponse.fromJson(data);
+        // Проверка на пустой ответ сервера
+        if (response.body.trim().isEmpty) return null;
+
+        // Декодируем как Map (объект), а не List (список)
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        
+        if (data['success'] == true) {
+          return StatResponse.fromJson(data);
+        }
       }
     } catch (e) {
       debugPrint('Stat error: $e');
