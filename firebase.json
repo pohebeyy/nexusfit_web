@@ -1,1 +1,10 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"aifitnes","appId":"1:701123620337:android:e8aa2c55db107c01062850","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"aifitnes","configurations":{"android":"1:701123620337:android:e8aa2c55db107c01062850","ios":"1:701123620337:ios:512aff1e56c27958062850","macos":"1:701123620337:ios:512aff1e56c27958062850","web":"1:701123620337:web:a3d4ec8157b92e66062850","windows":"1:701123620337:web:5a614afd8849eac1062850"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

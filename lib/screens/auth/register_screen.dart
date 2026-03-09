@@ -687,7 +687,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           child: const Text(
             'Войти',
             style: TextStyle(
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFF4538),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

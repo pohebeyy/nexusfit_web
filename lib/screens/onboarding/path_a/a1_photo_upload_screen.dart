@@ -25,7 +25,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => A2AIAnalysisScreen(photoPath: image.path),
+            builder: (_) => A2AIAnalysisScreen(photoFile: image),
           ),
         );
       }

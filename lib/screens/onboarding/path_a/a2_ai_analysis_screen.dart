@@ -1,16 +1,16 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'a3_confirmation_screen.dart';
 
 /// A2: AI-анализ и редактирование всех параметров тела
 class A2AIAnalysisScreen extends StatefulWidget {
-  final String photoPath;
+  final XFile photoFile;
 
-  const A2AIAnalysisScreen({super.key, required this.photoPath});
+  const A2AIAnalysisScreen({super.key, required this.photoFile});
 
   @override
   State<A2AIAnalysisScreen> createState() => _A2AIAnalysisScreenState();
@@ -18,6 +18,8 @@ class A2AIAnalysisScreen extends StatefulWidget {
 
 class _A2AIAnalysisScreenState extends State<A2AIAnalysisScreen> {
   bool _isAnalyzing = true;
+  
+  Uint8List? _imageBytes;
   
   // Основные параметры
   String _gender = 'male';
@@ -70,7 +72,8 @@ Future<void> _analyzeImage() async {
         _isAnalyzing = true;
       });
 
-      final bytes = await File(widget.photoPath).readAsBytes();
+      final bytes = await widget.photoFile.readAsBytes();
+      _imageBytes = bytes;
       final base64Image = base64Encode(bytes);
 
       final url = Uri.parse('https://n8n.nexusfit.ru/webhook/analyze-photo');
@@ -313,17 +316,13 @@ _buildExpandableSection(
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
-        child: kIsWeb
-            ? Image.network(
-                widget.photoPath,
+        child: _imageBytes != null
+            ? Image.memory(
+                _imageBytes!,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => _buildPhotoPlaceholder(),
               )
-            : Image.file(
-                File(widget.photoPath),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _buildPhotoPlaceholder(),
-              ),
+            : _buildPhotoPlaceholder(),
       ),
     );
   }

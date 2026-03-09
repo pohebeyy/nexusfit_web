@@ -1,6 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+// Foundation import used above already covers kIsWeb and PointerDeviceKind
+
 import 'package:provider/provider.dart';
 import 'package:startap/providers/auth_provider.dart';
 import 'package:startap/providers/onboarding_provider.dart';
@@ -17,6 +21,17 @@ import 'package:startap/services/profile_api.dart';
 import 'screens/home/home_screen.dart';
 
 import 'firebase_options.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();           
   await Firebase.initializeApp(
@@ -56,6 +71,14 @@ class FitnessApp extends StatelessWidget {
           primaryColor: const Color(0xFF6C5CE7),
           scaffoldBackgroundColor: const Color(0xFF0A0E21),
         ),
+        builder: (context, widget) {
+          // wrap every route with scroll configuration to make
+          // web + mobile scrolling smooth and respond to touch.
+          return ScrollConfiguration(
+            behavior: _WebTouchScrollBehavior(),
+            child: widget ?? const SizedBox.shrink(),
+          );
+        },
         home: const AuthWrapper(),
         routes: {
           '/home': (context) => const HomeScreen(),

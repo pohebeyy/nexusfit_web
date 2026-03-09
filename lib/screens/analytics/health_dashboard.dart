@@ -48,10 +48,12 @@ class _HealthDashboardState extends State<HealthDashboard> {
     // Если ваш сервис теперь не принимает email, уберите _userEmail из скобок.
     // Я оставлю так, как было изначально.
     final stats = await StatService.fetchMonthStats(_userEmail);
-    setState(() {
-      _stats = stats;
-      _statsLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _stats = stats;
+        _statsLoading = false;
+      });
+    }
   }
     Future<void> _loadDailyActivity(DateTime day) async {
     final key = day.toIso8601String().split('T')[0];
@@ -66,14 +68,16 @@ class _HealthDashboardState extends State<HealthDashboard> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          setState(() {
-            _dailyActivityCache[key] = {
-              'active_minutes': data['active_minutes'] ?? 0,
-              'active_calories': data['active_calories'] ?? 0,
-              'workouts_completed': data['workouts']?['completed'] ?? 0,
-              'workouts_total': data['workouts']?['total'] ?? 0,
-            };
-          });
+          if (mounted) {
+            setState(() {
+              _dailyActivityCache[key] = {
+                'active_minutes': data['active_minutes'] ?? 0,
+                'active_calories': data['active_calories'] ?? 0,
+                'workouts_completed': data['workouts']?['completed'] ?? 0,
+                'workouts_total': data['workouts']?['total'] ?? 0,
+              };
+            });
+          }
         }
       }
     } catch (e) {
@@ -94,7 +98,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
     
     // Для сегодняшнего дня (или новых дней) всегда скачиваем свежие данные
     final stats = await StatService.fetchDayStats(_userEmail, day);
-    if (stats != null) {
+    if (stats != null && mounted) {
       setState(() => _dayStatsCache[key] = stats);
     }
   }
@@ -324,15 +328,19 @@ class _HealthDashboardState extends State<HealthDashboard> {
               
               if (isPassedOrToday) {
                 if (_selectedDay != null && isSameDay(_selectedDay, selectedDay)) {
-                  setState(() {
-                    _selectedDay = null;
-                    _focusedDay = focusedDay;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _selectedDay = null;
+                      _focusedDay = focusedDay;
+                    });
+                  }
                 } else {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  }
                   // Грузим всё параллельно
                   await Future.wait([
                     _loadDayStats(selectedDay),
@@ -351,7 +359,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
               }
             },
 
-            onPageChanged: (fd) => setState(() => _focusedDay = fd),
+            onPageChanged: (fd) => mounted ? setState(() => _focusedDay = fd) : null,
             headerStyle: HeaderStyle(
               titleTextStyle: const TextStyle(
                   color: Colors.white,
@@ -405,11 +413,11 @@ class _HealthDashboardState extends State<HealthDashboard> {
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () => setState(() {
+            onTap: () => mounted ? setState(() {
               _calendarFormat = _calendarFormat == CalendarFormat.week
                   ? CalendarFormat.month
                   : CalendarFormat.week;
-            }),
+            }) : null,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               decoration: BoxDecoration(

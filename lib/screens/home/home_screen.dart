@@ -1,3 +1,5 @@
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/screens/home/TodayWorkoutCardState.dart';
@@ -10,6 +12,17 @@ import '../nutrition/nutrition_dashboard.dart';
 import '../ai_coach/chat_screen.dart';
 import '../workouts/workout_plan_screen.dart';
 import '../analytics/health_dashboard.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,37 +55,39 @@ class _HomeScreenState extends State<HomeScreen> {
 Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFF1C1C1E),
-    body: PageView(
-      controller: _pageController,
-      onPageChanged: (index) {
-        setState(() => _selectedIndex = index);
+    body: LayoutBuilder(
+      builder: (context, constraints) {
+        // on web/mobile we disable horizontal swiping to avoid
+        // interference with vertical scrolls. users can still tap nav.
+        final disableSwipe = kIsWeb || constraints.maxWidth < 600;
+        return PageView(
+          controller: _pageController,
+          physics: disableSwipe ? const NeverScrollableScrollPhysics() : null,
+          onPageChanged: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          children: [
+            const NutritionDashboard(),
+            const WorkoutPlanScreen(),
+            _HomePageContent(switchToStats: switchToStats),
+            const HealthDashboard(),
+            const ChatScreen(),
+          ],
+        );
       },
-      children: [
-        const NutritionDashboard(),
-        const WorkoutPlanScreen(),
-        _HomePageContent(switchToStats: switchToStats),
-        const HealthDashboard(),
-        const ChatScreen(),
-      ],
     ),
     bottomNavigationBar: _buildModernBottomNav(),
   );
 }
 
 Widget _buildModernBottomNav() {
-  return Container(
-    decoration: BoxDecoration(
+  return SafeArea(
+    top: false,
+    child: Material(
       color: const Color(0xFF1C1C1E),
-      border: Border(
-        top: BorderSide(
-          color: Colors.grey[900]!,
-          width: 0.5,
-        ),
-      ),
-    ),
-    child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      elevation: 4,
+      child: SizedBox(
+        height: kBottomNavigationBarHeight + 8,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -91,70 +106,72 @@ Widget _buildModernBottomNav() {
 Widget _buildNavItem(int index, IconData icon, String label) {
   final isSelected = _selectedIndex == index;
   final isHome = index == 2;
-  
-  return GestureDetector(
-    onTap: () {
-      setState(() => _selectedIndex = index);
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Центральная кнопка "Главная" с красным кругом
-          if (isHome)
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFFF3B30),
-                    Color(0xFFFF6B6B),
+
+  return Expanded(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isHome)
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFF3B30),
+                      Color(0xFFFF6B6B),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF3B30).withOpacity(0.4),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF3B30).withOpacity(0.4),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.home_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            )
-          else ...[
-            // Обычные иконки
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.grey[600],
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
+                child: const Icon(
+                  Icons.home_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              )
+            else ...[
+              Icon(
+                icon,
                 color: isSelected ? Colors.white : Colors.grey[600],
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+                size: 24,
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey[600],
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     ),
   );
@@ -177,8 +194,11 @@ Widget build(BuildContext context) {
     },
     backgroundColor: const Color(0xFF1D1E33),
     color: const Color(0xFF6C5CE7),
-    child: CustomScrollView(
-      slivers: [
+    child: ScrollConfiguration(
+      behavior: _WebTouchScrollBehavior(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
         Appnar.buildModernAppBar(context, "Главная"),
         SliverToBoxAdapter(
           child: Padding(
@@ -201,7 +221,8 @@ Widget build(BuildContext context) {
                 SizedBox(
                   height: 320, // Увеличьте это значение (было 250)
                   child: PageView(
-                    padEnds: false, 
+                    padEnds: false,
+                    physics: const BouncingScrollPhysics(),
                     controller: PageController(viewportFraction: 0.9),
                     children: const [
                       FlipMetricCard.sleep(),
@@ -219,6 +240,7 @@ Widget build(BuildContext context) {
         ),
       ],
     ),
+    )
   );
 }
 

@@ -361,8 +361,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             borderRadius: BorderRadius.circular(12),
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF00D9FF),
-                Color(0xFF00B8D4),
+                Color(0xFFFF4538),
+                Color(0xFFFF4538),
               ],
             ),
            
@@ -548,7 +548,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: const Text(
             'Зарегистрироваться',
             style: TextStyle(
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFF4538),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

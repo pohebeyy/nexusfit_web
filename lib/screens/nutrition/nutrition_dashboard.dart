@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +35,7 @@ class _NutritionDashboardState extends State<NutritionDashboard> {
     'dinner': [],
   };
 
-  File? _selectedImage;
+  XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -264,8 +265,7 @@ Future<void> _saveToCache() async {
   );
   if (image == null) return;
 
-  final imageFile = File(image.path);
-  setState(() => _selectedImage = imageFile);
+  setState(() => _selectedImage = image);
 
   // Показать загрузку
   showDialog(
@@ -279,7 +279,7 @@ Future<void> _saveToCache() async {
   );
 
   // Отправить фото на API
-  final result = await PhotoService.analyzePhoto(imageFile);
+  final result = await PhotoService.analyzePhoto(await image.readAsBytes());
 
   if (context.mounted) Navigator.pop(context); // убрать загрузку
 
@@ -301,7 +301,7 @@ Future<void> _saveToCache() async {
       context: context,
       builder: (dialogCtx) => FoodConfirmDialog(
         analysis: entry,
-        image: imageFile,
+        image: image,
         onSave: (e) {
           _addToMeal(mealType, e);
           final provider = context.read<NutritionProvider>();
@@ -966,16 +966,36 @@ class _PremiumTileButton extends StatelessWidget {
   }
 }
 
-class FoodConfirmDialog extends StatelessWidget {
+class FoodConfirmDialog extends StatefulWidget {
   final Map<String, dynamic> analysis;
   final Function(Map<String, dynamic>) onSave;
-  final File? image;
+  final XFile? image;
 
   const FoodConfirmDialog({
     required this.analysis,
     required this.onSave,
     this.image,
   });
+
+  @override
+  State<FoodConfirmDialog> createState() => _FoodConfirmDialogState();
+}
+
+class _FoodConfirmDialogState extends State<FoodConfirmDialog> {
+  Uint8List? _imageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    if (widget.image != null) {
+      final bytes = await widget.image!.readAsBytes();
+      setState(() => _imageBytes = bytes);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -995,10 +1015,10 @@ class FoodConfirmDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Фото или эмодзи
-                if (image != null)
+                if (_imageBytes != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.file(image!,
+                    child: Image.memory(_imageBytes!,
                         height: 140,
                         width: double.infinity,
                         fit: BoxFit.cover),
@@ -1012,20 +1032,20 @@ class FoodConfirmDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Center(
-                      child: Text(analysis['emoji'] ?? '🍽️',
+                      child: Text(widget.analysis['emoji'] ?? '🍽️',
                           style: const TextStyle(fontSize: 36)),
                     ),
                   ),
                 const SizedBox(height: 16),
-                Text(analysis['name'] ?? '',
+                Text(widget.analysis['name'] ?? '',
                     style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 20,
                         color: Colors.white,
                         letterSpacing: -0.5)),
-                if ((analysis['desc'] ?? '').toString().isNotEmpty) ...[
+                if ((widget.analysis['desc'] ?? '').toString().isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(analysis['desc'],
+                  Text(widget.analysis['desc'],
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 13,
@@ -1034,12 +1054,12 @@ class FoodConfirmDialog extends StatelessWidget {
                 ],
                 const SizedBox(height: 20),
                 _analyzeBar(
-                    'Калории', analysis['calories'] ?? 0, 600, Colors.deepOrange),
+                    'Калории', widget.analysis['calories'] ?? 0, 600, Colors.deepOrange),
                 _analyzeBar(
-                    'Белки', analysis['protein'] ?? 0, 40, Colors.pinkAccent),
-                _analyzeBar('Жиры', analysis['fat'] ?? 0, 40, Colors.orange),
+                    'Белки', widget.analysis['protein'] ?? 0, 40, Colors.pinkAccent),
+                _analyzeBar('Жиры', widget.analysis['fat'] ?? 0, 40, Colors.orange),
                 _analyzeBar(
-                    'Углеводы', analysis['carb'] ?? 0, 70, Colors.lightBlueAccent),
+                    'Углеводы', widget.analysis['carb'] ?? 0, 70, Colors.lightBlueAccent),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -1057,7 +1077,7 @@ class FoodConfirmDialog extends StatelessWidget {
                         style:
                             TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     onPressed: () {
-                      onSave(analysis);
+                      widget.onSave(widget.analysis);
                       Navigator.pop(context);
                     },
                   ),

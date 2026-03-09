@@ -1,19 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:startap/services/api/StringApi.dart';
 
 class PhotoService {
- static Future<Map<String, dynamic>?> analyzePhoto(File imageFile) async {
+ static Future<Map<String, dynamic>?> analyzePhoto(Uint8List imageBytes) async {
   try {
-    final bytes = await imageFile.readAsBytes();
-    debugPrint('📸 Отправляю фото: ${bytes.length} байт на ${StringApi.apiPhoto}');
+    debugPrint('📸 Отправляю фото: ${imageBytes.length} байт на ${StringApi.apiPhoto}');
 
     final response = await http.post(
       Uri.parse(StringApi.apiPhoto),
       headers: {'Content-Type': 'image/jpeg'},
-      body: bytes,
+      body: imageBytes,
     );
 
     debugPrint('📸 Статус: ${response.statusCode}');
