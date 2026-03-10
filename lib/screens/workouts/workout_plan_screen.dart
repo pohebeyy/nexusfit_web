@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -10,6 +11,17 @@ import '../../providers/workout_provider.dart';
 import '../../models/activity_day.dart';
 import '../ai_coach/chat_screen.dart';
 import 'workout_session_screen.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 enum WorkoutSource { templates, ai }
 
@@ -258,10 +270,11 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
-      body: Consumer<WorkoutProvider>(
-        builder: (context, workoutProvider, _) {
-          return CustomScrollView(
-            slivers: [
+      body: ScrollConfiguration(
+        behavior: _WebTouchScrollBehavior(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
               Appnar.buildModernAppBar(context, 'Тренировки'),
               SliverToBoxAdapter(
                 child: Padding(
@@ -283,9 +296,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+      
     );
   }
 
@@ -299,6 +312,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
         borderRadius: BorderRadius.circular(24),
       ),
       child: TableCalendar(
+        // ДОБАВЛЕНА СТРОЧКА НИЖЕ:
+        availableGestures: AvailableGestures.horizontalSwipe, // Разрешаем только свайп влево/вправо
+        
         firstDay: DateTime.utc(2024, 1, 1),
         lastDay: DateTime.utc(2030, 12, 31),
         focusedDay: _focusedDay,

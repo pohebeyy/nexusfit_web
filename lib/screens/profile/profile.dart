@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/models/ProfileModel.dart';
@@ -5,6 +6,17 @@ import 'package:startap/providers/profile_provider.dart';
 import 'package:startap/screens/auth/login_screen.dart';
 import 'inventory_screen.dart';
 import 'context_json_screen.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 
 class ProfileScreen extends StatefulWidget {
@@ -194,8 +206,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFF1C1C1E),
-          body: CustomScrollView(
-            slivers: [
+          body: ScrollConfiguration(
+            behavior: _WebTouchScrollBehavior(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               // КОМПАКТНЫЙ APP BAR
               SliverAppBar(
                 floating: false,
@@ -470,6 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },

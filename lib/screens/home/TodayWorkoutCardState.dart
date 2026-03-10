@@ -8,7 +8,14 @@ import 'package:startap/screens/workouts/workout_plan_screen.dart';
 import 'package:startap/services/api/StringApi.dart';
 
 class TodayWorkoutCard extends StatefulWidget {
-  const TodayWorkoutCard({Key? key}) : super(key: key);
+  // Добавляем поле для хранения переданной даты
+  final DateTime selectedDate;
+
+  // Обновляем конструктор: делаем selectedDate обязательным параметром (required)
+  const TodayWorkoutCard({
+    Key? key, 
+    required this.selectedDate,
+  }) : super(key: key);
 
   @override
   State<TodayWorkoutCard> createState() => TodayWorkoutCardState();
@@ -25,85 +32,121 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   int _durationMinutes = 0;
   List<Map<String, String>> _exercises = [];
 
-  @override
+   @override
   void initState() {
     super.initState();
-    _loadWorkoutPlan();
+    loadWorkoutPlan(); 
   }
 
-  // Главная функция: проверяем кэш, если его нет/устарел — идем в сеть
-  Future<void> _loadWorkoutPlan() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String todayDate = DateTime.now().toIso8601String().split('T')[0];
-    final String? cachedDate = prefs.getString('workout_date');
-    final String? cachedYaml = prefs.getString('workout_yaml');
-
-    if (cachedDate == todayDate && cachedYaml != null) {
-      debugPrint("Используем кэшированную тренировку за $todayDate");
-      // Пробуем распарсить — если битый, сбрасываем и качаем заново
-      final bool valid = _tryParseAndSetState(cachedYaml);
-      if (!valid) {
-        debugPrint("Кэш битый — сбрасываем и качаем заново...");
-        await prefs.remove('workout_date');
-        await prefs.remove('workout_yaml');
-        await _fetchFromNetwork(prefs, todayDate);
-      }
-    } else {
-      debugPrint("Кэш устарел или пуст. Скачиваем новую тренировку...");
-      await _fetchFromNetwork(prefs, todayDate);
+  // ОБЯЗАТЕЛЬНО добавляем метод для реагирования на смену даты кликом в календаре:
+  @override
+  void didUpdateWidget(TodayWorkoutCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDate != widget.selectedDate) {
+      loadWorkoutPlan();
     }
   }
 
+  Future<void> loadWorkoutPlan() async {
+    setState(() => _isLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    
+    // БЕРЕМ ИМЕННО ВЫБРАННУЮ ДАТУ
+    final String targetDate = widget.selectedDate.toIso8601String().split('T')[0];
+    final String? rawCalendar = prefs.getString('calendar_workouts');
+    
+    bool needsFetch = true;
+
+    if (rawCalendar != null) {
+      try {
+        final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
+        
+        // Проверка: кэш не устарел?
+        DateTime? maxDate;
+        for (String key in calendarCache.keys) {
+          final d = DateTime.tryParse(key);
+          if (d != null) {
+            if (maxDate == null || d.isAfter(maxDate)) maxDate = d;
+          }
+        }
+        
+        final todayDt = DateTime.now();
+        final todayStart = DateTime(todayDt.year, todayDt.month, todayDt.day);
+        
+        // Если в кэше есть данные на сегодня и будущее — он валидный
+        if (maxDate != null && !maxDate.isBefore(todayStart)) {
+          needsFetch = false; 
+        }
+
+        // Пытаемся вытянуть тренировку именно на выбранную дату (targetDate)
+        if (calendarCache.containsKey(targetDate)) {
+          _parseJsonAndSetState(calendarCache[targetDate]);
+        } else {
+          // Выходной или пустой день
+          _setRestDay();
+        }
+      } catch (e) {
+        debugPrint(e.toString());
+      }
+    }
+
+    if (needsFetch) {
+      // Идет запрос в сеть только если кэша нет (он даст план на 30 дней)
+      await _fetchFromNetwork(prefs, targetDate); 
+    } else {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // Вспомогательный метод для дня отдыха
+  void _setRestDay() {
+    setState(() {
+      _workoutName = 'День отдыха';
+      _difficulty = 'easy';
+      _calories = 0;
+      _durationMinutes = 0;
+      _exercises = [];
+      _isLoading = false;
+    });
+  }
+
   // Загрузка по сети (n8n)
-    Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
+  Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
     try {
-      // --- ДОСТАЕМ ПОЧТУ ИЗ КЭША ---
       final String userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
       debugPrint('Запрос тренировки (main) для почты: $userEmail');
-      // -----------------------------
 
       final response = await http.post(
-        Uri.parse(StringApi.apiUrl), // Убедитесь, что это URL для вебхука /main
+        Uri.parse(StringApi.apiUrl), 
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': userEmail, // Подставляем найденную почту
+          'email': userEmail,
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        // Проверяем успешность
         if (data['success'] == true) {
           
-          // 1. Сохраняем весь календарь на месяц для экрана WorkoutPlanScreen
+          // 1. Сохраняем весь календарь на месяц
           if (data['month_calendar'] != null) {
             final monthCalendar = data['month_calendar'];
             await prefs.setString('calendar_workouts', jsonEncode(monthCalendar));
-          }
-
-          // 2. Достаем сегодняшнюю тренировку
-          final todayWorkout = data['today_workout'];
-          if (todayWorkout != null) {
-            await prefs.setString('workout_date', todayDate);
             
-            // Сохраним в старый ключ JSON в виде строки
-            final workoutString = jsonEncode(todayWorkout);
-            await prefs.setString('workout_yaml', workoutString);
-
-            _parseJsonAndSetState(todayWorkout);
+            // 2. Пытаемся достать сегодняшнюю тренировку прямо из сгенерированного плана
+            // (или берем today_workout от n8n, если он передается отдельно)
+            final todayWorkout = monthCalendar[todayDate] ?? data['today_workout'];
+            
+            if (todayWorkout != null) {
+              _parseJsonAndSetState(todayWorkout);
+            } else {
+              _setRestDay(); // Если ИИ сгенерировал первый день как выходной
+            }
           } else {
-            // Если на сегодня тренировки нет (выходной день)
-            setState(() {
-              _workoutName = 'День отдыха';
-              _difficulty = 'easy';
-              _calories = 0;
-              _durationMinutes = 0;
-              _exercises = [];
-              _isLoading = false;
-            });
+            _setRestDay();
           }
-
+          
         } else {
           setState(() => _isLoading = false);
           debugPrint('Ошибка сервера: ${data['error']}');
@@ -176,7 +219,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
     // ЕСЛИ УСПЕШНО — ПЕРЕЗАГРУЖАЕМ ТРЕНИРОВКУ ИЗ КЭША
     if (isAdapted == true) {
       setState(() => _isLoading = true);
-      await _loadWorkoutPlan();
+      await loadWorkoutPlan();
     }
   }
 

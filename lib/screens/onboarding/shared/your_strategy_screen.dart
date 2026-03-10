@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -8,6 +9,17 @@ import 'package:startap/providers/onboarding_provider.dart';
 import 'dart:math' as math;
 
 import 'package:startap/screens/home/home_screen.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 /// Экран финальной стратегии с симуляцией прогресса
 class YourStrategyScreen extends StatefulWidget {
@@ -287,8 +299,11 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
       body: Stack(
         children: [
           // Основной контент
-          CustomScrollView(
-            slivers: [
+          ScrollConfiguration(
+            behavior: _WebTouchScrollBehavior(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -309,6 +324,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
                 ),
               ),
             ],
+          ),
           ),
 
           // Закрепленная кнопка снизу

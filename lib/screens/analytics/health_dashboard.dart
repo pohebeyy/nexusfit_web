@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:startap/models/stat_response.dart';
 import 'package:startap/services/stat_service.dart';
@@ -7,6 +8,17 @@ import 'package:table_calendar/table_calendar.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({Key? key}) : super(key: key);
@@ -195,8 +207,11 @@ class _HealthDashboardState extends State<HealthDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
-      body: CustomScrollView(
-        slivers: [
+      body: ScrollConfiguration(
+        behavior: _WebTouchScrollBehavior(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           Appnar.buildModernAppBar(context, "Статистика"),
           SliverToBoxAdapter(
             child: Padding(
@@ -238,6 +253,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -299,7 +315,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
-  Widget _buildCalendar() {
+    Widget _buildCalendar() {
     final today = _normalize(DateTime.now());
 
     return Container(
@@ -312,6 +328,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
       child: Column(
         children: [
           TableCalendar(
+            // ДОБАВЬТЕ ЭТУ СТРОКУ СЮДА:
+            availableGestures: AvailableGestures.horizontalSwipe, 
+            
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
@@ -322,7 +341,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
               CalendarFormat.week: 'Неделя',
               CalendarFormat.month: 'Месяц',
             },
-                        onDaySelected: (selectedDay, focusedDay) async {
+            onDaySelected: (selectedDay, focusedDay) async {
+// ... остальной код без изменений
+
               final selNorm = _normalize(selectedDay);
               final isPassedOrToday = !selNorm.isAfter(today);
               

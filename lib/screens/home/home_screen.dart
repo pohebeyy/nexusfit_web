@@ -1,8 +1,8 @@
-import 'package:flutter/gestures.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/screens/home/TodayWorkoutCardState.dart';
+import 'package:startap/widgets/HomeCalendarWidget.dart';
 import 'package:startap/widgets/appnar.dart';
 import 'package:startap/widgets/workout_calendar.dart';
 import '../../providers/nutrition_provider.dart';
@@ -13,17 +13,6 @@ import '../ai_coach/chat_screen.dart';
 import '../workouts/workout_plan_screen.dart';
 import '../analytics/health_dashboard.dart';
 
-// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
-class _WebTouchScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.unknown,
-      };
-}
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,188 +21,178 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 2;
-  final PageController _pageController = PageController(initialPage: 2);
+  // Индекс 0 - это Главная (Home)
+  // Индекс 1 - это AI Коуч (Chat)
+  int _selectedIndex = 0;
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  // Пустая функция для совместимости с HomePageContent,
+  // так как экрана статистики больше нет
+  void switchToStats() {
+    // Ничего не делаем
   }
 
-  void switchToStats() {
-    const statsIndex = 3;
-    setState(() => _selectedIndex = statsIndex);
-    _pageController.animateToPage(
-      statsIndex,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1C1C1E),
+      // Используем IndexedStack, чтобы нельзя было свайпать экраны
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          // Индекс 0: Главный экран
+          HomePageContent(switchToStats: switchToStats),
+          // Индекс 1: AI Коуч
+          const ChatScreen(),
+        ],
+      ),
+      bottomNavigationBar: _buildModernBottomNav(),
     );
   }
 
-  @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFF1C1C1E),
-    body: LayoutBuilder(
-      builder: (context, constraints) {
-        // on web/mobile we disable horizontal swiping to avoid
-        // interference with vertical scrolls. users can still tap nav.
-        final disableSwipe = kIsWeb || constraints.maxWidth < 600;
-        return PageView(
-          controller: _pageController,
-          physics: disableSwipe ? const NeverScrollableScrollPhysics() : null,
-          onPageChanged: (index) {
-            setState(() => _selectedIndex = index);
-          },
-          children: [
-            const NutritionDashboard(),
-            const WorkoutPlanScreen(),
-            _HomePageContent(switchToStats: switchToStats),
-            const HealthDashboard(),
-            const ChatScreen(),
-          ],
-        );
-      },
-    ),
-    bottomNavigationBar: _buildModernBottomNav(),
-  );
-}
+     Widget _buildModernBottomNav() {
+    // Вы можете поменять этот цвет, чтобы он точнее совпадал с оттенком вашей SVG-иконки
+    const activeColor = Color(0xFFFF6B35); 
+    const inactiveColor = Colors.white;
 
-Widget _buildModernBottomNav() {
-  return SafeArea(
-    top: false,
-    child: Material(
-      color: const Color(0xFF1C1C1E),
-      elevation: 4,
-      child: SizedBox(
-        height: kBottomNavigationBarHeight + 8,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(0, Icons.restaurant_rounded, 'ПИТАНИЕ'),
-            _buildNavItem(1, Icons.fitness_center_rounded, 'ТРЕНИРОВКИ'),
-            _buildNavItem(2, Icons.home_rounded, ''),
-            _buildNavItem(3, Icons.analytics_rounded, 'СТАТИСТИКА'),
-            _buildNavItem(4, Icons.psychology_rounded, 'AI КОУЧ'),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E),
+        border: Border(
+          top: BorderSide(
+            color: Colors.grey[900]!,
+            width: 0.5,
+          ),
         ),
       ),
-    ),
-  );
-}
-
-Widget _buildNavItem(int index, IconData icon, String label) {
-  final isSelected = _selectedIndex == index;
-  final isHome = index == 2;
-
-  return Expanded(
-    child: InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        setState(() => _selectedIndex = index);
-        _pageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isHome)
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFFF3B30),
-                      Color(0xFFFF6B6B),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // Кнопка 0: ГЛАВНАЯ
+              GestureDetector(
+                onTap: () => setState(() => _selectedIndex = 0),
+                child: Container(
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/Container.svg',
+                        width: 26,
+                        height: 26,
+                        // Если выбрана (0) -> фильтра нет (родной оранжевый цвет)
+                        // Если не выбрана -> накладываем белый фильтр
+                        colorFilter: _selectedIndex == 0
+                            ? null
+                            : const ColorFilter.mode(inactiveColor, BlendMode.srcIn),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ГЛАВНАЯ',
+                        style: TextStyle(
+                          color: _selectedIndex == 0 ? activeColor : inactiveColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ],
                   ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF3B30).withOpacity(0.4),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: const Icon(
-                  Icons.home_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              )
-            else ...[
-              Icon(
-                icon,
-                color: isSelected ? Colors.white : Colors.grey[600],
-                size: 24,
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[600],
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
+
+              // Кнопка 1: AI КОУЧ
+              GestureDetector(
+                onTap: () => setState(() => _selectedIndex = 1),
+                child: Container(
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.psychology_rounded,
+                        size: 26,
+                        // Если выбрана (1) -> красим в оранжевый, иначе в белый
+                        color: _selectedIndex == 1 ? activeColor : inactiveColor,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'AI КОУЧ',
+                        style: TextStyle(
+                          color: _selectedIndex == 1 ? activeColor : inactiveColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+
 
 }
 
-class _HomePageContent extends StatelessWidget {
+
+class HomePageContent extends StatefulWidget {
   final VoidCallback switchToStats;
-
-  const _HomePageContent({required this.switchToStats});
+  const HomePageContent({super.key, required this.switchToStats});
 
   @override
-Widget build(BuildContext context) {
-  return RefreshIndicator(
-    onRefresh: () async {
-      context.read<HealthProvider>().initHealthData();
-      context.read<WorkoutProvider>().initWorkouts();
-      context.read<NutritionProvider>().init();
-    },
-    backgroundColor: const Color(0xFF1D1E33),
-    color: const Color(0xFF6C5CE7),
-    child: ScrollConfiguration(
-      behavior: _WebTouchScrollBehavior(),
+  State<HomePageContent> createState() => _HomePageContentState();
+}
+
+class _HomePageContentState extends State<HomePageContent> {
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read<HealthProvider>().initHealthData();
+        await context.read<WorkoutProvider>().initWorkouts();
+        await context.read<NutritionProvider>().init();
+      },
+      backgroundColor: const Color(0xFF1D1E33),
+      color: const Color(0xFF6C5CE7),
       child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-        Appnar.buildModernAppBar(context, "Главная"),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-
-                WeeklyOverviewCalendar(
-                  onOpenStats: switchToStats,
-                ),
-                const SizedBox(height: 24),
-
-                const TodayWorkoutCard(),
+          Appnar.buildModernAppBar(context, 'Главная'),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  
+                  // 1. Используем новый умный календарь
+                  HomeCalendarWidget(
+                    selectedDate: _selectedDate,
+                    onDateSelected: (date) {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    },
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // 2. Передаем выбранную дату в карточку тренировки
+                  TodayWorkoutCard(selectedDate: _selectedDate),
+                  
+                  const SizedBox(height: 24),
                 const SizedBox(height: 24),
 
                 const SizedBox(height: 16),
@@ -221,14 +200,13 @@ Widget build(BuildContext context) {
                 SizedBox(
                   height: 320, // Увеличьте это значение (было 250)
                   child: PageView(
-                    padEnds: false,
-                    physics: const BouncingScrollPhysics(),
+                    padEnds: false, 
                     controller: PageController(viewportFraction: 0.9),
                     children: const [
                       FlipMetricCard.sleep(),
-                      FlipMetricCard.nutrition(),
+                  
                       FlipMetricCard.activity(),
-                      FlipMetricCard.water(),
+                      
                     ],
                   ),
                 ),
@@ -240,7 +218,6 @@ Widget build(BuildContext context) {
         ),
       ],
     ),
-    )
   );
 }
 
@@ -320,16 +297,14 @@ class _FlipMetricCardState extends State<FlipMetricCard> with SingleTickerProvid
     );
   }
 
-  Widget _buildFront() {
+    Widget _buildFront() {
     switch (widget.type) {
       case FlipCardType.sleep:
         return const SleepFrontCard();
-      case FlipCardType.nutrition:
-        return const NutritionFrontCard();
       case FlipCardType.activity:
         return const ActivityFrontCard();
-      case FlipCardType.water:
-        return const WaterFrontCard();
+      default:
+        return const SizedBox.shrink(); 
     }
   }
 
@@ -337,14 +312,13 @@ class _FlipMetricCardState extends State<FlipMetricCard> with SingleTickerProvid
     switch (widget.type) {
       case FlipCardType.sleep:
         return const SleepBackCard();
-      case FlipCardType.nutrition:
-        return const NutritionBackCard();
       case FlipCardType.activity:
         return const ActivityBackCard();
-      case FlipCardType.water:
-        return const WaterBackCard();
+      default:
+        return const SizedBox.shrink(); 
     }
   }
+
 }
 
 class _BaseFlipCardContainer extends StatelessWidget {
@@ -379,121 +353,141 @@ class SleepFrontCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
-    
     return _BaseFlipCardContainer(
-      
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              _buildDotIndicator(),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF3B30), Color(0xFFFF6B35)],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  const Text(
+                    'СОН',
+                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ИНСАЙТ',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5AC8FA), // Голубой цвет
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.nightlight_round, color: Colors.white, size: 20),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.nightlight_round,
-                  color: Colors.grey[500],
-                  size: 16,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'ГОТОВНОСТЬ ЦНС: СРЕДНЯЯ',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+          const Spacer(),
+          // Сегментированный круг с помощью стандартного индикатора
+          SizedBox(
+            width: 140, // Увеличили ширину (было 130)
+            height: 140, // Увеличили высоту (было 130)
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 140, // Указываем размеры явно для CircularProgressIndicator
+                  height: 140,
+                  child: CircularProgressIndicator(
+                    value: 0.81,
+                    strokeWidth: 12, // Сделали линию чуть толще (было 10)
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5AC8FA)),
+                    strokeCap: StrokeCap.round,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      '81%',
+                      style: TextStyle(
+                        color: Colors.white, 
+                        fontSize: 42, // Увеличили размер шрифта (было 36)
+                        fontWeight: FontWeight.w800, 
+                        height: 1.0
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'ОЦЕНКА',
+                      style: TextStyle(
+                        color: Colors.white54, 
+                        fontSize: 11, // Чуть увеличили подпись (было 10)
+                        fontWeight: FontWeight.w700, 
+                        letterSpacing: 1.0
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'НЕЙРОКОЛЛАЙДЕР: НАГРУЗКА СНИЖЕНА',
+                  style: TextStyle(color: Color(0xFF5AC8FA), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                ),
+                SizedBox(width: 6),
+                Icon(Icons.bolt_rounded, color: Color(0xFF5AC8FA), size: 14),
+              ],
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildWaveBar(0.3),
-              _buildWaveBar(0.5),
-              _buildWaveBar(0.7),
-              _buildWaveBar(0.9),
-              _buildWaveBar(0.7),
-              _buildWaveBar(0.5),
-              _buildWaveBar(0.3),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ты не доспал 1.5 часа. Снижаю интенсивность тренировки на 10%, чтобы избежать перегрузки.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
+          _buildTapToExpand(),
         ],
       ),
     );
   }
 
-  Widget _buildWaveBar(double height) {
+  Widget _buildDotIndicator() {
     return Container(
-      width: 6,
-      height: 40 * height,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
-        color: const Color(0xFF5E5CE6),
-        borderRadius: BorderRadius.circular(3),
+        color: Colors.white.withOpacity(0.05),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTapToExpand() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Text(
+            'НАЖМИ, ЧТОБЫ РАЗВЕРНУТЬ',
+            style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+          SizedBox(width: 4),
+          Icon(Icons.adjust_rounded, color: Colors.white54, size: 12),
+        ],
       ),
     );
   }
@@ -504,204 +498,63 @@ class SleepBackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const sleepScore = 81;
-
     return _BaseFlipCardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.nightlight_round, color: Color(0xFF5E5CE6), size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'СОН',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: CircularProgressIndicator(
-                    value: sleepScore / 100,
-                    strokeWidth: 8,
-                    backgroundColor: Colors.grey[800],
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5E5CE6)),
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '$sleepScore',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'баллов',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Вчера: 6 ч 30 мин / 8 ч',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Дефицит: 1 ч 30 мин',
-            style: TextStyle(
-              color: Color(0xFFFF9500),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ ДЛЯ AI-СОВЕТА',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class NutritionFrontCard extends StatelessWidget {
-  const NutritionFrontCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _BaseFlipCardContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF3B30), Color(0xFFFF6B35)],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ИНСАЙТ',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                padding: const EdgeInsets.all(6),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.grey[800],
+                  color: Colors.white.withOpacity(0.05),
                   shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white12),
                 ),
-                child: Icon(
-                  Icons.restaurant_rounded,
-                  color: Colors.grey[500],
-                  size: 16,
-                ),
+                child: const Icon(Icons.nightlight_round, color: Colors.white54, size: 16),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'AI ИНСАЙТ',
+                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: const [
+              Icon(Icons.bolt_rounded, color: Color(0xFFFF3B30), size: 16),
+              SizedBox(width: 6),
+              Text(
+                'ГОТОВНОСТЬ ЦНС',
+                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            'БАЛАНС МАКРОСОВ: ХОРОШИЙ',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+          // Градиентный график готовности ЦНС
+          _buildRedBarChart(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                'Сон поверхностный. Фокус снижен. ИИ убрал 2 подхода из становой тяги, чтобы не перегрузить ЦНС.',
+                style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildWaveBar(0.4, const Color(0xFF32D74B)),
-              _buildWaveBar(0.6, const Color(0xFF32D74B)),
-              _buildWaveBar(0.8, const Color(0xFF32D74B)),
-              _buildWaveBar(1.0, const Color(0xFF32D74B)),
-              _buildWaveBar(0.8, const Color(0xFF32D74B)),
-              _buildWaveBar(0.6, const Color(0xFF32D74B)),
-              _buildWaveBar(0.4, const Color(0xFF32D74B)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Калории: 1850 / 2200 ккал. Добавь 30г белка на полдник для оптимального восстановления мышц.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
+          const Center(
+            child: Text(
+              'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
+              style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
             ),
           ),
         ],
@@ -709,124 +562,32 @@ class NutritionFrontCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWaveBar(double height, Color color) {
-    return Container(
-      width: 6,
-      height: 40 * height,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(3),
-      ),
+  Widget _buildRedBarChart() {
+    final heights = [15.0, 25.0, 15.0, 30.0, 45.0, 25.0, 25.0, 40.0, 20.0, 10.0];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: List.generate(heights.length, (index) {
+        return Container(
+          width: 14,
+          height: heights[index],
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Color(0xFF8B1A2B), // Темно-красный внизу
+                Color(0xFFFF3B30), // Ярко-красный вверху
+              ],
+            ),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
     );
   }
 }
 
-class NutritionBackCard extends StatelessWidget {
-  const NutritionBackCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _BaseFlipCardContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.restaurant_rounded, color: Color(0xFFFF9500), size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'ПИТАНИЕ',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Калории: 1850 / 2200 ккал',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: 1850 / 2200,
-            minHeight: 6,
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9500)),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'БЖУ: 145г / 78г / 210г',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildMacroBar('Б', 145 / 180, const Color(0xFF32D74B)),
-              const SizedBox(width: 8),
-              _buildMacroBar('Ж', 78 / 90, const Color(0xFFFF9500)),
-              const SizedBox(width: 8),
-              _buildMacroBar('У', 210 / 250, const Color(0xFF5E5CE6)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ ДЛЯ AI-СОВЕТА',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMacroBar(String label, double progress, Color color) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: Colors.grey[800],
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
 class ActivityFrontCard extends StatelessWidget {
@@ -836,116 +597,130 @@ class ActivityFrontCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _BaseFlipCardContainer(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Верхняя строка с точкой и заголовком
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              _buildDotIndicator(),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF3B30), Color(0xFFFF6B35)],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const Text(
+                    'АКТИВНОСТЬ',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ИНСАЙТ',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF3B30),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.directions_run_rounded,
-                  color: Colors.grey[500],
-                  size: 16,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'УРОВЕНЬ АКТИВНОСТИ: УМЕРЕННЫЙ',
+          const Spacer(),
+          // Основные данные (Центр)
+          const Text(
+            '840',
             style: TextStyle(
-              color: Colors.grey[500],
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'АКТИВНЫЕ ККАЛ',
+            style: TextStyle(
+              color: Color(0xFFFF3B30),
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildWaveBar(0.5, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.7, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.9, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.7, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.5, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.6, const Color(0xFF00D9FF)),
-              _buildWaveBar(0.8, const Color(0xFF00D9FF)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Шаги: 8,230 / 10,000. Хорошая активность во второй половине дня. Добавь лёгкую утреннюю прогулку.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 24),
+          // График гистограммы
+          _buildBarChart(),
+          const Spacer(),
+          // Нижние плашки
+          
+          
+          _buildTapToExpand(),
         ],
       ),
     );
   }
 
-  Widget _buildWaveBar(double height, Color color) {
+  Widget _buildDotIndicator() {
     return Container(
-      width: 6,
-      height: 40 * height,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(3),
+        color: Colors.white.withOpacity(0.05),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    // Высоты столбцов для имитации графика
+    final heights = [10.0, 15.0, 12.0, 25.0, 45.0, 65.0, 40.0, 90.0, 70.0, 35.0, 25.0, 20.0, 15.0, 25.0, 20.0];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: List.generate(heights.length, (index) {
+        final isMax = index == 7; // Выделяем самый высокий столбец красным
+        return Container(
+          width: 8,
+          height: heights[index],
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          decoration: BoxDecoration(
+            color: isMax ? const Color(0xFFFF3B30) : Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildTapToExpand() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Text(
+            'НАЖМИ, ЧТОБЫ РАЗВЕРНУТЬ',
+            style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+          SizedBox(width: 4),
+          Icon(Icons.adjust_rounded, color: Colors.white54, size: 12),
+        ],
       ),
     );
   }
@@ -962,265 +737,54 @@ class ActivityBackCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.directions_run_rounded, color: Color(0xFF00D9FF), size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'АКТИВНОСТЬ',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Активные ккал: 450 / 600',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: 450 / 600,
-            minHeight: 6,
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00D9FF)),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Шаги: 8,230 • Время: 68 мин',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Статус: Умеренно активный',
-            style: TextStyle(
-              color: Color(0xFF00D9FF),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ ДЛЯ AI-СОВЕТА',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class WaterFrontCard extends StatelessWidget {
-  const WaterFrontCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _BaseFlipCardContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF3B30), Color(0xFFFF6B35)],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ИНСАЙТ',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                padding: const EdgeInsets.all(6),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.grey[800],
+                  color: Colors.white.withOpacity(0.05),
                   shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white12),
                 ),
-                child: Icon(
-                  Icons.water_drop_rounded,
-                  color: Colors.grey[500],
-                  size: 16,
-                ),
+                child: const Icon(Icons.bolt_rounded, color: Colors.white54, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'AI ИНСАЙТ',
+                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1.0),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'ГИДРАТАЦИЯ: ОПТИМАЛЬНАЯ',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 32),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildWaveBar(0.6, const Color(0xFF5AC8FA)),
-              _buildWaveBar(0.8, const Color(0xFF5AC8FA)),
-              _buildWaveBar(1.0, const Color(0xFF5AC8FA)),
-              _buildWaveBar(0.9, const Color(0xFF5AC8FA)),
-              _buildWaveBar(0.7, const Color(0xFF5AC8FA)),
-              _buildWaveBar(0.8, const Color(0xFF5AC8FA)),
-              _buildWaveBar(0.6, const Color(0xFF5AC8FA)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Выпито: 1800 / 2000 мл. Выпей 300 мл за 30 мин до тренировки для максимальной производительности.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaveBar(double height, Color color) {
-    return Container(
-      width: 6,
-      height: 40 * height,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(3),
-      ),
-    );
-  }
-}
-
-class WaterBackCard extends StatelessWidget {
-  const WaterBackCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _BaseFlipCardContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.water_drop_rounded, color: Color(0xFF5AC8FA), size: 20),
-              const SizedBox(width: 8),
+            children: const [
+              Icon(Icons.bolt_rounded, color: Color(0xFFFF3B30), size: 16),
+              SizedBox(width: 6),
               Text(
-                'ВОДА',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
+                'АНАЛИЗ ЭНЕРГИИ',
+                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Выпито: 1800 / 2000 мл',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: 1800 / 2000,
-            minHeight: 6,
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5AC8FA)),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Гидратация: 90%',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Статус: Норма',
-            style: TextStyle(
-              color: Color(0xFF5AC8FA),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                'НАЖМИ ДЛЯ AI-СОВЕТА',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
               ),
+              child: const Text(
+                'Высокая бытовая активность. Лактат утилизирован. Выполни 5 минут МФР на икры, чтобы снять спазм перед сном.',
+                style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
+              style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
             ),
           ),
         ],
@@ -1228,3 +792,5 @@ class WaterBackCard extends StatelessWidget {
     );
   }
 }
+
+

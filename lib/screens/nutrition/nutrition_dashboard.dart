@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,17 @@ import 'package:startap/widgets/appnar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:startap/services/photo_service.dart';
+
+// custom scroll behavior allowing both touch and mouse input; useful on web/mobile
+class _WebTouchScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+}
 
 
 class NutritionDashboard extends StatefulWidget {
@@ -387,8 +399,11 @@ Future<void> _saveToCache() async {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
-      body: CustomScrollView(
-        slivers: [
+      body: ScrollConfiguration(
+        behavior: _WebTouchScrollBehavior(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           Appnar.buildModernAppBar(context, "Питание"),
           SliverToBoxAdapter(
             child: SafeArea(
@@ -475,7 +490,9 @@ Future<void> _saveToCache() async {
           ),
         ],
       ),
+      )
     );
+    
   }
 }
 
