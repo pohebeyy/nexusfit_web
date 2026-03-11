@@ -584,10 +584,10 @@ class _SleepScreenState extends State<SleepScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF00D9FF).withOpacity(0.1),
+        color: const Color(0xFF2C2C2E).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.3),
+          color: const Color(0xFFFF4538).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -595,7 +595,7 @@ class _SleepScreenState extends State<SleepScreen> {
         children: [
           Icon(
             Icons.bedtime,
-            color: const Color(0xFF00D9FF),
+            color: const Color(0xFFFF4538),
             size: 20,
           ),
           const SizedBox(width: 12),

@@ -427,7 +427,7 @@ class _B2HealthScreeningScreenState extends State<B2HealthScreeningScreen> {
                 boxShadow: canContinue
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF00D9FF).withOpacity(0.4),
+                          color: const Color(0xFFFF4538).withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),

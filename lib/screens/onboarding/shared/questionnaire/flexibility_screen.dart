@@ -143,7 +143,7 @@ class _FlexibilityScreenState extends State<FlexibilityScreen> {
                 _buildInfoCard(
                   'Попробуй наклониться вперёд с прямыми ногами. Насколько низко ты можешь дотянуться?',
                   Icons.info_outline,
-                  const Color(0xFF00D9FF),
+                  const Color(0xFFFF4538),
                 ),
                 const SizedBox(height: 16),
                 
@@ -417,7 +417,7 @@ class _FlexibilityScreenState extends State<FlexibilityScreen> {
                     decoration: BoxDecoration(
                       color: isSelected 
                           ? color.withOpacity(0.15) 
-                          : const Color(0xFF1A1F3A),
+                          : const Color(0xFF2C2C2E),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isSelected 

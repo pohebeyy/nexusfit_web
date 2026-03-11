@@ -268,7 +268,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: Color(0xFF00D9FF)),
+              const CircularProgressIndicator(color: Color(0xFFFF4538)),
               const SizedBox(height: 24),
               Text(
                 'ИИ анализирует твои данные...',
@@ -387,7 +387,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
         const Text(
           'ПРОГНОЗ ТРАНСФОРМАЦИИ',
           style: TextStyle(
-            color: Color(0xFF00D9FF),
+            color: Color(0xFFFF4538),
             fontSize: 12,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.0,
@@ -430,7 +430,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
           const Text(
             'ТВОИ ПОКАЗАТЕЛИ',
             style: TextStyle(
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFF4538),
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
@@ -565,15 +565,15 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF00D9FF).withOpacity(0.05),
-              const Color(0xFF00D9FF).withOpacity(0.0),
+              const Color(0xFFFF4538).withOpacity(0.05),
+              const Color(0xFFFF4538).withOpacity(0.0),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF00D9FF).withOpacity(0.2),
+            color: const Color(0xFFFF4538).withOpacity(0.2),
           ),
         ),
         child: Column(
@@ -583,7 +583,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
               children: const [
                 Icon(
                   Icons.auto_awesome,
-                  color: Color(0xFF00D9FF),
+                  color: Color(0xFFFF4538),
                   size: 20,
                 ),
                 SizedBox(width: 8),
@@ -666,16 +666,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
   Widget _buildStickyButton() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0A0E27).withOpacity(0.0),
-            const Color(0xFF0A0E27),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+      
       child: AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
@@ -700,8 +691,8 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
+                  backgroundColor: Color(0xFFFF4538),
+                  shadowColor: Color(0xFFFF4538),
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -742,7 +733,7 @@ class StrategyGraphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF00D9FF)
+      ..color = const Color(0xFFFF4538)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -771,8 +762,8 @@ class StrategyGraphPainter extends CustomPainter {
     final fillPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          const Color(0xFF00D9FF).withOpacity(0.2),
-          const Color(0xFF00D9FF).withOpacity(0.0),
+          const Color(0xFFFF4538).withOpacity(0.2),
+          const Color(0xFFFF4538).withOpacity(0.0),
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,

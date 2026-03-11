@@ -184,7 +184,7 @@ Future<void> _analyzeImage() async {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -208,7 +208,7 @@ Future<void> _analyzeImage() async {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
               ),
             ),
             child: const Padding(
@@ -223,7 +223,7 @@ Future<void> _analyzeImage() async {
           const Text(
             'Анализируем твои данные...',
             style: TextStyle(
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFF4538),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -310,7 +310,7 @@ _buildExpandableSection(
         color: const Color(0xFF1A1F3A),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.2),
+          color: const Color(0xFFFF4538).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -663,7 +663,7 @@ _buildExpandableSection(
                   ),
                   Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: const Color(0xFF00D9FF),
+                    color: const Color(0xFFFF4538),
                   ),
                 ],
               ),

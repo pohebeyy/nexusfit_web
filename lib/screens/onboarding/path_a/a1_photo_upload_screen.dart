@@ -49,7 +49,7 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),

@@ -246,7 +246,7 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
         decoration: BoxDecoration(
           color: _isConfirmed 
               ? const Color(0xFFFF4538).withOpacity(0.1) 
-              : const Color(0xFF1A1F3A),
+              : const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isConfirmed 

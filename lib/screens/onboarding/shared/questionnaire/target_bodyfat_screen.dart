@@ -134,7 +134,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -250,12 +250,12 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF2C2C2E).withOpacity(0.15) 
+              ? const Color(0xFFFFFFFF).withOpacity(0.15) 
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected 
-                ? const Color(0xFF00D9FF) 
+                ? const Color(0xFFFF4538) 
                 : Colors.transparent,
             width: 2,
           ),
@@ -265,7 +265,7 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF00D9FF) : const Color(0xFFB0B5C0),
+              color: isSelected ? const Color(0xFFFF4538) : const Color(0xFFB0B5C0),
               size: 20,
             ),
             const SizedBox(width: 8),

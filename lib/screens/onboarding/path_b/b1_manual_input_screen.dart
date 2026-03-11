@@ -40,7 +40,7 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -316,14 +316,14 @@ class _B1ManualInputScreenState extends State<B1ManualInputScreen> {
                 borderRadius: BorderRadius.circular(12),
                 gradient: isValid
                     ? const LinearGradient(
-                        colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                        colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
                       )
                     : null,
                 color: isValid ? null : const Color(0xFF1A1F3A),
                 boxShadow: isValid
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF00D9FF).withOpacity(0.4),
+                          color: const Color(0xFFFF4538).withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),

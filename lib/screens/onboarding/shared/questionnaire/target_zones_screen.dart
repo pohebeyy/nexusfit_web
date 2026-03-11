@@ -220,7 +220,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFF00D9FF)),
+              color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -288,11 +288,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
         color: const Color(0xFF1A1F3A),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00D9FF).withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+          
         ],
       ),
       child: Row(
@@ -365,12 +361,12 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
         color: const Color(0xFF1A1F3A),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFF00D9FF).withOpacity(0.2),
+          color: const Color(0xFFFF4538).withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00D9FF).withOpacity(0.1),
+            color: const Color(0xFFFF4538).withOpacity(0.1),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -406,7 +402,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                   height: 500,
                   child: BodyChart(
                     selectedParts: _selectedZones,
-                    selectedColor: const Color(0xFF00D9FF),
+                    selectedColor: const Color(0xFFFF4538),
                     unselectedColor: const Color(0xFF2A2A3E),
                     viewType: _viewType,
                     width: 340,
@@ -575,7 +571,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                         colors: [color.withOpacity(0.3), color.withOpacity(0.15)],
                       )
                     : null,
-                color: isSelected ? null : const Color(0xFF1A1F3A),
+                color: isSelected ? null : const Color(0xFF2C2C2E),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected ? color : color.withOpacity(0.3),
@@ -635,15 +631,9 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(
-                colors: [Color(0xFF00D9FF), Color(0xFF00B8D4)],
+                colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00D9FF).withOpacity(0.5),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              
             ),
             child: Material(
               color: Colors.transparent,

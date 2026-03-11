@@ -111,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         backgroundColor: Color(0xFF1C1C1E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF00D9FF)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -459,7 +459,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             onChanged: (value) {
               setState(() => _agreedToTerms = value ?? false);
             },
-            activeColor: const Color(0xFF0A0E27),
+            activeColor: const Color(0xFFFFFFFF),
             checkColor: const Color(0xFF0A0E27),
             side: BorderSide(
               color: const Color(0xFFB0B5C0).withOpacity(0.3),
