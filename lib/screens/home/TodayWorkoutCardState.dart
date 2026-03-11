@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:startap/screens/home/adaptiom_sheet.dart';
 import 'package:startap/screens/workouts/workout_plan_screen.dart';
+import 'package:startap/screens/workouts/workout_session_screen.dart';
 import 'package:startap/services/api/StringApi.dart';
 
 class TodayWorkoutCard extends StatefulWidget {
@@ -24,7 +25,7 @@ class TodayWorkoutCard extends StatefulWidget {
 class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   bool _isExpanded = false;
   bool _isLoading = true;
-
+   String _lastCacheHash = "";
   // Динамические переменные
   String _workoutName = 'Загрузка...';
   String _difficulty = 'medium';
@@ -46,7 +47,26 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       loadWorkoutPlan();
     }
   }
+  Future<void> _checkCacheUpdate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String targetDate = widget.selectedDate.toIso8601String().split('T')[0];
+    final String? rawCalendar = prefs.getString('calendar_workouts');
+    
+    // Создаем хэш текущих данных для этой даты
+    String currentHash = "";
+    if (rawCalendar != null) {
+      final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
+      if (calendarCache.containsKey(targetDate)) {
+        currentHash = jsonEncode(calendarCache[targetDate]);
+      }
+    }
 
+    // Если кэш изменился с последнего раза — обновляем UI
+    if (currentHash != _lastCacheHash) {
+      _lastCacheHash = currentHash;
+      loadWorkoutPlan(); // Перезапускаем вашу функцию парсинга
+    }
+  }
   Future<void> loadWorkoutPlan() async {
     setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
@@ -236,6 +256,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
 
   @override
   Widget build(BuildContext context) {
+    _checkCacheUpdate();
     if (_isLoading) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -360,12 +381,24 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                   crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 250),
                 ),
-                SizedBox(
+                                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkoutPlanScreen()));
+                      // Правильный вызов навигации
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WorkoutSessionScreen(
+                            // Передаем данные из стейта текущей карточки
+                            title: _workoutName,
+                            exercises: _exercises,
+                          ),
+                        ),
+                      );
                     },
+                    
+
                     icon: const Icon(Icons.play_arrow_rounded, size: 20),
                     label: const Text(
                       'НАЧАТЬ ТРЕНИРОВКУ',

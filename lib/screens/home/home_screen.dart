@@ -4,14 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:startap/screens/home/TodayWorkoutCardState.dart';
 import 'package:startap/widgets/HomeCalendarWidget.dart';
 import 'package:startap/widgets/appnar.dart';
-import 'package:startap/widgets/workout_calendar.dart';
 import '../../providers/nutrition_provider.dart';
 import '../../providers/workout_provider.dart';
 import '../../providers/health_provider.dart';
-import '../nutrition/nutrition_dashboard.dart';
 import '../ai_coach/chat_screen.dart';
-import '../workouts/workout_plan_screen.dart';
-import '../analytics/health_dashboard.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:startap/services/stat_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -348,13 +347,72 @@ class _BaseFlipCardContainer extends StatelessWidget {
   }
 }
 
-class SleepFrontCard extends StatelessWidget {
+class SleepFrontCard extends StatefulWidget {
   const SleepFrontCard({super.key});
 
   @override
+  State<SleepFrontCard> createState() => _SleepFrontCardState();
+}
+
+class _SleepFrontCardState extends State<SleepFrontCard> {
+  double _sleepHours = 0.0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSleepData();
+  }
+
+  Future<void> _loadSleepData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Достаем сохраненное количество часов (если вы его сохраняете в провайдере)
+      // Если вы еще не сохраняете саму цифру в AICoachProvider, добавьте туда: 
+      // await prefs.setDouble('last_sleep_hours', hours); 
+      // во время вызова _handleSleepLogInput
+      final hours = prefs.getDouble('last_sleep_hours') ?? 8.0; 
+
+      if (mounted) {
+        setState(() {
+          _sleepHours = hours;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // 1. Высчитываем процент качества сна (идеал = 8 часов)
+    double targetSleep = 8.0;
+    double sleepScoreRaw = (_sleepHours / targetSleep).clamp(0.0, 1.0);
+    int sleepScorePercent = (sleepScoreRaw * 100).toInt();
+
+    // 2. Определяем цвета и статус в зависимости от сна
+    Color mainColor;
+    String statusText;
+
+    if (_sleepHours >= 7.0) {
+      mainColor = const Color(0xFF5AC8FA); // Голубой - отлично
+      statusText = 'ЦНС ВОССТАНОВЛЕНА: НАГРУЗКА 100%';
+    } else if (_sleepHours >= 5.5) {
+      mainColor = const Color(0xFFFF9500); // Оранжевый - средне
+      statusText = 'НЕЙРОКОЛЛАЙДЕР: НАГРУЗКА СНИЖЕНА';
+    } else {
+      mainColor = const Color(0xFFFF3B30); // Красный - плохо
+      statusText = 'КРИТИЧЕСКИЙ НЕДОСЫП: РЕЖИМ ЛАЙТ';
+    }
+
     return _BaseFlipCardContainer(
-      child: Column(
+      child: _isLoading 
+      ? const Center(child: CircularProgressIndicator(color: Color(0xFF5AC8FA)))
+      : Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
@@ -371,7 +429,7 @@ class SleepFrontCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5AC8FA), // Голубой цвет
+                      color: mainColor, // Динамический цвет
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.nightlight_round, color: Colors.white, size: 20),
@@ -392,27 +450,27 @@ class SleepFrontCard extends StatelessWidget {
                   width: 140, // Указываем размеры явно для CircularProgressIndicator
                   height: 140,
                   child: CircularProgressIndicator(
-                    value: 0.81,
+                    value: sleepScoreRaw, // Динамическое заполнение круга
                     strokeWidth: 12, // Сделали линию чуть толще (было 10)
                     backgroundColor: Colors.white.withOpacity(0.1),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5AC8FA)),
+                    valueColor: AlwaysStoppedAnimation<Color>(mainColor), // Динамический цвет
                     strokeCap: StrokeCap.round,
                   ),
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text(
-                      '81%',
-                      style: TextStyle(
+                      '$sleepScorePercent%', // Динамический процент
+                      style: const TextStyle(
                         color: Colors.white, 
                         fontSize: 42, // Увеличили размер шрифта (было 36)
                         fontWeight: FontWeight.w800, 
                         height: 1.0
                       ),
                     ),
-                    SizedBox(height: 4),
-                    Text(
+                    const SizedBox(height: 4),
+                    const Text(
                       'ОЦЕНКА',
                       style: TextStyle(
                         color: Colors.white54, 
@@ -430,19 +488,19 @@ class SleepFrontCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: mainColor.withOpacity(0.1), // Слегка подкрашиваем фон плашки
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white12),
+              border: Border.all(color: mainColor.withOpacity(0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Text(
-                  'НЕЙРОКОЛЛАЙДЕР: НАГРУЗКА СНИЖЕНА',
-                  style: TextStyle(color: Color(0xFF5AC8FA), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                  statusText, // Динамический текст
+                  style: TextStyle(color: mainColor, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                 ),
-                SizedBox(width: 6),
-                Icon(Icons.bolt_rounded, color: Color(0xFF5AC8FA), size: 14),
+                const SizedBox(width: 6),
+                Icon(Icons.bolt_rounded, color: mainColor, size: 14),
               ],
             ),
           ),
@@ -590,8 +648,47 @@ class SleepBackCard extends StatelessWidget {
 
 
 
-class ActivityFrontCard extends StatelessWidget {
+class ActivityFrontCard extends StatefulWidget {
   const ActivityFrontCard({super.key});
+
+  @override
+  State<ActivityFrontCard> createState() => _ActivityFrontCardState();
+}
+
+class _ActivityFrontCardState extends State<ActivityFrontCard> {
+  int _activeCalories = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchActivityData();
+  }
+
+  Future<void> _fetchActivityData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
+      final today = DateTime.now();
+
+      // Запрашиваем данные за сегодня
+      final activityData = await StatService.fetchDailyActivity(userEmail, today);
+
+      if (mounted) {
+        setState(() {
+          if (activityData != null) {
+            _activeCalories = activityData['active_calories'] ?? 0;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Ошибка загрузки калорий в ActivityFrontCard: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -629,16 +726,32 @@ class ActivityFrontCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
+          
           // Основные данные (Центр)
-          const Text(
-            '840',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
-            ),
-          ),
+          _isLoading 
+            ? const SizedBox(
+                height: 40, 
+                child: Center(
+                  child: SizedBox(
+                    width: 20, 
+                    height: 20, 
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF3B30), 
+                      strokeWidth: 2
+                    )
+                  )
+                )
+              )
+            : Text(
+                '$_activeCalories', // <--- ЗДЕСЬ ПОДСТАВЛЯЮТСЯ РЕАЛЬНЫЕ ДАННЫЕ
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                ),
+              ),
+              
           const SizedBox(height: 4),
           const Text(
             'АКТИВНЫЕ ККАЛ',
@@ -650,12 +763,12 @@ class ActivityFrontCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+          
           // График гистограммы
           _buildBarChart(),
           const Spacer(),
+          
           // Нижние плашки
-          
-          
           _buildTapToExpand(),
         ],
       ),

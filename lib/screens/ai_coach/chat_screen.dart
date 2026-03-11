@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/ai_coach_provider.dart';
 import '../../models/chat_message.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -53,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+    PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFF1C1C1E),
       elevation: 0,
@@ -68,6 +68,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ),
           const Spacer(),
+          // === КНОПКА ДЛЯ ТЕСТИРОВАНИЯ СНА ===
+          // IconButton(
+          //   icon: const Icon(Icons.delete_outline, color: Colors.grey),
+          //   onPressed: () async {
+          //     final prefs = await SharedPreferences.getInstance();
+          //     // Удаляем запись о том, что сон сегодня вводили
+          //     await prefs.remove('last_sleep_log_date');
+              
+          //     // Перезапускаем чат
+          //     if (mounted) {
+          //       context.read<AICoachProvider>().initChat();
+          //       ScaffoldMessenger.of(context).showSnackBar(
+          //         const SnackBar(content: Text('Кэш сна сброшен!')),
+          //       );
+          //     }
+          //   },
+          // ),
+          // ====================================
           Container(
             width: 40,
             height: 40,
@@ -90,6 +108,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
 
   // Внутри ChatScreen -> _buildMessageBubble
 Widget _buildMessageBubble(ChatMessage message, int index) {
