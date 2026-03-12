@@ -215,13 +215,17 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
 
 
 // Вспомогательный метод на случай сбоя сети
+// Вспомогательный метод на случай сбоя сети
 void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi, OnboardingProvider provider) {
   setState(() {
     _userStrategy['currentWeight'] = currentWeight;
     _userStrategy['targetWeight'] = targetWeight;
     _userStrategy['bmi'] = bmi;
-    _userStrategy['experience'] = provider.data.experience ?? 'Новичок';
-    _userStrategy['metabolism'] = 'Средний (Оффлайн)';
+    
+    // Используем маппер для опыта
+    _userStrategy['experience'] = _mapExperience(provider.data.experience);
+    
+    _userStrategy['metabolism'] = 'Средний';
     _userStrategy['bodyType'] = 'Мезоморф';
     
     // Считаем недели грубо на телефоне
@@ -239,6 +243,36 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
 
 
 
+
+    String _mapMetabolism(String? rawValue) {
+    switch (rawValue?.toLowerCase()) {
+      case 'slow': return 'Медленный';
+      case 'average': 
+      case 'normal': return 'Средний';
+      case 'fast': return 'Быстрый';
+      default: return 'Средний'; // Значение по умолчанию
+    }
+  }
+
+  String _mapExperience(String? rawValue) {
+    switch (rawValue?.toLowerCase()) {
+      case 'complete_beginner': return 'Новичок';
+      case 'beginner': return 'Начинающий';
+      case 'intermediate': return 'Средний уровень';
+      case 'advanced': return 'Продвинутый';
+      case 'pro': return 'Опытный';
+      default: return 'Новичок';
+    }
+  }
+
+  String _mapBodyType(String? rawValue) {
+    switch (rawValue?.toLowerCase()) {
+      case 'ectomorph': return 'Эктоморф';
+      case 'mesomorph': return 'Мезоморф';
+      case 'endomorph': return 'Эндоморф';
+      default: return 'Мезоморф';
+    }
+  }
 
 
 
@@ -681,15 +715,20 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: ElevatedButton(
+                            child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
+                  // Используем pushAndRemoveUntil, чтобы полностью очистить 
+                  // историю переходов. Тогда HomeScreen станет корневым экраном, 
+                  // и стрелка "Назад" автоматически исчезнет!
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const HomeScreen(),
                     ),
+                    (route) => false, 
                   );
                 },
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFFFF4538),
                   shadowColor: Color(0xFFFF4538),

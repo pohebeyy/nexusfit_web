@@ -281,15 +281,12 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
     );
   }
 
-  Widget _buildViewToggle() {
+    Widget _buildViewToggle() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E), // Цвет по твоей палитре
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          
-        ],
       ),
       child: Row(
         children: [
@@ -300,7 +297,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
               BodyViewType.front,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8), // Отступ между кнопками
           Expanded(
             child: _buildToggleButton(
               'Сзади',
@@ -320,16 +317,13 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
       onTap: () => setState(() => _viewType = type),
       borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
-                )
-              : null,
+          color: isSelected 
+              ? const Color(0xFFFF4538) // Акцентный цвет
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -337,7 +331,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
             Icon(
               icon,
               color: isSelected ? Colors.white : const Color(0xFFB0B5C0),
-              size: 18,
+              size: 20,
             ),
             const SizedBox(width: 8),
             Text(
@@ -354,23 +348,18 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
     );
   }
 
-  Widget _buildBodyVisualization() {
+
+    Widget _buildBodyVisualization() {
     return Container(
       height: 520,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E), // Обновленный фон
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFFFF4538).withOpacity(0.2),
+          color: const Color(0xFFB0B5C0).withOpacity(0.1), // Нейтральная обводка
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF4538).withOpacity(0.1),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        // Тень убрана для более чистого "плоского" дизайна под 2C2C2E
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -383,14 +372,10 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTapDown: (details) {
-                  // Получаем RenderBox этого GestureDetector
                   final RenderBox? box = context.findRenderObject() as RenderBox?;
                   if (box == null) return;
                   
-                  // Конвертируем в локальные координаты
                   final localPos = box.globalToLocal(details.globalPosition);
-                  
-                  // Определяем зону
                   final zone = _detectZoneFromTap(localPos, box.size);
                   
                   if (zone != null) {
@@ -403,7 +388,8 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                   child: BodyChart(
                     selectedParts: _selectedZones,
                     selectedColor: const Color(0xFFFF4538),
-                    unselectedColor: const Color(0xFF2A2A3E),
+                    // Немного высветлил невыбранные зоны, чтобы они были видны на 2C2C2E
+                    unselectedColor: const Color(0xFF3A3A3C), 
                     viewType: _viewType,
                     width: 340,
                   ),
@@ -456,6 +442,7 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
       ),
     );
   }
+
 
   Widget _buildGridBackground() {
     return CustomPaint(
@@ -615,71 +602,77 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
     );
   }
 
-  Widget _buildFloatingButton() {
+    Widget _buildFloatingButton() {
     final canContinue = _selectedZones.isNotEmpty;
 
-    return AnimatedSlide(
-      offset: canContinue ? Offset.zero : const Offset(0, 2),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOutCubic,
+    return Padding(
+      padding: const EdgeInsets.all(24),
       child: AnimatedOpacity(
-        opacity: canContinue ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
-              ),
-              
-            ),
-            child: Material(
-              color: Colors.transparent,
-                            child: InkWell(
-                onTap: canContinue
-                    ? () {
-                        // Сохраняем список выбранных зон в Provider
-                        // Преобразуем Set<String> в List<String>
-                        context.read<OnboardingProvider>().setTargetZones(_selectedZones.toList());
+        duration: const Duration(milliseconds: 200),
+        opacity: canContinue ? 1.0 : 0.5,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: canContinue
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
+                  )
+                : null,
+            color: canContinue ? null : const Color(0xFF2C2C2E),
+          ),
+          child: ElevatedButton(
+            onPressed: canContinue
+                ? () {
+                    // Сохраняем список выбранных зон в Provider
+                    context.read<OnboardingProvider>().setTargetZones(_selectedZones.toList());
 
-                        // Переходим на следующий экран
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TrainingLocationScreen(),
-                          ),
-                        );
-                      }
-                    : null,
-
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Продолжить',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    // Переходим на следующий экран
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TrainingLocationScreen(),
                       ),
-                      SizedBox(width: 12),
-                      Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
-                    ],
+                    );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Продолжить',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: canContinue 
+                        ? Colors.white 
+                        : const Color(0xFFB0B5C0).withOpacity(0.5),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_rounded, 
+                  color: canContinue 
+                      ? Colors.white 
+                      : const Color(0xFFB0B5C0).withOpacity(0.5), 
+                  size: 22,
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
 }
 
 class _GridPainter extends CustomPainter {

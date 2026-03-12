@@ -163,8 +163,8 @@ class _HomePageContentState extends State<HomePageContent> {
         await context.read<WorkoutProvider>().initWorkouts();
         await context.read<NutritionProvider>().init();
       },
-      backgroundColor: const Color(0xFF1D1E33),
-      color: const Color(0xFF6C5CE7),
+      backgroundColor: const Color(0xFF2C2C2E), // Цвет плашек твоего дизайна
+      color: const Color(0xFFFF4538), // Твой акцентный цвет стрелочки
       child: CustomScrollView(
         slivers: [
           Appnar.buildModernAppBar(context, 'Главная'),

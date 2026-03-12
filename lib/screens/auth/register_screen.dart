@@ -81,10 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       final authProvider = context.read<AuthProvider>();
 
       final success = await authProvider.signUp(
-        email: _emailController.text.trim(),
+        email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text,
         name: _nameController.text.trim(),
       );
+
 
       if (success && mounted) {
         Navigator.of(context).pushReplacement(

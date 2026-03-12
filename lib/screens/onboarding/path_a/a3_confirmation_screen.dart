@@ -91,34 +91,38 @@ class _A3ConfirmationScreenState extends State<A3ConfirmationScreen> {
     );
   }
 
-  Widget _buildSuccessIcon() {
+    Widget _buildSuccessIcon() {
     return Center(
       child: Container(
         width: 100,
         height: 100,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFFFFFFFF).withOpacity(0.2),
-              const Color(0xFFFFFFFFF).withOpacity(0.05),
-            ],
-          ),
+          // Слегка красный полупрозрачный фон внутри
+          color: const Color(0xFFFF4538).withOpacity(0.1),
+          // Яркая красная обводка
           border: Border.all(
-            color: const Color(0xFFFFFFFFF).withOpacity(0.4),
+            color: const Color(0xFFFF4538).withOpacity(0.5),
             width: 2,
           ),
+          // Эффект "неонового свечения"
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF4538).withOpacity(0.2),
+              blurRadius: 30,
+              spreadRadius: 5,
+            ),
+          ],
         ),
         child: const Icon(
           Icons.check_circle_outline,
           size: 50,
-          color: Color(0xFFFFFFFFF),
+          color: Color(0xFFFF4538), // Фирменный акцентный цвет
         ),
       ),
     );
   }
+
 
   Widget _buildSummaryCard() {
     final summaryItems = [

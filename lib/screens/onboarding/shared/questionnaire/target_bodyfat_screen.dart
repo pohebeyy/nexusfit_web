@@ -215,11 +215,11 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
     );
   }
 
-  Widget _buildGenderToggle() {
+    Widget _buildGenderToggle() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F3A),
+        color: const Color(0xFF2C2C2E), // Цвет контейнеров по твоей палитре
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -250,29 +250,23 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFFFFFFFF).withOpacity(0.15) 
+              ? const Color(0xFFFF4538) // Акцентный цвет для выбранного
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected 
-                ? const Color(0xFFFF4538) 
-                : Colors.transparent,
-            width: 2,
-          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFFFF4538) : const Color(0xFFB0B5C0),
+              color: isSelected ? Colors.white : const Color(0xFFB0B5C0),
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFFFFFFFF) : const Color(0xFFFFFFFF),
+                color: isSelected ? Colors.white : const Color(0xFFB0B5C0),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -282,6 +276,68 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
       ),
     );
   }
+
+  Widget _buildContinueButton() {
+    final canContinue = _selectedTarget != null;
+    
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: canContinue ? 1.0 : 0.5,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: canContinue
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
+                  )
+                : null,
+            // Заменил старый 1A1F3A на твой цвет контейнеров 2C2C2E для неактивной кнопки
+            color: canContinue ? null : const Color(0xFF2C2C2E), 
+          ),
+          child: ElevatedButton(
+            onPressed: canContinue
+                ? () {
+                    // Сохраняем целевой % жира в провайдер
+                    if (_selectedTarget != null) {
+                      context.read<OnboardingProvider>().setTargetBodyFat(_selectedTarget!);
+                    }
+
+                    // Переходим на следующий экран
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TargetZonesScreen(),
+                      ),
+                    );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Продолжить',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: canContinue 
+                    ? Colors.white 
+                    : const Color(0xFFB0B5C0).withOpacity(0.5),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildInfoCard() {
     return Container(
@@ -515,66 +571,5 @@ class _TargetBodyfatScreenState extends State<TargetBodyfatScreen> {
     );
   }
 
-  Widget _buildContinueButton() {
-    final canContinue = _selectedTarget != null;
-    
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: canContinue ? 1.0 : 0.5,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: canContinue
-                ? const LinearGradient(
-                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
-                  )
-                : null,
-            color: canContinue ? null : const Color(0xFF1A1F3A),
-            
-                
-          ),
-                        child: ElevatedButton(
-                onPressed: canContinue
-                    ? () {
-                        // Сохраняем целевой % жира в провайдер
-                        if (_selectedTarget != null) {
-                          context.read<OnboardingProvider>().setTargetBodyFat(_selectedTarget!);
-                        }
-
-                        // Переходим на следующий экран
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TargetZonesScreen(),
-                          ),
-                        );
-                      }
-                    : null,
-
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              minimumSize: const Size(double.infinity, 56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Продолжить',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: canContinue 
-                    ? Colors.white 
-                    : const Color(0xFFB0B5C0).withOpacity(0.5),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  
 }

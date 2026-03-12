@@ -25,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
     final userId = prefs.getInt('user_id');
     final userEmail = prefs.getString('user_email');
     final userName = prefs.getString('user_name');
-    
+
     if (_token != null && userId != null) {
       _user = UserModel(
         id: userId.toString(),
@@ -37,67 +37,81 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> signUp({
-    required String email, 
-    required String password, 
-    required String name
+    required String email,
+    required String password,
+    required String name,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
+    final normalizedEmail = email.trim().toLowerCase();
+    final trimmedName = name.trim();
+
     try {
       final url = Uri.parse('https://n8n.nexusfit.ru/webhook/reguser');
-      
-      print('Отправляем запрос на: $url'); 
-      print('Данные: email=$email, name=$name');
+
+      print('Отправляем запрос на: $url');
+      print('Данные: email=$normalizedEmail, name=$trimmedName');
 
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email,
+          'email': normalizedEmail,
           'password': password,
-          'name': name,
+          'name': trimmedName,
           'goal': 'general_fitness',
           'body_type': 'mesomorph',
           'experience': 'beginner',
-          'equipment': ['собственный вес']
+          'equipment': ['собственный вес'],
         }),
       );
 
       print('Статус код от сервера: ${response.statusCode}');
       print('Ответ от сервера: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          // Сохраняем данные пользователя после успешной регистрации
+      Map<String, dynamic>? data;
+      if (response.body.isNotEmpty) {
+        try {
+          data = jsonDecode(response.body) as Map<String, dynamic>;
+        } catch (e) {
+          print('Ошибка парсинга JSON: $e');
+        }
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data != null && data['success'] == true) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_email', email);
-          await prefs.setString('user_name', name);
-          
+          await prefs.setString('user_email', normalizedEmail);
+          await prefs.setString('user_name', trimmedName);
+
           _user = UserModel(
-            id: '', // ID может быть не известен сразу после регистрации
-            email: email,
-            name: name,
+            id: data['userId']?.toString() ?? '',
+            email: normalizedEmail,
+            name: trimmedName,
           );
-          
+
+          _error = null;
           _isLoading = false;
           notifyListeners();
-          return true; 
+          return true;
         } else {
-          _error = data['message'] ?? 'Ошибка регистрации';
+          _error = data?['message']?.toString() ?? 'Ошибка регистрации';
         }
+      } else if (response.statusCode == 409) {
+        _error = data?['message']?.toString() ??
+            'Пользователь с таким email уже существует';
       } else {
-        _error = 'Ошибка регистрации. Сервер вернул: ${response.statusCode}';
+        _error = data?['message']?.toString() ??
+            'Ошибка регистрации. Сервер вернул: ${response.statusCode}';
       }
-      
+
       _isLoading = false;
       notifyListeners();
       return false;
-
     } catch (e) {
-      print('КРИТИЧЕСКАЯ ОШИБКА: $e'); 
+      print('КРИТИЧЕСКАЯ ОШИБКА: $e');
       _error = 'Ошибка соединения с сервером: $e';
       _isLoading = false;
       notifyListeners();
@@ -109,21 +123,23 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
 
+    final normalizedEmail = email.trim().toLowerCase();
+
+    try {
       final url = Uri.parse('https://n8n.nexusfit.ru/webhook/login');
-      
+
       print('Отправка запроса на вход: $url');
-      print('Email: $email');
+      print('Email: $normalizedEmail');
 
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email.trim(),
+          'email': normalizedEmail,
           'password': password,
         }),
       );
@@ -131,38 +147,51 @@ class AuthProvider extends ChangeNotifier {
       print('Статус ответа: ${response.statusCode}');
       print('Тело ответа: ${response.body}');
 
+      Map<String, dynamic>? data;
+      if (response.body.isNotEmpty) {
+        try {
+          data = jsonDecode(response.body) as Map<String, dynamic>;
+        } catch (e) {
+          print('Ошибка парсинга JSON при логине: $e');
+        }
+      }
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        
-        if (data['success'] == true) {
-          // Сохраняем токен и данные пользователя
+        if (data != null && data['success'] == true) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', data['token']);
-          await prefs.setString('user_email', data['user']['email']);
-          await prefs.setString('user_name', data['user']['name'] ?? '');
-          await prefs.setInt('user_id', data['user']['id']);
-          
-          _token = data['token'];
+          await prefs.setString('token', data['token']?.toString() ?? '');
+          await prefs.setString(
+              'user_email', data['user']?['email']?.toString() ?? normalizedEmail);
+          await prefs.setString(
+              'user_name', data['user']?['name']?.toString() ?? '');
+          if (data['user']?['id'] != null) {
+            await prefs.setInt('user_id', data['user']['id']);
+          }
+
+          _token = data['token']?.toString();
           _user = UserModel(
-            id: data['user']['id'].toString(),
-            email: data['user']['email'],
-            name: data['user']['name'] ?? '',
+            id: data['user']?['id']?.toString() ?? '',
+            email: data['user']?['email']?.toString() ?? normalizedEmail,
+            name: data['user']?['name']?.toString() ?? '',
           );
-          
+
+          _error = null;
           _isLoading = false;
           notifyListeners();
           return true;
         } else {
-          _error = data['message'] ?? 'Неверный email или пароль';
+          _error = data?['message']?.toString() ?? 'Неверный email или пароль';
         }
+      } else if (response.statusCode == 401) {
+        _error = data?['message']?.toString() ?? 'Неверный email или пароль';
       } else {
-        _error = 'Ошибка сервера: ${response.statusCode}';
+        _error =
+            data?['message']?.toString() ?? 'Ошибка сервера: ${response.statusCode}';
       }
 
       _isLoading = false;
       notifyListeners();
       return false;
-      
     } catch (e) {
       print('Ошибка при входе: $e');
       _error = 'Ошибка подключения: $e';
@@ -178,9 +207,10 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('user_email');
     await prefs.remove('user_name');
     await prefs.remove('user_id');
-    
+
     _token = null;
     _user = null;
+    _error = null;
     notifyListeners();
   }
 
@@ -190,9 +220,8 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      // TODO: Добавить endpoint для сброса пароля в n8n
       await Future.delayed(const Duration(seconds: 1));
-      
+
       _isLoading = false;
       notifyListeners();
       return true;

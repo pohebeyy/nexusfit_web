@@ -69,34 +69,71 @@ class AICoachProvider extends ChangeNotifier {
   }
 
   // === ОТПРАВКА СООБЩЕНИЯ ===
+    // === ОТПРАВКА СООБЩЕНИЯ ===
+    // === ОТПРАВКА СООБЩЕНИЯ ===
   Future<void> sendMessage(String userMessage) async {
     if (_isDisposed) return;
 
     // 1. Показываем сообщение пользователя
     _addUserMessage(userMessage);
 
-    // 2. Если ждем данные о сне — перехватываем
-    if (_isWaitingForSleepLog) {
+    // 2. Проверяем, есть ли в сообщении данные о сне (даже если мы об этом не спрашивали!)
+    final sleepHours = _extractSleepHours(userMessage);
+
+    if (sleepHours != null) {
+      // Бот понял, что юзер сообщает о сне
       _isWaitingForSleepLog = false;
-      await _handleSleepLogInput(userMessage);
-      return;
+      await _handleSleepLogInput(sleepHours);
+      return; // Прерываемся, к нейронке не идем
     }
 
-    // 3. Отправляем в нейросеть
+    // Если мы ждали лог сна, но юзер перевел тему (например, нажал кнопку "как накачать пресс"),
+    // мы снимаем ожидание сна и отправляем его запрос нейросети.
+    if (_isWaitingForSleepLog) {
+      _isWaitingForSleepLog = false;
+    }
+
+    // 3. Отправляем вопрос в нейросеть
     await _sendChatMessageToNetwork(userMessage);
   }
 
+  // === УМНЫЙ ПАРСЕР СНА ===
+  double? _extractSleepHours(String text) {
+    final textLower = text.toLowerCase();
+    
+    // Ищем любую цифру (целую или с точкой/запятой)
+    final match = RegExp(r'\d+([.,]\d+)?').firstMatch(textLower);
+    if (match == null) return null; // Нет цифр -> точно не про сон
+    
+    final double hours = double.parse(match.group(0)!.replaceAll(',', '.'));
+    
+    // Проверяем наличие ключевых слов о сне
+    final hasSleepKeywords = textLower.contains(RegExp(r'(сон|спал|спала|выспался|сном)'));
+    
+    // Сценарий 1: Мы сами только что спросили про сон утром (_isWaitingForSleepLog == true)
+    // Юзеру достаточно написать короткий ответ (например "8", "около 7") или любое сообщение со словом "спал"
+    if (_isWaitingForSleepLog && (textLower.length <= 20 || hasSleepKeywords)) {
+      return hours;
+    }
+    
+    // Сценарий 2: Юзер В ЛЮБОЙ МОМЕНТ сам написал "сон 3 часа" или "я спал 7 часов"
+    // Ограничиваем длину сообщения <= 40, чтобы если он задаст длинный вопрос 
+    // ("я спал 8 часов, но у меня болит спина, как мне делать становую тягу?"), 
+    // этот сложный вопрос ушел к AI-тренеру, а не просто залогировал сон.
+    if (hasSleepKeywords && textLower.length <= 40) {
+      return hours;
+    }
+    
+    return null;
+  }
+
+
+
   // === ЛОГИКА СНА (n8n webhook) ===
     // === ЛОКАЛЬНАЯ ЛОГИКА СНА ===
-  Future<void> _handleSleepLogInput(String userMessage) async {
+    // === ЛОКАЛЬНАЯ ЛОГИКА СНА ===
+  Future<void> _handleSleepLogInput(double hours) async {
     _setLoading(true);
-
-    final match = RegExp(r'\d+').firstMatch(userMessage);
-    double hours = 7.0; // По умолчанию, если цифра не найдена
-    
-    if (match != null) {
-      hours = double.parse(match.group(0)!);
-    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -105,6 +142,7 @@ class AICoachProvider extends ChangeNotifier {
       final todayDate = DateTime.now().toIso8601String().split('T')[0];
       await prefs.setString('last_sleep_log_date', todayDate);
       await prefs.setDouble('last_sleep_hours', hours);
+      
       // Логика: Если сон меньше 6 часов, мы считаем это недосыпом
       if (hours < 6.0) {
         // Облегчаем тренировку локально
@@ -134,6 +172,7 @@ class AICoachProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
 
   // Метод, который лезет в SharedPreferences, достает сегодняшнюю тренировку и урезает ее
   Future<bool> _reduceTodayWorkoutIntensityLocally() async {
