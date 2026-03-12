@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/data/UserModel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _user;
@@ -35,6 +36,116 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+  Future<bool> _authenticateSocialUser({
+    required String email,
+    required String name,
+    required String provider,
+    required String providerId,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      final url = Uri.parse('https://n8n.nexusfit.ru/webhook/social-auth');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': normalizedEmail,
+          'name': name,
+          'provider': provider,
+          'provider_id': providerId,
+        }),
+      );
+
+      Map<String, dynamic>? data;
+      if (response.body.isNotEmpty) {
+        try {
+          data = jsonDecode(response.body);
+        } catch (_) {}
+      }
+
+      if (response.statusCode == 200 && data != null && data['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']?.toString() ?? '');
+        await prefs.setString('user_email', data['user']?['email']?.toString() ?? normalizedEmail);
+        await prefs.setString('user_name', data['user']?['name']?.toString() ?? name);
+        if (data['user']?['id'] != null) {
+          await prefs.setInt('user_id', data['user']['id']);
+        }
+
+        _token = data['token']?.toString();
+        _user = UserModel(
+          id: data['user']?['id']?.toString() ?? '',
+          email: data['user']?['email']?.toString() ?? normalizedEmail,
+          name: data['user']?['name']?.toString() ?? name,
+        );
+
+        _error = null;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data?['message']?.toString() ?? 'Ошибка входа через $provider';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _error = 'Ошибка подключения к серверу';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+    // === ВХОД ЧЕРЕЗ GOOGLE (FIREBASE WEB) ===
+    // === ВХОД ЧЕРЕЗ GOOGLE (FIREBASE WEB) ===
+  // Теперь возвращает String? ('new', 'existing' или null в случае ошибки)
+  Future<String?> signInWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      final User? user = userCredential.user;
+
+      // 🔥 Магия Firebase: проверяем, новый ли это пользователь
+      final bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+      if (user != null) {
+        // Отправляем данные в твой вебхук n8n
+        bool success = await _authenticateSocialUser(
+          email: user.email ?? '',
+          name: user.displayName ?? 'Пользователь Google',
+          provider: 'google',
+          providerId: user.uid,
+        );
+
+        if (success) {
+          // Если n8n ответил 200 OK, возвращаем статус пользователя
+          return isNewUser ? 'new' : 'existing';
+        } else {
+          return null; // Ошибка со стороны n8n
+        }
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      print('Ошибка Firebase Google Sign In: $e');
+      _error = 'Ошибка авторизации Google';
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+
+  // (Твой метод _authenticateSocialUser оставляем без изменений,
+  // просто убедись, что он есть в файле, чтобы отправлять данные в n8n)
 
   Future<bool> signUp({
     required String email,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:startap/screens/auth/ForgotPasswordScreen.dart';
+import 'package:startap/screens/onboarding/onboarding_router.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
@@ -447,41 +448,54 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
 
-  Widget _buildSocialButtons() {
+    Widget _buildSocialButtons() {
     return Row(
       children: [
-        Expanded(
-          child: _buildSocialButton(
-            icon: Icons.apple,
-            label: 'Apple',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Apple Sign In - скоро'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
+        
+        
         Expanded(
           child: _buildSocialButton(
             icon: Icons.g_mobiledata_rounded,
             label: 'Google',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Google Sign In - скоро'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+            onTap: _handleGoogleLogin, // Вызываем наш обновленный метод
           ),
         ),
       ],
     );
   }
+
+  // Добавь этот метод в класс _LoginScreenState
+    Future<void> _handleGoogleLogin() async {
+    final authProvider = context.read<AuthProvider>();
+    
+    // Теперь получаем 'new', 'existing' или null
+    final result = await authProvider.signInWithGoogle();
+
+    if (mounted) {
+      if (result == 'new') {
+        // Впервые зашел через этот Google аккаунт -> на Онбординг
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnboardingRouter()),
+        );
+      } else if (result == 'existing') {
+        // Уже заходил раньше -> на Главную
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else if (authProvider.error != null) {
+        // Ошибка -> показываем красивый SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_getErrorMessage(authProvider.error!)),
+            backgroundColor: const Color(0xFFFF006E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+
 
 
   Widget _buildSocialButton({
