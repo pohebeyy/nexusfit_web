@@ -179,7 +179,7 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
 
     if (!mounted) return;
 
-    if (response.statusCode == 200) {
+        if (response.statusCode == 200) {
       // 5. Парсим успешный ответ от n8n
       final responseData = jsonDecode(response.body);
       final strategy = responseData['strategy'];
@@ -188,16 +188,20 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
         _userStrategy['currentWeight'] = currentWeight;
         _userStrategy['targetWeight'] = targetWeight;
         _userStrategy['bmi'] = bmi;
-        _userStrategy['experience'] = provider.data.experience ?? 'Новичок';
         
-        // Подставляем данные, которые прислал n8n
-        _userStrategy['metabolism'] = strategy['metabolism'] ?? 'Средний';
+        // ВАЖНО: Используем маппер для опыта, который пришел из provider.data.experience
+        _userStrategy['experience'] = _mapExperience(provider.data.experience ?? 'beginner');
+        
+        // ВАЖНО: Используем маппер для метаболизма, который прислал ИИ
+        _userStrategy['metabolism'] = _mapMetabolism(strategy['metabolism']?.toString() ?? 'average');
+        
         _userStrategy['bodyType'] = strategy['bodyType'] ?? 'Мезоморф';
         _userStrategy['weeks'] = strategy['weeks'] ?? 12;
 
         _isLoading = false;
       });
     } else {
+
       // Если сервер вернул ошибку, ставим fallback (запасные) значения
       _setFallbackStrategy(currentWeight, targetWeight, bmi, provider);
     }
