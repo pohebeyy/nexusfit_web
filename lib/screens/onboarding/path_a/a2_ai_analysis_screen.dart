@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'a3_confirmation_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
 
 /// A2: AI-анализ и редактирование всех параметров тела
 class A2AIAnalysisScreen extends StatefulWidget {
@@ -690,23 +692,24 @@ _buildExpandableSection(
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
-          ),
-          
-        ),
+        decoration: BoxDecoration(/* ... твой код ... */),
         child: ElevatedButton(
           onPressed: () {
+            // 👇 ДОБАВЛЯЕМ ЭТИ ДВЕ СТРОЧКИ:
+            // Берем текст из контроллера, превращаем в double (если ошибка - ставим 70.0)
+            final parsedWeight = double.tryParse(_weightController.text) ?? 70.0;
+            // Сохраняем в провайдер
+            context.read<OnboardingProvider>().setCurrentWeight(parsedWeight);
+
+            // Твой старый переход на следующий экран
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const A3ConfirmationScreen()),
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
+            backgroundColor: Color(0xFFFF4538),
+            shadowColor: Color(0xFFFF4538),
             padding: const EdgeInsets.symmetric(vertical: 16),
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(

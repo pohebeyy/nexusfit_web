@@ -68,8 +68,19 @@ class FitnessApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          primaryColor: const Color(0xFF6C5CE7),
+          // Если хотите убрать фиолетовый везде по приложению, поменяйте и эти два параметра:
+          // primaryColor: const Color(0xFFFF4538),
+          // colorScheme: const ColorScheme.dark(primary: Color(0xFFFF4538)),
+          primaryColor: const Color(0xFF6C5CE7), // Оставил ваш, если он нужен
           scaffoldBackgroundColor: const Color(0xFF0A0E21),
+          
+          // 👇 ДОБАВЛЕНО: Настройка цвета курсора и выделения текста 👇
+          textSelectionTheme: const TextSelectionThemeData(
+            cursorColor: Color(0xFFFF4538),
+            selectionColor: Color(0x66FF4538), // Полупрозрачный для выделения текста
+            selectionHandleColor: Color(0xFFFF4538), // Цвет "капелек" при выделении
+          ),
+          // 👆 --------------------------------------------------- 👆
         ),
         builder: (context, widget) {
           // wrap every route with scroll configuration to make
@@ -86,6 +97,7 @@ class FitnessApp extends StatelessWidget {
           '/onboarding': (context) => const OnboardingRouter(),
         },
       ),
+
     );
   }
 }

@@ -122,66 +122,21 @@ class _A1PhotoUploadScreenState extends State<A1PhotoUploadScreen> {
         children: [
           // Визуализация (placeholder для гифки/изображения)
           Container(
-            height: 280,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF2C2C2E),
-                  Color(0xFF2C2C2E),
-                ],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Центральная иконка (замена для гифки)
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2C2C2E).withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFFFF4538).withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.person_outline,
-                          size: 80,
-                          color: Color(0xFFFF4538),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Фото спереди',
-                        style: TextStyle(
-                          color: const Color(0xFFB0B5C0).withOpacity(0.8),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Бейджи "Правильно" / "Неправильно"
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: _buildBadge('✓ Правильно', true),
-                ),
-              ],
-            ),
-          ),
+  height: 220,
+  decoration: BoxDecoration(
+    borderRadius: const BorderRadius.only(
+      topLeft: Radius.circular(20),
+      topRight: Radius.circular(20),
+    ),
+    image: const DecorationImage(
+      image: AssetImage('assets/person.png'),
+      fit: BoxFit.cover,
+      alignment: Alignment.center,
+    ),
+  ),
+  
+),
+
           
           // Подсказка внизу карточки
           Padding(

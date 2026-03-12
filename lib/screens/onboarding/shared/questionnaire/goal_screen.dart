@@ -421,23 +421,27 @@ class _GoalScreenState extends State<GoalScreen> {
                   ]
                 : null,
           ),
-                        child: ElevatedButton(
-                onPressed: canContinue
-                    ? () {
-                        // Сохраняем выбранную цель в провайдер
-                        if (_selectedGoal != null) {
-                          context.read<OnboardingProvider>().setGoal(_selectedGoal!);
-                        }
+                       child: ElevatedButton(
+        onPressed: canContinue
+            ? () {
+                if (_selectedGoal != null) {
+                  // Сохраняем цель
+                  context.read<OnboardingProvider>().setGoal(_selectedGoal!);
+                  
+                  // 👇 ДОБАВЛЯЕМ ЭТУ СТРОКУ: 
+                  // Читаем текущий вес из провайдера (если там null, то передаем 70.0)
+                  final savedWeight = context.read<OnboardingProvider>().currentWeight ?? 70.0;
 
-                        // Переходим на следующий экран
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TargetWeightScreen(),
-                          ),
-                        );
-                      }
-                    : null,
+                  // Переходим на экран веса и ПЕРЕДАЕМ savedWeight в конструктор
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TargetWeightScreen(currentWeight: savedWeight),
+                    ),
+                  );
+                }
+              }
+            : null,
 
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFFF4538),

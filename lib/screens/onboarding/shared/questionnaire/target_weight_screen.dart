@@ -84,7 +84,7 @@ class _TargetWeightScreenState extends State<TargetWeightScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF2C2C2E)),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFF4538)),
           onPressed: () => Navigator.pop(context),
         ),
       ),

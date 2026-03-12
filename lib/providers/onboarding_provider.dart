@@ -20,7 +20,8 @@ class OnboardingProvider extends ChangeNotifier {
   List<String>? _dietRestrictions;
   String? _flexibilityLevel;
   Map<String, String>? _problemAreas;
-  Map<String, dynamic>? _sleepData;
+  Map<String, dynamic>? _sleepData; 
+  
 
   // ==========================================
   // ГЕТТЕРЫ (Чтобы YourStrategyScreen мог читать данные)
