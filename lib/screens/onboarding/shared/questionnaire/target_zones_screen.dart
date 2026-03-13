@@ -100,100 +100,88 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
   }
 
   // 🔥 ИДЕАЛЬНАЯ КАЛИБРОВКА ПОД bodychart_heatmap
-  String? _detectZoneFromTap(Offset localPosition, Size size) {
-    // Центр контейнера
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
+    // 🔥 ИДЕАЛЬНАЯ КАЛИБРОВКА ПОД bodychart_heatmap (СМЕЩЕНИЕ ВНИЗ)
+    String? _detectZoneFromTap(Offset localPosition, Size size) {
+    // Теперь localPosition отсчитывается строго от 0 до 340 по X и от 0 до 500 по Y
+    final relX = localPosition.dx / size.width;
+    final relY = localPosition.dy / size.height;
     
-    // Смещение для центрирования модели (340x500 в контейнере)
-    final modelWidth = 340.0;
-    final modelHeight = 500.0;
-    final offsetX = (size.width - modelWidth) / 2;
-    final offsetY = (size.height - modelHeight) / 2;
-    
-    // Координаты относительно модели
-    final relX = (localPosition.dx - offsetX) / modelWidth;
-    final relY = (localPosition.dy - offsetY) / modelHeight;
-    
-    // Если клик вне модели - игнор
+    // Если клик вне модели - игнор (хотя теперь это почти невозможно)
     if (relX < 0 || relX > 1 || relY < 0 || relY > 1) {
       return null;
     }
     
-    // Зоны по X (центр модели)
-    final bool isCenter = relX >= 0.30 && relX <= 0.70;
-    final bool isLeft = relX < 0.30;
-    final bool isRight = relX > 0.70;
+    final bool isCenter = relX >= 0.35 && relX <= 0.65;
+    final bool isLeft = relX < 0.35;
+    final bool isRight = relX > 0.65;
     
-    if (_viewType == BodyViewType.front) {
+        if (_viewType == BodyViewType.front) {
       // ============ СПЕРЕДИ ============
       
-      // 1. Голова (пропуск) - 0.00 - 0.10
-      if (relY < 0.10) return null;
+      // Голова и шея (0.00 - 0.15)
+      if (relY < 0.15) return null; 
       
-      // 2. Плечи - 0.10 - 0.20
-      if (relY >= 0.10 && relY < 0.20) {
+      // Плечи (очень узкая полоса на самом верху торса: 0.15 - 0.20)
+      if (relY >= 0.15 && relY < 0.20) {
         return 'shoulder';
       }
       
-      // 3. Руки (боковые зоны) - 0.20 - 0.48
-      if (relY >= 0.20 && relY < 0.48) {
-        if (isLeft || isRight) {
-          return 'arm';
-        }
-      }
-      
-      // 4. Грудь (центр верх) - 0.20 - 0.35
-      if (relY >= 0.20 && relY < 0.35 && isCenter) {
+      // Грудь (поднята выше, четко под ключицами: 0.20 - 0.28)
+      if (relY >= 0.20 && relY < 0.28 && isCenter) {
         return 'chest';
       }
       
-      // 5. Пресс (центр середина) - 0.35 - 0.58
-      if (relY >= 0.35 && relY < 0.58 && isCenter) {
+      // Пресс (начинается сразу под грудью: 0.28 - 0.48)
+      if (relY >= 0.28 && relY < 0.48 && isCenter) {
         return 'abs';
       }
       
-      // 6. Ноги - 0.58 - 1.0
-      if (relY >= 0.58) {
+      // Руки (по бокам от плеч до таза: 0.20 - 0.48)
+      if (relY >= 0.20 && relY < 0.48) {
+        if (isLeft || isRight) return 'arm';
+      }
+      
+      // Ноги (с 0.48 и ниже)
+      if (relY >= 0.48) {
         return 'leg';
       }
       
     } else if (_viewType == BodyViewType.back) {
       // ============ СЗАДИ ============
       
-      // 1. Голова (пропуск) - 0.00 - 0.10
-      if (relY < 0.10) return null;
+      // Голова и шея
+      if (relY < 0.15) return null; 
       
-      // 2. Плечи - 0.10 - 0.20
-      if (relY >= 0.10 && relY < 0.20) {
+      // Плечи (задняя дельта: 0.15 - 0.20)
+      if (relY >= 0.15 && relY < 0.20) {
         return 'shoulder';
       }
       
-      // 3. Руки (боковые зоны) - 0.20 - 0.48
-      if (relY >= 0.20 && relY < 0.48) {
-        if (isLeft || isRight) {
-          return 'arm';
-        }
-      }
-      
-      // 4. Спина (центр верх) - 0.20 - 0.50
-      if (relY >= 0.20 && relY < 0.50 && isCenter) {
+      // Спина (широчайшие и поясница: 0.20 - 0.42)
+      if (relY >= 0.20 && relY < 0.42 && isCenter) {
         return 'back';
       }
       
-      // 5. Ягодицы (центр середина) - 0.50 - 0.63
-      if (relY >= 0.50 && relY < 0.63 && isCenter) {
+      // Руки
+      if (relY >= 0.20 && relY < 0.48) {
+        if (isLeft || isRight) return 'arm';
+      }
+      
+      // Ягодицы (0.42 - 0.52)
+      if (relY >= 0.42 && relY < 0.52 && isCenter) {
         return 'butt';
       }
       
-      // 6. Ноги - 0.63 - 1.0
-      if (relY >= 0.63) {
+      // Ноги (задняя поверхность: 0.52+)
+      if (relY >= 0.52) {
         return 'leg';
       }
     }
+
     
     return null;
   }
+
 
   List<String> _getVisibleZones() {
     if (_viewType == BodyViewType.front) {
@@ -368,15 +356,18 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
             _buildGridBackground(),
 
             // 🔥 ИДЕАЛЬНАЯ КЛИКАБЕЛЬНОСТЬ
+                        // 🔥 ИДЕАЛЬНАЯ КЛИКАБЕЛЬНОСТЬ
             Center(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapDown: (details) {
-                  final RenderBox? box = context.findRenderObject() as RenderBox?;
-                  if (box == null) return;
+                // Используем onPanDown вместо onTapDown для более точного перехвата локальных координат
+                onPanDown: (details) {
+                  // details.localPosition - это координаты КЛИКА ОТНОСИТЕЛЬНО ЭТОГО SizedBox (340x500)
+                  // Ему вообще не важно, где находится скролл!
+                  final localPos = details.localPosition;
                   
-                  final localPos = box.globalToLocal(details.globalPosition);
-                  final zone = _detectZoneFromTap(localPos, box.size);
+                  // Передаем точные размеры нашего SizedBox (340x500)
+                  final zone = _detectZoneFromTap(localPos, const Size(340, 500));
                   
                   if (zone != null) {
                     _toggleZone(zone);
@@ -388,14 +379,14 @@ class _TargetZonesScreenState extends State<TargetZonesScreen> {
                   child: BodyChart(
                     selectedParts: _selectedZones,
                     selectedColor: const Color(0xFFFF4538),
-                    // Немного высветлил невыбранные зоны, чтобы они были видны на 2C2C2E
                     unselectedColor: const Color(0xFF3A3A3C), 
                     viewType: _viewType,
-                    width: 340,
+                    width: 340, // Ширина должна совпадать с шириной SizedBox
                   ),
                 ),
               ),
             ),
+
 
             Positioned(
               top: 16,
