@@ -14,13 +14,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
 
-  @override
+ @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<AICoachProvider>().initChat();
+      
     });
   }
+
+  
 
   @override
   Widget build(BuildContext context) {

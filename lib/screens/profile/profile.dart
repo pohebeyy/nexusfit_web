@@ -6,7 +6,7 @@ import 'package:startap/providers/profile_provider.dart';
 import 'package:startap/screens/auth/login_screen.dart';
 import 'inventory_screen.dart';
 import 'context_json_screen.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 // custom scroll behavior allowing both touch and mouse input; useful on web/mobile
 class _WebTouchScrollBehavior extends MaterialScrollBehavior {
   @override
@@ -43,18 +43,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DateTime? _birthDate;
 
 
-  @override
+   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<ProfileProvider>();
       if (provider.profile == null && !provider.isLoading) {
         await provider.load();
-        _syncFromProvider();
-      } else {
-        _syncFromProvider();
       }
+      _syncFromProvider();
+      _checkProfileTutorial();
     });
+  }
+
+  Future<void> _checkProfileTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('seen_profile_tutorial_v1') ?? false;
+    if (!seen && mounted) {
+      await _showProfileDialog();
+      await prefs.setBool('seen_profile_tutorial_v1', true);
+    }
+  }
+
+  Future<void> _showProfileDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Заполни профиль',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: const Text(
+            'Укажи инвентарь, рост, вес и возможные травмы/болезни. '
+            'Это нужно, чтобы тренировки и рекомендации подстраивались под тебя и были безопасными.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'ПОЗЖЕ',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                // при желании можно сразу скролл/фокус на нужный блок
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: const Color(0xFF1C1C1E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('ЗАПОЛНИТЬ'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
 

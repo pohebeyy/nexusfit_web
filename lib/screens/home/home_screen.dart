@@ -11,6 +11,7 @@ import '../ai_coach/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/services/stat_service.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,38 +20,202 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // Индекс 0 - это Главная (Home)
-  // Индекс 1 - это AI Коуч (Chat)
-  int _selectedIndex = 0;
 
-  // Пустая функция для совместимости с HomePageContent,
-  // так как экрана статистики больше нет
+
+class _HomeScreenState extends State<HomeScreen> {
+  // 0 - Home, 1 - AI Chat
+  int selectedIndex = 0;
+
+  // если у тебя был callback switchToStats - не трогаем
   void switchToStats() {
-    // Ничего не делаем
+    // твоя логика, если была
   }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      
+    });
+  }
+
+ 
+
+
+  
+
+
+  
+
+
+  Future<void> _showAICoachDialog() async {
+  await showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 30,
+                offset: const Offset(0, 18),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.white.withOpacity(0.06),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Верх: бейдж + аватар AI
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.psychology_rounded,
+                            size: 14, color: Color(0xFFFF3B30)),
+                        SizedBox(width: 6),
+                        Text(
+                          'AI COACH',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[700]!,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              const Text(
+                'Как использовать AI‑коуча',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Пункты
+              _AiCoachBullet(
+                icon: Icons.nightlight_round,
+                iconColor: const Color(0xFF5AC8FA),
+                title: 'Сон',
+                text:
+                    'Напиши, сколько часов ты спал. Коуч учтёт это и подправит рекомендованную нагрузку на тренировке.',
+              ),
+              const SizedBox(height: 10),
+              _AiCoachBullet(
+                icon: Icons.autorenew_rounded,
+                iconColor: const Color(0xFFFF9500),
+                title: 'Замена упражнений',
+                text:
+                    'Если какое‑то упражнение не заходит или есть ограничения — напиши, и я предложу безопасную замену.',
+              ),
+              const SizedBox(height: 10),
+              _AiCoachBullet(
+                icon: Icons.chat_bubble_outline_rounded,
+                iconColor: const Color(0xFFFF3B30),
+                title: 'Свободный формат',
+                text:
+                    'Задавай вопросы про технику, прогресс, восстановление и питание обычным языком — без шаблонов.',
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF3B30),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Окей, погнали чатиться',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
-      // Используем IndexedStack, чтобы нельзя было свайпать экраны
       body: IndexedStack(
-        index: _selectedIndex,
+        index: selectedIndex,
         children: [
-          // Индекс 0: Главный экран
-          HomePageContent(switchToStats: switchToStats),
-          // Индекс 1: AI Коуч
-          const ChatScreen(),
+          HomePageContent(
+            switchToStats: switchToStats,
+          ),
+          const ChatScreen(), // AI‑коуч
         ],
       ),
       bottomNavigationBar: _buildModernBottomNav(),
     );
   }
 
-     Widget _buildModernBottomNav() {
-    // Вы можете поменять этот цвет, чтобы он точнее совпадал с оттенком вашей SVG-иконки
-    const activeColor = Color(0xFFFF6B35); 
+  Widget _buildModernBottomNav() {
+    const activeColor = Color(0xFFFF6B35);
     const inactiveColor = Colors.white;
 
     return Container(
@@ -69,30 +234,38 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // Кнопка 0: ГЛАВНАЯ
+              // HOME
               GestureDetector(
-                onTap: () => setState(() => _selectedIndex = 0),
+                onTap: () {
+                  setState(() {
+                    selectedIndex = 0;
+                  });
+                },
                 child: Container(
                   color: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.asset(
-                        'assets/Container.svg',
+                        'assets/container.svg',
                         width: 26,
                         height: 26,
-                        // Если выбрана (0) -> фильтра нет (родной оранжевый цвет)
-                        // Если не выбрана -> накладываем белый фильтр
-                        colorFilter: _selectedIndex == 0
+                        colorFilter: selectedIndex == 0
                             ? null
-                            : const ColorFilter.mode(inactiveColor, BlendMode.srcIn),
+                            : const ColorFilter.mode(
+                                inactiveColor,
+                                BlendMode.srcIn,
+                              ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'ГЛАВНАЯ',
+                        'HOME',
                         style: TextStyle(
-                          color: _selectedIndex == 0 ? activeColor : inactiveColor,
+                          color: selectedIndex == 0
+                              ? activeColor
+                              : inactiveColor,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
@@ -103,45 +276,56 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Кнопка 1: AI КОУЧ
-              GestureDetector(
-                onTap: () => setState(() => _selectedIndex = 1),
-                child: Container(
-                  color: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.psychology_rounded,
-                        size: 26,
-                        // Если выбрана (1) -> красим в оранжевый, иначе в белый
-                        color: _selectedIndex == 1 ? activeColor : inactiveColor,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'AI КОУЧ',
-                        style: TextStyle(
-                          color: _selectedIndex == 1 ? activeColor : inactiveColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // AI
+              // AI
+GestureDetector(
+  onTap: () async {
+    setState(() {
+      selectedIndex = 1;
+    });
+
+    // Туториал по AI только при первом заходе
+    final prefs = await SharedPreferences.getInstance();
+    final seenAI = prefs.getBool('seen_ai_tutorial_v1') ?? false;
+    if (!seenAI && mounted) {
+      await _showAICoachDialog();
+      await prefs.setBool('seen_ai_tutorial_v1', true);
+    }
+  },
+  child: Container(
+    color: Colors.transparent,
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.psychology_rounded,
+          size: 26,
+          color: selectedIndex == 1 ? activeColor : inactiveColor,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'AI',
+          style: TextStyle(
+            color: selectedIndex == 1 ? activeColor : inactiveColor,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
             ],
           ),
         ),
       ),
     );
   }
-
-
-
 }
+
 
 
 class HomePageContent extends StatefulWidget {
@@ -155,6 +339,121 @@ class HomePageContent extends StatefulWidget {
 class _HomePageContentState extends State<HomePageContent> {
   DateTime _selectedDate = DateTime.now();
 
+  final GlobalKey _calendarKey = GlobalKey();
+  final GlobalKey _todayWorkoutKey = GlobalKey();
+
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runHomeTour();
+    });
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  Future<void> _runHomeTour() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('seen_home_tour_v1') ?? false;
+    if (seen) return;
+
+    await _showHighlightOver(calendar: true);
+    await _showHighlightOver(calendar: false);
+
+    await prefs.setBool('seen_home_tour_v1', true);
+  }
+
+  Future<void> _showHighlightOver({required bool calendar}) async {
+    final key = calendar ? _calendarKey : _todayWorkoutKey;
+    final renderObject = key.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox) return;
+
+    final box = renderObject;
+    final offset = box.localToGlobal(Offset.zero);
+    final rect = offset & box.size;
+
+    final completer = Completer<void>();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            // затемнённый фон
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  _removeOverlay();
+                  if (!completer.isCompleted) completer.complete();
+                },
+                child: Container(
+                  color: Colors.black.withOpacity(0.75),
+                ),
+              ),
+            ),
+
+            // подсвеченная область вокруг виджета
+            Positioned(
+              left: rect.left - 8,
+              top: rect.top - 8,
+              width: rect.width + 16,
+              height: rect.height + 16,
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1C1C1E),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFFF6B35),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF6B35).withOpacity(0.45),
+                        blurRadius: 25,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // карточка-подсказка под элементом
+            Positioned(
+              left: 20,
+              right: 20,
+              top: rect.bottom + 12,
+              child: _HomeTourTooltip(
+                title: calendar ? 'Календарь' : 'План на сегодня',
+                text: calendar
+                    ? 'Тапни по дате, чтобы посмотреть будущие тренировки и заранее понимать нагрузку.'
+                    : 'Тапни по карточке, чтобы открыть тренировки на сегодня и детали по каждому упражнению.',
+                onClose: () {
+                  _removeOverlay();
+                  if (!completer.isCompleted) completer.complete();
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    await completer.future;
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -163,21 +462,23 @@ class _HomePageContentState extends State<HomePageContent> {
         await context.read<WorkoutProvider>().initWorkouts();
         await context.read<NutritionProvider>().init();
       },
-      backgroundColor: const Color(0xFF2C2C2E), // Цвет плашек твоего дизайна
-      color: const Color(0xFFFF4538), // Твой акцентный цвет стрелочки
+      backgroundColor: const Color(0xFF2C2C2E),
+      color: const Color(0xFFFF4538),
       child: CustomScrollView(
         slivers: [
           Appnar.buildModernAppBar(context, 'Главная'),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  
-                  // 1. Используем новый умный календарь
+
+                  // 1. Календарь с ключом для онбординга
                   HomeCalendarWidget(
+                    key: _calendarKey,
                     selectedDate: _selectedDate,
                     onDateSelected: (date) {
                       setState(() {
@@ -185,42 +486,150 @@ class _HomePageContentState extends State<HomePageContent> {
                       });
                     },
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // 2. Передаем выбранную дату в карточку тренировки
-                  TodayWorkoutCard(selectedDate: _selectedDate),
-                  
-                  const SizedBox(height: 24),
-                const SizedBox(height: 24),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                SizedBox(
-                  height: 320, // Увеличьте это значение (было 250)
-                  child: PageView(
-                    padEnds: false, 
-                    controller: PageController(viewportFraction: 0.9),
-                    children: const [
-                      FlipMetricCard.sleep(),
-                  
-                      FlipMetricCard.activity(),
-                      
-                    ],
+                  // 2. TodayWorkoutCard с ключом для онбординга
+                  TodayWorkoutCard(
+                    key: _todayWorkoutKey,
+                    selectedDate: _selectedDate,
                   ),
-                ),
 
-                const SizedBox(height: 60),
-              ],
+                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    height: 320,
+                    child: PageView(
+                      padEnds: false,
+                      controller: PageController(viewportFraction: 0.9),
+                      children: const [
+                        FlipMetricCard.sleep(),
+                        FlipMetricCard.activity(),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 60),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
+/// тултип для тура по главному экрану
+class _HomeTourTooltip extends StatelessWidget {
+  final String title;
+  final String text;
+  final VoidCallback onClose;
+
+  const _HomeTourTooltip({
+    required this.title,
+    required this.text,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.6),
+              blurRadius: 20,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.touch_app_rounded,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onClose,
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: Colors.white.withOpacity(0.45),
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              text,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 13,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: onClose,
+                child: const Text(
+                  'ДАЛЬШЕ',
+                  style: TextStyle(
+                    color: Color(0xFFFF6B35),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
 
 
 
@@ -838,7 +1247,64 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
     );
   }
 }
+class _AiCoachBullet extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String text;
 
+  const _AiCoachBullet({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.16),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: iconColor, size: 15),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.82),
+                  fontSize: 13,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 class ActivityBackCard extends StatelessWidget {
   const ActivityBackCard({super.key});
 
@@ -905,5 +1371,3 @@ class ActivityBackCard extends StatelessWidget {
     );
   }
 }
-
-
