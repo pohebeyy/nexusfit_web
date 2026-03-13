@@ -68,6 +68,7 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
       child: Column(
         children: [
           TableCalendar(
+             locale: 'ru_RU',
             availableGestures: AvailableGestures.horizontalSwipe, 
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),

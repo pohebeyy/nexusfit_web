@@ -62,7 +62,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       debugPrint('Login result: success=$success, error=${authProvider.error}');
 
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Убираем: Navigator.of(context).pushReplacementNamed('/home');
+        // Добавляем:
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       } else if (mounted) {
         final errorMessage = authProvider.error ?? 'Ошибка входа';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -465,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   // Добавь этот метод в класс _LoginScreenState
-    Future<void> _handleGoogleLogin() async {
+      Future<void> _handleGoogleLogin() async {
     final authProvider = context.read<AuthProvider>();
     
     // Теперь получаем 'new', 'existing' или null
@@ -474,12 +476,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (mounted) {
       if (result == 'new') {
         // Впервые зашел через этот Google аккаунт -> на Онбординг
-        Navigator.of(context).pushReplacement(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const OnboardingRouter()),
+          (route) => false, // полностью очищаем историю
         );
       } else if (result == 'existing') {
         // Уже заходил раньше -> на Главную
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       } else if (authProvider.error != null) {
         // Ошибка -> показываем красивый SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
@@ -494,6 +497,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     }
   }
+
 
 
 

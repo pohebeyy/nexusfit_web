@@ -102,8 +102,8 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
         if (calendarCache.containsKey(targetDate)) {
           _parseJsonAndSetState(calendarCache[targetDate]);
         } else {
-          // Выходной или пустой день
-          _setRestDay();
+          // ЗДЕСЬ ИЗМЕНЕНИЕ: Умная проверка вместо обычного выходного
+          _handleEmptyDay(targetDate);
         }
       } catch (e) {
         debugPrint(e.toString());
@@ -129,6 +129,36 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       _isLoading = false;
     });
   }
+  void _setNoWorkoutDay() {
+    setState(() {
+      _workoutName = 'Тренировки не было';
+      _difficulty = 'easy';
+      _calories = 0;
+      _durationMinutes = 0;
+      _exercises = [];
+      _isLoading = false;
+    });
+  }
+
+  // НОВЫЙ МЕТОД: Умная проверка пустого дня (прошлое или будущее?)
+  void _handleEmptyDay(String targetDate) {
+    final targetDt = DateTime.tryParse(targetDate);
+    if (targetDt == null) {
+      _setRestDay();
+      return;
+    }
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    // Если запрошенная дата была ДО сегодняшнего дня -> "Тренировки не было"
+    if (targetDt.isBefore(todayStart)) {
+      _setNoWorkoutDay();
+    } else {
+      // Если сегодня или в будущем -> "День отдыха"
+      _setRestDay();
+    }
+  }
 
   // Загрузка по сети (n8n)
   Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
@@ -147,27 +177,40 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        if (data['success'] == true) {
-          
-          // 1. Сохраняем весь календарь на месяц
+                if (data['success'] == true) {
+          // 1. Слияние нового календаря со старым кэшем (чтобы не терять прошлое)
           if (data['month_calendar'] != null) {
-            final monthCalendar = data['month_calendar'];
-            await prefs.setString('calendar_workouts', jsonEncode(monthCalendar));
+            final Map<String, dynamic> newMonthCalendar = data['month_calendar'];
+            Map<String, dynamic> mergedCalendar = {};
             
-            // 2. Пытаемся достать сегодняшнюю тренировку прямо из сгенерированного плана
-            // (или берем today_workout от n8n, если он передается отдельно)
-            final todayWorkout = monthCalendar[todayDate] ?? data['today_workout'];
+            // Достаем старый кэш, если он есть
+            final String? oldRawCalendar = prefs.getString('calendar_workouts');
+            if (oldRawCalendar != null) {
+              try {
+                mergedCalendar = Map<String, dynamic>.from(jsonDecode(oldRawCalendar));
+              } catch (_) {}
+            }
+            
+            // Добавляем новые дни (записываем поверх старых совпадений, 
+            // но то, что было в прошлом, остается нетронутым)
+            mergedCalendar.addAll(newMonthCalendar);
+
+            await prefs.setString('calendar_workouts', jsonEncode(mergedCalendar));
+            
+            // 2. Пытаемся достать сегодняшнюю тренировку из объединенного кэша
+            final todayWorkout = mergedCalendar[todayDate] ?? data['today_workout'];
             
             if (todayWorkout != null) {
               _parseJsonAndSetState(todayWorkout);
             } else {
-              _setRestDay(); // Если ИИ сгенерировал первый день как выходной
+              // ИЗМЕНЕНИЕ: Умная обработка, если ИИ не сгенерировал тренировку
+              _handleEmptyDay(todayDate);
             }
           } else {
-            _setRestDay();
+            _handleEmptyDay(todayDate);
           }
-          
-        } else {
+        }
+ else {
           setState(() => _isLoading = false);
           debugPrint('Ошибка сервера: ${data['error']}');
         }
@@ -285,6 +328,8 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           onTap: () => setState(() => _isExpanded = !_isExpanded),
           child: Padding(

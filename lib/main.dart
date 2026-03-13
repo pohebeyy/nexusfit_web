@@ -16,7 +16,7 @@ import 'package:startap/providers/workout_provider.dart';
 import 'package:startap/providers/health_provider.dart';
 import 'package:startap/screens/auth/login_screen.dart';
 import 'package:startap/screens/onboarding/onboarding_router.dart';
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:startap/services/profile_api.dart';
 import 'screens/home/home_screen.dart';
 
@@ -38,7 +38,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,   
   );
 
-  
+  await initializeDateFormatting('ru_RU', null); 
   
   runApp(const FitnessApp());
 }
