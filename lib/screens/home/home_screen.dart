@@ -375,84 +375,55 @@ class _HomePageContentState extends State<HomePageContent> {
   }
 
   Future<void> _showHighlightOver({required bool calendar}) async {
-    final key = calendar ? _calendarKey : _todayWorkoutKey;
-    final renderObject = key.currentContext?.findRenderObject();
-    if (renderObject is! RenderBox) return;
+  final key = calendar ? _calendarKey : _todayWorkoutKey;
+  final renderObject = key.currentContext?.findRenderObject();
+  if (renderObject is! RenderBox) return;
 
-    final box = renderObject;
-    final offset = box.localToGlobal(Offset.zero);
-    final rect = offset & box.size;
+  final box = renderObject;
+  final offset = box.localToGlobal(Offset.zero);
+  final rect = offset & box.size;
 
-    final completer = Completer<void>();
+  final completer = Completer<void>();
 
-    _overlayEntry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: [
-            // затемнённый фон
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  _removeOverlay();
-                  if (!completer.isCompleted) completer.complete();
-                },
-                child: Container(
-                  color: Colors.black.withOpacity(0.75),
-                ),
-              ),
+  _overlayEntry = OverlayEntry(
+    builder: (context) {
+      return Stack(
+        children: [
+          // затемнение с дыркой вокруг выделенного виджета
+          _HighlightOverlay(
+            highlightRect: rect,
+            onTap: () {
+              _removeOverlay();
+              if (!completer.isCompleted) completer.complete();
+            },
+          ),
+
+          // подсказка под виджетом
+          Positioned(
+            left: 20,
+            right: 20,
+            top: rect.bottom + 12,
+            child: _HomeTourTooltip(
+              title: calendar ? 'Календарь' : 'План на сегодня',
+              text: calendar
+                  ? 'Тапни по дате, чтобы посмотреть будущие тренировки и заранее понимать нагрузку.'
+                  : 'Тапни по карточке, чтобы открыть тренировки на сегодня и детали по каждому упражнению.',
+              onClose: () {
+                _removeOverlay();
+                if (!completer.isCompleted) completer.complete();
+              },
             ),
+          ),
+        ],
+      );
+    },
+  );
 
-            // подсвеченная область вокруг виджета
-            Positioned(
-              left: rect.left - 8,
-              top: rect.top - 8,
-              width: rect.width + 16,
-              height: rect.height + 16,
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1C1C1E),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFFFF6B35),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF6B35).withOpacity(0.45),
-                        blurRadius: 25,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+  Overlay.of(context).insert(_overlayEntry!);
+  await completer.future;
+}
 
-            // карточка-подсказка под элементом
-            Positioned(
-              left: 20,
-              right: 20,
-              top: rect.bottom + 12,
-              child: _HomeTourTooltip(
-                title: calendar ? 'Календарь' : 'План на сегодня',
-                text: calendar
-                    ? 'Тапни по дате, чтобы посмотреть будущие тренировки и заранее понимать нагрузку.'
-                    : 'Тапни по карточке, чтобы открыть тренировки на сегодня и детали по каждому упражнению.',
-                onClose: () {
-                  _removeOverlay();
-                  if (!completer.isCompleted) completer.complete();
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
 
-    Overlay.of(context).insert(_overlayEntry!);
-    await completer.future;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -496,9 +467,7 @@ class _HomePageContentState extends State<HomePageContent> {
                   ),
 
                   const SizedBox(height: 24),
-
                   const SizedBox(height: 24),
-
                   const SizedBox(height: 16),
 
                   SizedBox(
@@ -523,6 +492,61 @@ class _HomePageContentState extends State<HomePageContent> {
     );
   }
 }
+class _HighlightOverlay extends StatelessWidget {
+  final Rect highlightRect;
+  final VoidCallback onTap;
+
+  const _HighlightOverlay({
+    required this.highlightRect,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: CustomPaint(
+        size: MediaQuery.of(context).size,
+        painter: _HolePainter(highlightRect: highlightRect),
+      ),
+    );
+  }
+}
+
+class _HolePainter extends CustomPainter {
+  final Rect highlightRect;
+
+  _HolePainter({required this.highlightRect});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final overlayPaint = Paint()
+      ..color = Colors.black.withOpacity(0.75)
+      ..style = PaintingStyle.fill;
+
+    // полный экран
+    final fullPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    // прямоугольник подсветки (немного расширим и скруглим)
+    final rRect = RRect.fromRectAndRadius(
+      highlightRect.inflate(8),
+      const Radius.circular(20),
+    );
+    final holePath = Path()..addRRect(rRect);
+
+    // вычитаем дырку
+    final result = Path.combine(PathOperation.difference, fullPath, holePath);
+
+    canvas.drawPath(result, overlayPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HolePainter oldDelegate) {
+    return oldDelegate.highlightRect != highlightRect;
+  }
+}
+
 
 /// тултип для тура по главному экрану
 class _HomeTourTooltip extends StatelessWidget {
