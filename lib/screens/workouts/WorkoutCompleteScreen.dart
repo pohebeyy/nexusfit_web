@@ -1,163 +1,233 @@
+// WorkoutCompleteScreen.dart
 import 'package:flutter/material.dart';
 
 class WorkoutCompleteScreen extends StatelessWidget {
-  const WorkoutCompleteScreen({super.key});
+  final int totalMinutes;
+  final int caloriesBurned;
+
+  const WorkoutCompleteScreen({
+    super.key,
+    required this.totalMinutes,
+    required this.caloriesBurned,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D1E33),
+      backgroundColor: const Color(0xFF151515), // Темный фон
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.celebration_rounded,
-                  color: Color(0xFFFF4538), size: 64),
-              const SizedBox(height: 16),
-              const Text(
-                'ТРЕНИРОВКА ЗАВЕРШЕНА',
-                style: TextStyle(
-                  color: Color(0xFFFFFFFF),
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
+              const Spacer(flex: 2),
+
+              // Иконка кубка с красным свечением
               Container(
-                padding: const EdgeInsets.all(20),
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2C2C2E),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: const Color(0xFFFF4538).withOpacity(0.3)),
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFF4538).withOpacity(0.1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF4538).withOpacity(0.15),
+                      blurRadius: 40,
+                      spreadRadius: 10,
+                    )
+                  ],
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: Color(0xFFFF4538),
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Заголовок
+              const Text(
+                'ТРЕНИРОВКА\nЗАВЕРШЕНА',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  height: 1.2,
+                  letterSpacing: 0.5,
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Карточка со статусом и статистикой
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF242426),
+                  borderRadius: BorderRadius.circular(28),
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'Ноги (квадрицепс + ягодицы)',
-                      style: TextStyle(
-                          color: Color(0xFFFFFFFF),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Статус сессии
+                    Row(
                       children: [
-                        Icon(Icons.check_circle_rounded,
-                            color: Color(0xFFFF4538), size: 20),
-                        SizedBox(width: 6),
-                        Text(
-                          'Все упражнения выполнены',
-                          style: TextStyle(
-                              color: Color(0xFFFF4538), fontSize: 13),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50).withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: Color(0xFF4CAF50),
+                            size: 20,
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(color: Colors.white12),
-                    const SizedBox(height: 16),
-                    _statRow('Общее время:', '43 мин'),
-                    _statRow('Калории:', '385 ккал'),
-                    _statRow('Интенсивность:', '94%'),
-                    const SizedBox(height: 16),
-                    const Divider(color: Colors.white12),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1D1E33),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0xFFFF4538).withOpacity(0.2)),
-                      ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.psychology_rounded,
-                                  color: Color(0xFFFF4538), size: 18),
-                              SizedBox(width: 8),
                               Text(
-                                'РЕЗУЛЬТАТ:',
+                                'СТАТУС СЕССИИ',
                                 style: TextStyle(
-                                  color: Color(0xFFFF4538),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFAEAEB2),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'ВСЕ УПРАЖНЕНИЯ\nВЫПОЛНЕНЫ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.2,
                                 ),
                               ),
                             ],
                           ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // Статистика (Время, Калории, Интенсивность)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatColumn('TIME', '$totalMinutes мин', Colors.white),
+                        _buildStatColumn('ENERGY', '$caloriesBurned\nккал', Colors.white),
+                        _buildStatColumn('INTENSITY', '94%', const Color(0xFFFF4538)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Карточка AI Анализ
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF242426),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFFF4538).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF4538).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.bolt_rounded,
+                        color: Color(0xFFFF4538),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI АНАЛИЗ',
+                            style: TextStyle(
+                              color: Color(0xFFAEAEB2),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
                           SizedBox(height: 8),
                           Text(
-                            '"Отличная сессия! Ты выполнил план на 100%. Благодаря этому ты приблизился к своей цели на 1.2%"',
+                            '"Отличная сессия! Ты выполнил план на 100%. Мы стали на 1.2% ближе к цели."',
                             style: TextStyle(
-                                color: Color(0xFFAEAEB2),
-                                fontSize: 12,
-                                height: 1.5),
+                              color: Colors.white70,
+                              fontSize: 13,
+                              height: 1.5,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Divider(color: Colors.white12),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'СТАТИСТИКА:',
-                      style: TextStyle(
-                          color: Color(0xFFFFFFFF),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    _statRow('• Общий объём:', '15 тонн'),
-                    _statRow('• Макс. вес:', '100 кг'),
-                    _statRow('• Средняя интенсивность:', '87%'),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+
+              const Spacer(flex: 3),
+
+              // Нижние кнопки
               Row(
                 children: [
+                  
                   Expanded(
+                    flex: 2,
                     child: ElevatedButton(
                       onPressed: () {
+                        // Закрывает всё до главного экрана
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF4538),
-                        foregroundColor: const Color(0xFFFFFFFF),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                      ).copyWith(
+                        overlayColor: WidgetStateProperty.all(
+                          Colors.white.withOpacity(0.2),
+                        ),
                       ),
-                      child: const Text('ЗАВЕРШИТЬ',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFFFFFF),
-                        side: BorderSide(
-                            color: const Color(0xFFAEAEB2).withOpacity(0.4)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                      child: const Text(
+                        'ЗАВЕРШИТЬ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
                       ),
-                      child: const Text('ДЕТАЛИ',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -165,22 +235,31 @@ class WorkoutCompleteScreen extends StatelessWidget {
     );
   }
 
-  Widget _statRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Color(0xFFAEAEB2), fontSize: 12)),
-          Text(value,
-              style: const TextStyle(
-                  color: Color(0xFFFFFFFF),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-        ],
-      ),
+  Widget _buildStatColumn(String title, String value, Color valueColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFAEAEB2),
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            height: 1.2,
+          ),
+        ),
+      ],
     );
   }
 }

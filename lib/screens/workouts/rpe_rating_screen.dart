@@ -20,7 +20,7 @@ class RpeRatingScreen extends StatefulWidget {
 
 class _RpeRatingScreenState extends State<RpeRatingScreen>
     with SingleTickerProviderStateMixin {
-  int _selectedRpe = 7;
+  int _selectedRpe = 8;
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
@@ -31,9 +31,10 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    // Более приятная "пружинящая" анимация появления карточки
     _scaleAnimation = CurvedAnimation(
       parent: _animController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOutBack,
     );
     _animController.forward();
   }
@@ -45,395 +46,254 @@ class _RpeRatingScreenState extends State<RpeRatingScreen>
   }
 
   String _getRpeDescription(int rpe) {
-    switch (rpe) {
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-        return 'Очень легко\nБольшой запас по повторениям';
-      case 5:
-      case 6:
-        return 'Комфортно\n3–4 повторения в запасе';
-      case 7:
-        return 'Средне-тяжело\n2–3 повторения в запасе';
-      case 8:
-        return 'Тяжело\n1–2 повторения в запасе';
-      case 9:
-        return 'Почти максимум\n0–1 повторение в запасе';
-      case 10:
-        return 'Максимум\nДальше не пойдёт';
-      default:
-        return '';
-    }
-  }
-
-  Color _getRpeColor(int rpe) {
-    if (rpe <= 4) return const Color(0xFF4CAF50);
-    if (rpe <= 6) return const Color(0xFF00D9FF);
-    if (rpe <= 8) return const Color(0xFFFFA726);
-    return const Color(0xFFFF4538);
+    if (rpe <= 4) return 'Оставалось сил на 5+ повторений';
+    if (rpe == 5 || rpe == 6) return 'Оставалось сил на 3-4 повторения';
+    if (rpe == 7) return 'Оставалось сил на 3 повторения';
+    if (rpe == 8) return 'Оставалось сил на 2 повторения';
+    if (rpe == 9) return 'Оставалось сил на 1 повторение';
+    return 'Отказ, больше ни одного повторения';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: const Color(0xFF151515).withOpacity(0.95),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Text(
-                    '${widget.exerciseNumber} / ${widget.totalExercises}',
-                    style: const TextStyle(
-                      color: Color(0xFFAEAEB2),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF242426),
+                    borderRadius: BorderRadius.circular(28),
+                    // Добавлена оранжевая/красная обводка по краям контейнера
+                    border: Border.all(
+                      color: const Color(0xFFFF4538).withOpacity(0.5),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                      // Легкое свечение обводки
+                      BoxShadow(
+                        color: const Color(0xFFFF4538).withOpacity(0.1),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF4538).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Оценка RPE',
-                      style: TextStyle(
-                        color: Color(0xFFFF4538),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Animated Icon
-                    ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              _getRpeColor(_selectedRpe).withOpacity(0.3),
-                              _getRpeColor(_selectedRpe).withOpacity(0.1),
-                            ],
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.fitness_center_rounded,
-                          color: _getRpeColor(_selectedRpe),
-                          size: 50,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Заголовок
+                      const Text(
+                        'Как далось упражнение?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
 
-                    const SizedBox(height: 32),
-
-                    // Title
-                    const Text(
-                      'Насколько тяжёлым было\nупражнение?',
-                      style: TextStyle(
-                        color: Color(0xFFFFFFFF),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        height: 1.3,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Exercise Name
-                    Text(
-                      widget.exercise.name,
-                      style: const TextStyle(
-                        color: Color(0xFFAEAEB2),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // RPE Scale Container
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2E),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: _getRpeColor(_selectedRpe).withOpacity(0.3),
-                          width: 2,
+                      // Название упражнения
+                      Text(
+                        widget.exercise.name.toUpperCase(),
+                        style: const TextStyle(
+                          color: Color(0xFFFF4538),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _getRpeColor(_selectedRpe).withOpacity(0.15),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Описание про AI
+                      Text(
+                        'Честная оценка поможет AI откалибровать веса и сделать следующую тренировку эффективнее для тебя.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Подписи зон
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildZoneLabel('ЛЕГКО', const Color(0xFF4CAF50)),
+                          _buildZoneLabel('НОРМА', const Color(0xFFFFC107)),
+                          _buildZoneLabel('ТЯЖЕЛО', const Color(0xFFFF9800)),
+                          _buildZoneLabel('ОТКАЗ', const Color(0xFFFF4538)),
                         ],
                       ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Шкала RPE',
-                                style: TextStyle(
-                                  color: Color(0xFFFFFFFF),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getRpeColor(_selectedRpe),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '$_selectedRpe / 10',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFFFFF),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                      const SizedBox(height: 12),
 
-                          const SizedBox(height: 20),
+                      // Шкала RPE 1-10 с увеличенными цифрами и анимацией
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(10, (index) {
+                            final value = index + 1;
+                            final isSelected = value == _selectedRpe;
 
-                          // RPE Buttons Grid
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 5,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 1,
-                            ),
-                            itemCount: 10,
-                            itemBuilder: (context, index) {
-                              final value = index + 1;
-                              final isSelected = value == _selectedRpe;
-
-                              return GestureDetector(
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: InkWell(
                                 onTap: () {
                                   setState(() => _selectedRpe = value);
-                                  _animController.reset();
-                                  _animController.forward();
                                 },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    gradient: isSelected
-                                        ? LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              _getRpeColor(value),
-                                              _getRpeColor(value)
-                                                  .withOpacity(0.7),
-                                            ],
-                                          )
-                                        : null,
-                                    color: isSelected
-                                        ? null
-                                        : const Color(0xFF1D1E33),
-                                    border: Border.all(
+                                borderRadius: BorderRadius.circular(20),
+                                splashColor: const Color(0xFFFF4538).withOpacity(0.3),
+                                highlightColor: Colors.transparent,
+                                child: AnimatedScale(
+                                  // Если выбрано — чуть увеличиваем кнопку
+                                  scale: isSelected ? 1.15 : 1.0,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutBack,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 32, // Сделали кнопку шире
+                                    height: 44, // и выше
+                                    decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.transparent
-                                          : _getRpeColor(value).withOpacity(0.3),
-                                      width: 1.5,
+                                          ? const Color(0xFFFF4538)
+                                          : const Color(0xFF1C1C1E),
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFFFF4538).withOpacity(0.5),
+                                                blurRadius: 10,
+                                                spreadRadius: 2,
+                                                offset: const Offset(0, 2),
+                                              )
+                                            ]
+                                          : [],
                                     ),
-                                    boxShadow: isSelected
-                                        ? [
-                                            BoxShadow(
-                                              color: _getRpeColor(value)
-                                                  .withOpacity(0.4),
-                                              blurRadius: 12,
-                                              spreadRadius: 2,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                  child: Center(
+                                    alignment: Alignment.center,
                                     child: Text(
                                       '$value',
                                       style: TextStyle(
-                                        color: isSelected
-                                            ? const Color(0xFFFFFFFF)
-                                            : const Color(0xFFAEAEB2),
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
+                                        color: isSelected ? Colors.white : Colors.white54,
+                                        fontSize: 16, // Цифры стали больше
+                                        fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                                       ),
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Description
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: _getRpeColor(_selectedRpe).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color:
-                                    _getRpeColor(_selectedRpe).withOpacity(0.3),
                               ),
-                            ),
-                            child: Text(
-                              _getRpeDescription(_selectedRpe),
-                              style: const TextStyle(
-                                color: Color(0xFFFFFFFF),
-                                fontSize: 14,
-                                height: 1.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Info Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2E),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFFF4538).withOpacity(0.2),
+                            );
+                          }),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.lightbulb_outline_rounded,
-                            color: Color(0xFFFF4538),
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Оценка RPE помогает AI адаптировать\nтвой план под текущее состояние',
-                              style: TextStyle(
-                                color: Color(0xFFAEAEB2),
-                                fontSize: 12,
-                                height: 1.4,
+
+                      const SizedBox(height: 28),
+
+                      // Динамический текст
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1C1C1E),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.0, 0.2),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
                               ),
+                            );
+                          },
+                          // Ключ нужен, чтобы AnimatedSwitcher понимал, что текст изменился
+                          child: Text(
+                            _getRpeDescription(_selectedRpe),
+                            key: ValueKey<int>(_selectedRpe),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Кнопка подтверждения
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, _selectedRpe),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF4538),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                          ).copyWith(
+                            overlayColor: WidgetStateProperty.all(
+                              Colors.white.withOpacity(0.2),
                             ),
                           ),
-                        ],
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'ПОДТВЕРДИТЬ И ДАЛЬШЕ',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 18),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-
-            // Bottom Buttons
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFAEAEB2),
-                        side: BorderSide(
-                          color: const Color(0xFFAEAEB2).withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text(
-                        'Пропустить',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, _selectedRpe),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF4538),
-                        foregroundColor: const Color(0xFFFFFFFF),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 4,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Продолжить',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildZoneLabel(String text, Color color) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.5,
       ),
     );
   }

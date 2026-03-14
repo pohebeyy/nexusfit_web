@@ -597,33 +597,52 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSocialButtons() {
+    Widget _buildSocialButtons() {
     return Row(
       children: [
-        Expanded(child: _buildSocialButton(
-          icon: Icons.apple,
-          label: 'Apple',
-          onTap: () {
-            // TODO: Apple Sign In
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Apple Sign In - скоро')),
-            );
-          },
-        )),
+        
         const SizedBox(width: 12),
         Expanded(child: _buildSocialButton(
           icon: Icons.g_mobiledata_rounded,
           label: 'Google',
-          onTap: () {
-            // TODO: Google Sign In
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Google Sign In - скоро')),
-            );
-          },
+          onTap: _handleGoogleLogin, // <-- Вызываем наш метод
         )),
       ],
     );
   }
+
+  // Добавляем метод для обработки входа/регистрации через Google
+  Future<void> _handleGoogleLogin() async {
+    final authProvider = context.read<AuthProvider>();
+    
+    // Получаем 'new', 'existing' или null
+    final result = await authProvider.signInWithGoogle();
+
+    if (mounted) {
+      if (result == 'new') {
+        // Впервые зашел через этот Google аккаунт -> на Онбординг
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const OnboardingRouter()),
+          (route) => false,
+        );
+      } else if (result == 'existing') {
+        // Уже заходил раньше -> на Главную
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      } else if (authProvider.error != null) {
+        // Ошибка -> показываем SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error!),
+            backgroundColor: const Color(0xFFFF006E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
 
   Widget _buildSocialButton({
     required IconData icon,

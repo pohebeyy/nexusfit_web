@@ -8,10 +8,10 @@ import '../../providers/nutrition_provider.dart';
 import '../../providers/workout_provider.dart';
 import '../../providers/health_provider.dart';
 import '../ai_coach/chat_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/services/stat_service.dart';
 import 'dart:async';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // 0 - Home, 1 - AI Chat
   int selectedIndex = 0;
 
+  
+  final GlobalKey _aiTabKey = GlobalKey();
+  final GlobalKey<ChatScreenState> _chatKey = GlobalKey<ChatScreenState>();
   // если у тебя был callback switchToStats - не трогаем
   void switchToStats() {
     // твоя логика, если была
@@ -206,8 +209,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           HomePageContent(
             switchToStats: switchToStats,
+            aiTabKey: _aiTabKey,
           ),
-          const ChatScreen(), // AI‑коуч
+          ChatScreen(key: _chatKey), // AI‑коуч
         ],
       ),
       bottomNavigationBar: _buildModernBottomNav(),
@@ -279,18 +283,19 @@ class _HomeScreenState extends State<HomeScreen> {
               // AI
               // AI
 GestureDetector(
+  key: _aiTabKey,
   onTap: () async {
     setState(() {
       selectedIndex = 1;
     });
 
-    // Туториал по AI только при первом заходе
-    final prefs = await SharedPreferences.getInstance();
-    final seenAI = prefs.getBool('seen_ai_tutorial_v1') ?? false;
-    if (!seenAI && mounted) {
-      await _showAICoachDialog();
-      await prefs.setBool('seen_ai_tutorial_v1', true);
-    }
+    // даём экрану отрисоваться
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    // ДЛЯ ТЕСТОВ: всегда показываем тур
+    _chatKey.currentState?.startChatTour(forceForTests: true);
+
+
   },
   child: Container(
     color: Colors.transparent,
@@ -330,98 +335,359 @@ GestureDetector(
 
 class HomePageContent extends StatefulWidget {
   final VoidCallback switchToStats;
-  const HomePageContent({super.key, required this.switchToStats});
+  final GlobalKey aiTabKey;
+  
+  const HomePageContent({
+    super.key,
+    required this.switchToStats,
+    required this.aiTabKey,
+  });
 
   @override
-  State<HomePageContent> createState() => _HomePageContentState();
+  State<HomePageContent> createState() => HomePageContentState();
 }
 
-class _HomePageContentState extends State<HomePageContent> {
-  DateTime _selectedDate = DateTime.now();
-
-  final GlobalKey _calendarKey = GlobalKey();
-  final GlobalKey _todayWorkoutKey = GlobalKey();
-
-  OverlayEntry? _overlayEntry;
+class HomePageContentState extends State<HomePageContent> {
+  DateTime selectedDate = DateTime.now();
+  
+  // Ключи должны быть глобальными переменными класса!
+  final GlobalKey calendarKey = GlobalKey();
+  final GlobalKey todayWorkoutKey = GlobalKey();
+  final GlobalKey metricsKey = GlobalKey();
+  
+  final ScrollController scrollController = ScrollController();
+  TutorialCoachMark? _tutorialCoachMark;
 
   @override
   void initState() {
     super.initState();
+    // Вызываем runHomeTour (без нижнего подчеркивания)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _runHomeTour();
+      runHomeTour();
     });
   }
 
   @override
   void dispose() {
-    _removeOverlay();
+    scrollController.dispose();
     super.dispose();
   }
 
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+
+  Future<void> focusElement(GlobalKey key) async {
+    try {
+      final context = key.currentContext;
+      if (context != null) {
+        await Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 600), // Плавный долгий скролл
+          curve: Curves.easeInOutCubic, // Красивая кривая ускорения-торможения
+          alignment: 0.5, // По центру экрана
+        );
+        await Future.delayed(const Duration(milliseconds: 200)); // Ждем, чтобы глаз успел сфокусироваться
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
-  Future<void> _runHomeTour() async {
+  /// Показывает один конкретный шаг туториала
+  Future<void> showTutorialStep(int stepIndex) async {
+    if (!mounted) return;
+
+    late GlobalKey targetKey;
+    late String title;
+    late String text;
+    late ContentAlign align;
+
+    switch (stepIndex) {
+      case 0:
+        targetKey = calendarKey;
+        title = 'АДАПТИВНЫЙ ГРАФИК';
+        text = 'Забудь про тупой подход и жесткие рамки. Neuro-Collider™ перестраивает твои дни отдыха и тренировок на лету. Просто следуй плану.';
+        align = ContentAlign.bottom;
+        break;
+      case 1:
+        targetKey = todayWorkoutKey;
+        title = 'ТРЕНИРОВКА ДНЯ';
+        text = 'Интенсивность уже подобрана под твое состояние. Мало спал? Снизим веса. Ты на пике энергии? Дадим буст.';
+        align = ContentAlign.bottom;
+        break;
+      case 2:
+        targetKey = metricsKey;
+        title = 'БИОМАШИНА НА ДАННЫХ';
+        text = 'Свайпай и тапай карточки. Чем больше метрик ты отдаешь, тем точнее нейросеть управляет твоим прогрессом.';
+        align = ContentAlign.top;
+        break;
+      case 3:
+        targetKey = widget.aiTabKey;
+        title = 'AI-НАСТАВНИК';
+        text = 'Твой карманный бро. Напиши ему, если болит плечо или нет времени на зал — весь план перестроится за секунду.';
+        align = ContentAlign.top;
+        break;
+      default:
+        return;
+    }
+
+        final isLast = stepIndex == 3;
+
+    final target = TargetFocus(
+      identify: "step_$stepIndex",
+      keyTarget: targetKey,
+      shape: ShapeLightFocus.RRect, // Теперь ВСЕГДА прямоугольник
+      radius: 20, // Скругление углов (можно сделать 20 или 24)
+      contents: [
+
+        TargetContent(
+          align: align,
+          builder: (context, controller) {
+            return buildTourContent(
+              title: title,
+              text: text,
+              controller: controller,
+              stepIndex: stepIndex,
+              isLast: isLast,
+                            onNext: () async {
+                // 1. Полностью убиваем текущий оверлей
+                controller.skip();
+                
+                // 2. Ждем чуть дольше, чтобы анимация исчезновения точно завершилась
+                // и Flutter удалил слой из дерева виджетов.
+                await Future.delayed(const Duration(milliseconds: 400));
+                
+                if (!mounted) return;
+
+                // 3. Выполняем скролл
+                if (stepIndex < 3) {
+                  late GlobalKey nextKey;
+                  if (stepIndex == 0) nextKey = todayWorkoutKey;
+                  else if (stepIndex == 1) nextKey = metricsKey;
+                  else if (stepIndex == 2) nextKey = widget.aiTabKey;
+                  
+                  await focusElement(nextKey);
+                  
+                  // 4. ГЛАВНЫЙ ФИКС: Ждем дополнительно 100 мс после скролла, 
+                  // чтобы Flutter успел просчитать layout (размеры) нового элемента.
+                  await Future.delayed(const Duration(milliseconds: 100));
+                }
+
+                if (!mounted) return;
+
+                // 5. Показываем следующий шаг только когда всё готово
+                if (stepIndex < 3) {
+                  await showTutorialStep(stepIndex + 1);
+                } else {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('seen_hometour_v2', true);
+                }
+              },
+              onPrev: () async {
+                // 1. Полностью убиваем текущий оверлей
+                controller.skip();
+                
+                await Future.delayed(const Duration(milliseconds: 400));
+                
+                if (!mounted) return;
+
+                // 2. Выполняем скролл
+                if (stepIndex > 0) {
+                  late GlobalKey prevKey;
+                  if (stepIndex == 1) prevKey = calendarKey;
+                  else if (stepIndex == 2) prevKey = todayWorkoutKey;
+                  else if (stepIndex == 3) prevKey = metricsKey;
+                  
+                  await focusElement(prevKey);
+                  
+                  // 3. ГЛАВНЫЙ ФИКС: Ждем перерисовки layout после скролла
+                  await Future.delayed(const Duration(milliseconds: 100));
+                }
+
+                if (!mounted) return;
+
+                // 4. Показываем предыдущий шаг
+                if (stepIndex > 0) {
+                  await showTutorialStep(stepIndex - 1);
+                }
+              },
+
+            );
+          },
+        )
+      ],
+    );
+
+        _tutorialCoachMark = TutorialCoachMark(
+      targets: [target],
+      colorShadow: Colors.black,
+      textSkip: "ПРОПУСТИТЬ",
+      paddingFocus: 5, // Строго положительное число или 0!
+      opacityShadow: 0.8,
+      hideSkip: true, // Скрываем стандартный skip, мы управляем им сами
+      onClickTarget: (target) {
+        // Запрещаем клики по самой выделенной области
+      },
+    )..show(context: context);
+  }
+
+    Future<void> runHomeTour() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+    if (!isCurrentRoute) {
+      Future.delayed(const Duration(seconds: 1), runHomeTour);
+      return;
+    }
+
+    // --- НА ВРЕМЯ ТЕСТОВ ОТКЛЮЧАЕМ ПРОВЕРКУ ФЛАГА ---
     final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getBool('seen_home_tour_v1') ?? false;
+    final seen = prefs.getBool('seen_hometour_v2') ?? false;
     if (seen) return;
 
-    await _showHighlightOver(calendar: true);
-    await _showHighlightOver(calendar: false);
-
-    await prefs.setBool('seen_home_tour_v1', true);
+    await focusElement(calendarKey);
+    if (!mounted) return;
+    await showTutorialStep(0);
   }
 
-  Future<void> _showHighlightOver({required bool calendar}) async {
-  final key = calendar ? _calendarKey : _todayWorkoutKey;
-  final renderObject = key.currentContext?.findRenderObject();
-  if (renderObject is! RenderBox) return;
 
-  final box = renderObject;
-  final offset = box.localToGlobal(Offset.zero);
-  final rect = offset & box.size;
-
-  final completer = Completer<void>();
-
-  _overlayEntry = OverlayEntry(
-    builder: (context) {
-      return Stack(
-        children: [
-          // затемнение с дыркой вокруг выделенного виджета
-          _HighlightOverlay(
-            highlightRect: rect,
-            onTap: () {
-              _removeOverlay();
-              if (!completer.isCompleted) completer.complete();
-            },
-          ),
-
-          // подсказка под виджетом
-          Positioned(
-            left: 20,
-            right: 20,
-            top: rect.bottom + 12,
-            child: _HomeTourTooltip(
-              title: calendar ? 'Календарь' : 'План на сегодня',
-              text: calendar
-                  ? 'Тапни по дате, чтобы посмотреть будущие тренировки и заранее понимать нагрузку.'
-                  : 'Тапни по карточке, чтобы открыть тренировки на сегодня и детали по каждому упражнению.',
-              onClose: () {
-                _removeOverlay();
-                if (!completer.isCompleted) completer.complete();
-              },
-            ),
+    // --- БЛОК 2: ВСТАВИТЬ ВМЕСТО СТАРОГО buildTourContent ---
+  Widget buildTourContent({
+    required String title,
+    required String text,
+    required TutorialCoachMarkController controller,
+    int stepIndex = 0,
+    required VoidCallback onNext,
+    required VoidCallback onPrev,
+    bool isLast = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E).withOpacity(0.98),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFF4538).withOpacity(0.6),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF4538).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
-      );
-    },
-  );
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFFF4538),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 13,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (stepIndex > 0)
+                GestureDetector(
+                  onTap: onPrev,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: const Text(
+                      'НАЗАД',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ),
+              if (stepIndex > 0) const SizedBox(width: 10),
+              GestureDetector(
+                onTap: onNext,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF4538).withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    isLast ? 'ПОГНАЛИ' : 'ДАЛЕЕ',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  // --- КОНЕЦ БЛОКА 2 ---
 
-  Overlay.of(context).insert(_overlayEntry!);
-  await completer.future;
-}
 
 
 
@@ -436,6 +702,7 @@ class _HomePageContentState extends State<HomePageContent> {
       backgroundColor: const Color(0xFF2C2C2E),
       color: const Color(0xFFFF4538),
       child: CustomScrollView(
+        controller: scrollController,
         slivers: [
           Appnar.buildModernAppBar(context, 'Главная'),
           SliverToBoxAdapter(
@@ -449,11 +716,11 @@ class _HomePageContentState extends State<HomePageContent> {
 
                   // 1. Календарь с ключом для онбординга
                   HomeCalendarWidget(
-                    key: _calendarKey,
-                    selectedDate: _selectedDate,
+                    key: calendarKey,
+                    selectedDate: selectedDate,
                     onDateSelected: (date) {
                       setState(() {
-                        _selectedDate = date;
+                        selectedDate = date;
                       });
                     },
                   ),
@@ -462,8 +729,8 @@ class _HomePageContentState extends State<HomePageContent> {
 
                   // 2. TodayWorkoutCard с ключом для онбординга
                   TodayWorkoutCard(
-                    key: _todayWorkoutKey,
-                    selectedDate: _selectedDate,
+                    key: todayWorkoutKey,
+                    selectedDate: selectedDate,
                   ),
 
                   const SizedBox(height: 24),
@@ -473,6 +740,7 @@ class _HomePageContentState extends State<HomePageContent> {
                   SizedBox(
                     height: 320,
                     child: PageView(
+                      key: metricsKey,
                       padEnds: false,
                       controller: PageController(viewportFraction: 0.9),
                       children: const [
@@ -492,178 +760,12 @@ class _HomePageContentState extends State<HomePageContent> {
     );
   }
 }
-class _HighlightOverlay extends StatelessWidget {
-  final Rect highlightRect;
-  final VoidCallback onTap;
-
-  const _HighlightOverlay({
-    required this.highlightRect,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: CustomPaint(
-        size: MediaQuery.of(context).size,
-        painter: _HolePainter(highlightRect: highlightRect),
-      ),
-    );
-  }
-}
-
-class _HolePainter extends CustomPainter {
-  final Rect highlightRect;
-
-  _HolePainter({required this.highlightRect});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final overlayPaint = Paint()
-      ..color = Colors.black.withOpacity(0.75)
-      ..style = PaintingStyle.fill;
-
-    // полный экран
-    final fullPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    // прямоугольник подсветки (немного расширим и скруглим)
-    final rRect = RRect.fromRectAndRadius(
-      highlightRect.inflate(8),
-      const Radius.circular(20),
-    );
-    final holePath = Path()..addRRect(rRect);
-
-    // вычитаем дырку
-    final result = Path.combine(PathOperation.difference, fullPath, holePath);
-
-    canvas.drawPath(result, overlayPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _HolePainter oldDelegate) {
-    return oldDelegate.highlightRect != highlightRect;
-  }
-}
-
-
-/// тултип для тура по главному экрану
-class _HomeTourTooltip extends StatelessWidget {
-  final String title;
-  final String text;
-  final VoidCallback onClose;
-
-  const _HomeTourTooltip({
-    required this.title,
-    required this.text,
-    required this.onClose,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.6),
-              blurRadius: 20,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.touch_app_rounded,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: onClose,
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white.withOpacity(0.45),
-                    size: 18,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 13,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onClose,
-                child: const Text(
-                  'ДАЛЬШЕ',
-                  style: TextStyle(
-                    color: Color(0xFFFF6B35),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-
 
 
 enum FlipCardType { sleep, nutrition, activity, water }
 
 class FlipMetricCard extends StatefulWidget {
   final FlipCardType type;
-
-  const FlipMetricCard._(this.type, {super.key});
 
   const FlipMetricCard.sleep({super.key}) : type = FlipCardType.sleep;
   const FlipMetricCard.nutrition({super.key}) : type = FlipCardType.nutrition;

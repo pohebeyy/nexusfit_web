@@ -45,7 +45,11 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
 
   bool _isLoading = true; // Пока true — показываем лоадер
 
+  // Рандомный seed для графика (генерируется при инициализации)
+  late int _graphSeed;
+
   // Данные пользователя (будем заполнять из провайдера/AI)
+    // --- БЛОК 1: ВСТАВЛЯЕМ СЮДА ---
   final Map<String, dynamic> _userStrategy = {
     'currentWeight': 80.0,
     'targetWeight': 90.0,
@@ -54,11 +58,18 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
     'bodyType': 'Эктоморф',
     'experience': 'Новичок',
     'weeks': 12,
+    'motivation': 'Нейросеть генерирует твой путь...',
+    'phase1': 'Загрузка...',
+    'phase2': 'Загрузка...',
   };
+
 
   @override
   void initState() {
     super.initState();
+
+    // Генерируем рандомный seed для графика
+    _graphSeed = DateTime.now().millisecond + DateTime.now().second * 1000;
 
     _mainController = AnimationController(
       vsync: this,
@@ -184,22 +195,30 @@ class _YourStrategyScreenState extends State<YourStrategyScreen>
       final responseData = jsonDecode(response.body);
       final strategy = responseData['strategy'];
 
-      setState(() {
+            setState(() {
         _userStrategy['currentWeight'] = currentWeight;
         _userStrategy['targetWeight'] = targetWeight;
-        _userStrategy['bmi'] = bmi;
         
-        // ВАЖНО: Используем маппер для опыта, который пришел из provider.data.experience
+        // Берем BMI напрямую от нейросети
+        _userStrategy['bmi'] = (strategy['bmi'] ?? bmi).toDouble();
+        
         _userStrategy['experience'] = _mapExperience(provider.data.experience ?? 'beginner');
-        
-        // ВАЖНО: Используем маппер для метаболизма, который прислал ИИ
         _userStrategy['metabolism'] = _mapMetabolism(strategy['metabolism']?.toString() ?? 'average');
-        
         _userStrategy['bodyType'] = strategy['bodyType'] ?? 'Мезоморф';
         _userStrategy['weeks'] = strategy['weeks'] ?? 12;
 
+        // Новые поля от AI
+        _userStrategy['motivation'] = strategy['motivation'] ?? 'Погнали!';
+        
+        if (strategy['phases'] != null && strategy['phases'].length >= 2) {
+          _userStrategy['phase1'] = strategy['phases'][0];
+          _userStrategy['phase2'] = strategy['phases'][1];
+        }
+        
         _isLoading = false;
       });
+      // --- КОНЕЦ БЛОКА 1 ---
+
     } else {
 
       // Если сервер вернул ошибку, ставим fallback (запасные) значения
@@ -448,6 +467,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
                   progress: _graphProgress.value,
                   startVal: _userStrategy['currentWeight'],
                   endVal: _userStrategy['targetWeight'],
+                  seed: _graphSeed,
                 ),
                 child: Container(),
               );
@@ -485,7 +505,7 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
             children: [
               _buildStatCard(
                 icon: Icons.speed,
-                title: 'BMI',
+                title: 'ИНДЕКС МАССЫ ТЕЛА',
                 content: AnimatedCounter(
                   value: _userStrategy['bmi'],
                   suffix: '',
@@ -598,61 +618,127 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
   Widget _buildStrategySummary() {
     return FadeTransition(
       opacity: _listFade,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFFFF4538).withOpacity(0.05),
-              const Color(0xFFFF4538).withOpacity(0.0),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: const Color(0xFFFF4538).withOpacity(0.2),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: const [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Color(0xFFFF4538),
-                  size: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Блок Мотивации от AI
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFFF4538).withOpacity(0.1),
+                  const Color(0xFFFF4538).withOpacity(0.0),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFFF4538).withOpacity(0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.local_fire_department, color: Color(0xFFFF4538), size: 24),
+                    SizedBox(width: 8),
+                    Text(
+                      'ТВОЯ МОТИВАЦИЯ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 8),
+                const SizedBox(height: 16),
                 Text(
-                  'КЛЮЧЕВЫЕ ФАКТОРЫ УСПЕХА',
-                  style: TextStyle(
+                  _userStrategy['motivation'],
+                  style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    height: 1.5,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _buildSummaryItem(
-              'Силовые 3 раза в неделю',
-              'Акцент: Грудь, Спина',
-              Icons.fitness_center,
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Блоки Фаз
+          const Text(
+            'ПЛАН ДЕЙСТВИЙ',
+            style: TextStyle(
+              color: Color(0xFFFF4538),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
             ),
-            _buildSummaryItem(
-              'Профицит +300 ккал',
-              'Высокое содержание белка',
-              Icons.restaurant,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildPhaseCard('Фаза 1: Адаптация', _userStrategy['phase1'], Icons.filter_1),
+          const SizedBox(height: 12),
+          _buildPhaseCard('Фаза 2: Прогресс', _userStrategy['phase2'], Icons.filter_2),
+        ],
+      ),
+    );
+  }
+
+
+
+  Widget _buildPhaseCard(String title, String content, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF4538).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            _buildSummaryItem(
-              'Сон 8 часов',
-              'Восстановление ЦНС',
-              Icons.bedtime,
+            child: Icon(icon, color: const Color(0xFFFF4538), size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  content,
+                  style: TextStyle(
+                    color: const Color(0xFFB0B5C0).withOpacity(0.8),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -762,15 +848,21 @@ void _setFallbackStrategy(double currentWeight, double targetWeight, double bmi,
 // --- Custom Painters & Widgets ---
 
 /// Отрисовщик анимированного графика
+/// Отрисовщик анимированного графика (Реалистичный путь трансформации)
 class StrategyGraphPainter extends CustomPainter {
   final double progress; // от 0.0 до 1.0
   final double startVal;
   final double endVal;
+  
+  // Используем рандомный сид для каждого инстанса, 
+  // чтобы график каждый раз был разным
+  final int seed;
 
   StrategyGraphPainter({
     required this.progress,
     required this.startVal,
     required this.endVal,
+    this.seed = 0, // По умолчанию используем seed от DateTime
   });
 
   @override
@@ -779,55 +871,86 @@ class StrategyGraphPainter extends CustomPainter {
       ..color = const Color(0xFFFF4538)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    // Координаты
     final startY = size.height * 0.8;
     final endY = size.height * 0.2;
     final width = size.width;
 
-    final currentX = width * progress;
-    final currentY = startY + (endY - startY) * progress;
+    // Генерируем точки для графика (20 точек для реалистичности)
+    final int pointsCount = 20;
+    final List<Offset> points = [];
+    
+    // Используем рандом с рандомным сидом или переданным seed
+    final actualSeed = seed != 0 ? seed : DateTime.now().millisecond;
+    final rand = math.Random(actualSeed);
 
-    // Градиент под линией
-    final fillPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, startY)
-      ..quadraticBezierTo(
-        currentX * 0.5,
-        startY + (currentY - startY) * 0.5,
-        currentX,
-        currentY,
-      )
-      ..lineTo(currentX, size.height)
-      ..close();
+    for (int i = 0; i <= pointsCount; i++) {
+      double t = i / pointsCount;
+      double x = width * t;
+      
+      // Идеальный Y (линия от начала к концу, но конец всегда вверху)
+      double idealY = startY + (endY - startY) * t;
+      
+      // Добавляем шум. В начале и конце шум равен нулю, чтобы график четко попадал в точки старта и финиша.
+      double noiseAmplitude = 20.0; // Сила скачков веса (пиксели) - увеличил для большей вариативности
+      double noiseModifier = math.sin(t * math.pi); // Плавно затухает по краям
+      double noise = (rand.nextDouble() - 0.5) * 2 * noiseAmplitude * noiseModifier;
+      
+      double y = idealY + noise;
+      points.add(Offset(x, y));
+    }    // Вычисляем, сколько точек нужно отрисовать согласно текущему прогрессу анимации
+    final currentPath = Path();
+    final fillPath = Path();
+    
+    if (progress > 0) {
+      currentPath.moveTo(points[0].dx, points[0].dy);
+      fillPath.moveTo(points[0].dx, size.height);
+      fillPath.lineTo(points[0].dx, points[0].dy);
 
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFFFF4538).withOpacity(0.2),
-          const Color(0xFFFF4538).withOpacity(0.0),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, width, size.height));
+      double targetX = width * progress;
+      
+      for (int i = 1; i < points.length; i++) {
+        if (points[i].dx <= targetX) {
+          currentPath.lineTo(points[i].dx, points[i].dy);
+          fillPath.lineTo(points[i].dx, points[i].dy);
+        } else {
+          // Интерполяция последней точки для плавности анимации
+          double prevX = points[i-1].dx;
+          double prevY = points[i-1].dy;
+          double t = (targetX - prevX) / (points[i].dx - prevX);
+          double currY = prevY + (points[i].dy - prevY) * t;
+          
+          currentPath.lineTo(targetX, currY);
+          fillPath.lineTo(targetX, currY);
+          break;
+        }
+      }
 
-    canvas.drawPath(fillPath, fillPaint);
+      fillPath.lineTo(targetX, size.height);
+      fillPath.close();
 
-    // Линия
-    canvas.drawLine(
-      Offset(0, startY),
-      Offset(currentX, currentY),
-      paint,
-    );
+      // Отрисовка градиента
+      final fillPaint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            const Color(0xFFFF4538).withOpacity(0.2),
+            const Color(0xFFFF4538).withOpacity(0.0),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromLTWH(0, 0, width, size.height));
+
+      canvas.drawPath(fillPath, fillPaint);
+      
+      // Отрисовка зигзагообразной линии
+      canvas.drawPath(currentPath, paint);
+    }
 
     // Точка старта
     if (progress > 0.0) {
-      canvas.drawCircle(
-        Offset(0, startY),
-        4,
-        Paint()..color = Colors.white,
-      );
+      canvas.drawCircle(points[0], 4, Paint()..color = Colors.white);
     }
 
     // Точка финиша
@@ -835,13 +958,9 @@ class StrategyGraphPainter extends CustomPainter {
       final glowPaint = Paint()
         ..color = const Color(0xFF00FF88).withOpacity(0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-      canvas.drawCircle(Offset(width, endY), 12, glowPaint);
+      canvas.drawCircle(points.last, 12, glowPaint);
 
-      canvas.drawCircle(
-        Offset(width, endY),
-        6,
-        Paint()..color = const Color(0xFF00FF88),
-      );
+      canvas.drawCircle(points.last, 6, Paint()..color = const Color(0xFF00FF88));
 
       final textSpan = TextSpan(
         text: '${endVal.toInt()} кг',
@@ -858,7 +977,7 @@ class StrategyGraphPainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(width - textPainter.width, endY - 25),
+        Offset(width - textPainter.width, points.last.dy - 25),
       );
     }
   }
@@ -866,6 +985,7 @@ class StrategyGraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
 
 /// Виджет для "накручивания" чисел
 class AnimatedCounter extends StatelessWidget {
