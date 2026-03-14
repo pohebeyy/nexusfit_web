@@ -1,3 +1,4 @@
+// workout_session_screen.dart
 import 'package:flutter/material.dart';
 import 'workout_exercise.dart';
 import 'exercise_detail_screen.dart';
@@ -5,7 +6,9 @@ import 'WorkoutPlayerScreen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final String title;
-  final List<Map<String, String>> exercises;
+  
+  // ИЗМЕНЕНО: теперь dynamic, чтобы принимать массивы (теги)
+  final List<Map<String, dynamic>> exercises;
 
   final int? calories;
   final String difficulty;
@@ -36,28 +39,46 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool _started = false;
   late final List<WorkoutExercise> _exercises;
 
-  @override
+    @override
   void initState() {
     super.initState();
 
     _exercises = widget.exercises.isNotEmpty
         ? widget.exercises.map((e) {
-            final name = e['name'] ?? 'Упражнение';
-            final display = e['display'] ?? '';
-            final reps = int.tryParse(e['reps'] ?? '') ?? 10;
-            final sets = int.tryParse(e['sets'] ?? '') ?? 3;
-            final weight = int.tryParse(e['weight'] ?? '') ?? 0;
+            // Принудительно приводим всё к строкам, так как из кэша могут прийти dynamic
+            final name = e['name']?.toString() ?? 'Упражнение';
+            
+            // Базовые параметры
+            final reps = int.tryParse(e['reps']?.toString() ?? '') ?? 10;
+            final sets = int.tryParse(e['sets']?.toString() ?? '') ?? 3;
+            final weight = int.tryParse(e['weight']?.toString() ?? '') ?? 0;
+            final minutes = int.tryParse(e['minutes']?.toString() ?? '') ?? 5;
 
-            final minutes = int.tryParse(e['minutes'] ?? '') ?? 5;
+            // Расширенные поля - проверяем ключи в точности так, как они приходят из JSON
+            final description = e['description']?.toString() ?? '';
+            final instructions = e['instructions']?.toString() ?? '';
+            final benefits = e['benefits']?.toString() ?? '';
+            final muscles = e['muscles']?.toString() ?? '';
+            
+            // Парсинг тегов (если они есть)
+            List<String> tags = [];
+            if (e['tags'] is List) {
+              tags = (e['tags'] as List).map((t) => t.toString()).toList();
+            }
+
+            // Для дебага: выводим в консоль, чтобы точно убедиться, что данные дошли до этого этапа
+            debugPrint('Создаем упражнение: $name');
+            debugPrint('  Desc: $description');
+            debugPrint('  Instr: $instructions');
 
             return WorkoutExercise(
               id: name,
               name: name,
-              description: display,
-              instructions: '',
-              benefits: '',
-              muscles: '',
-              tags: const [],
+              description: description,
+              instructions: instructions,
+              benefits: benefits,
+              muscles: muscles,
+              tags: tags,
               sets: sets,
               reps: reps,
               weight: weight,
@@ -68,45 +89,20 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             const WorkoutExercise(
               id: 'default_1',
               name: 'Тяга штанги в наклоне',
-              description: '',
-              instructions: '',
-              benefits: '',
-              muscles: '',
-              tags: [],
+              description: 'Базовое упражнение для мышц спины',
+              instructions: 'Наклоните корпус вперед, держите спину ровной. Подтягивайте штангу к поясу.',
+              benefits: 'Утолщает спину, улучшает осанку',
+              muscles: 'Широчайшие, ромбовидные, бицепс',
+              tags: ['Спина', 'База'],
               sets: 3,
               reps: 10,
               weight: 40,
               estimatedMinutes: 6,
             ),
-            const WorkoutExercise(
-              id: 'default_2',
-              name: 'Подтягивания',
-              description: '',
-              instructions: '',
-              benefits: '',
-              muscles: '',
-              tags: [],
-              sets: 3,
-              reps: 12,
-              weight: 0,
-              estimatedMinutes: 5,
-            ),
-            const WorkoutExercise(
-              id: 'default_3',
-              name: 'Сгибание на бицепс',
-              description: '',
-              instructions: '',
-              benefits: '',
-              muscles: '',
-              tags: [],
-              sets: 3,
-              reps: 12,
-              weight: 12,
-              estimatedMinutes: 5,
-            ),
           ];
   }
 
+  
   int get _totalMinutes =>
       _exercises.fold(0, (sum, e) => sum + e.estimatedMinutes);
 

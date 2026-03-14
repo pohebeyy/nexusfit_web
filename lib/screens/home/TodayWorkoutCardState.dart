@@ -1,3 +1,4 @@
+// today_workout_card.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -9,10 +10,8 @@ import 'package:startap/screens/workouts/workout_session_screen.dart';
 import 'package:startap/services/api/StringApi.dart';
 
 class TodayWorkoutCard extends StatefulWidget {
-  // Добавляем поле для хранения переданной даты
   final DateTime selectedDate;
 
-  // Обновляем конструктор: делаем selectedDate обязательным параметром (required)
   const TodayWorkoutCard({
     Key? key, 
     required this.selectedDate,
@@ -25,21 +24,23 @@ class TodayWorkoutCard extends StatefulWidget {
 class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   bool _isExpanded = false;
   bool _isLoading = true;
-   String _lastCacheHash = "";
+  String _lastCacheHash = "";
+  
   // Динамические переменные
   String _workoutName = 'Загрузка...';
   String _difficulty = 'medium';
   int _calories = 0;
   int _durationMinutes = 0;
-  List<Map<String, String>> _exercises = [];
+  
+  // ИЗМЕНЕНО: теперь dynamic, чтобы хранить списки (теги)
+  List<Map<String, dynamic>> _exercises = [];
 
-   @override
+  @override
   void initState() {
     super.initState();
     loadWorkoutPlan(); 
   }
 
-  // ОБЯЗАТЕЛЬНО добавляем метод для реагирования на смену даты кликом в календаре:
   @override
   void didUpdateWidget(TodayWorkoutCard oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -47,12 +48,12 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       loadWorkoutPlan();
     }
   }
+
   Future<void> _checkCacheUpdate() async {
     final prefs = await SharedPreferences.getInstance();
     final String targetDate = widget.selectedDate.toIso8601String().split('T')[0];
     final String? rawCalendar = prefs.getString('calendar_workouts');
     
-    // Создаем хэш текущих данных для этой даты
     String currentHash = "";
     if (rawCalendar != null) {
       final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
@@ -61,17 +62,16 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       }
     }
 
-    // Если кэш изменился с последнего раза — обновляем UI
     if (currentHash != _lastCacheHash) {
       _lastCacheHash = currentHash;
-      loadWorkoutPlan(); // Перезапускаем вашу функцию парсинга
+      loadWorkoutPlan(); 
     }
   }
+
   Future<void> loadWorkoutPlan() async {
     setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
     
-    // БЕРЕМ ИМЕННО ВЫБРАННУЮ ДАТУ
     final String targetDate = widget.selectedDate.toIso8601String().split('T')[0];
     final String? rawCalendar = prefs.getString('calendar_workouts');
     
@@ -81,7 +81,6 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       try {
         final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
         
-        // Проверка: кэш не устарел?
         DateTime? maxDate;
         for (String key in calendarCache.keys) {
           final d = DateTime.tryParse(key);
@@ -93,16 +92,13 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
         final todayDt = DateTime.now();
         final todayStart = DateTime(todayDt.year, todayDt.month, todayDt.day);
         
-        // Если в кэше есть данные на сегодня и будущее — он валидный
         if (maxDate != null && !maxDate.isBefore(todayStart)) {
           needsFetch = false; 
         }
 
-        // Пытаемся вытянуть тренировку именно на выбранную дату (targetDate)
         if (calendarCache.containsKey(targetDate)) {
           _parseJsonAndSetState(calendarCache[targetDate]);
         } else {
-          // ЗДЕСЬ ИЗМЕНЕНИЕ: Умная проверка вместо обычного выходного
           _handleEmptyDay(targetDate);
         }
       } catch (e) {
@@ -111,14 +107,12 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
     }
 
     if (needsFetch) {
-      // Идет запрос в сеть только если кэша нет (он даст план на 30 дней)
       await _fetchFromNetwork(prefs, targetDate); 
     } else {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Вспомогательный метод для дня отдыха
   void _setRestDay() {
     setState(() {
       _workoutName = 'День отдыха';
@@ -129,6 +123,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       _isLoading = false;
     });
   }
+
   void _setNoWorkoutDay() {
     setState(() {
       _workoutName = 'Тренировки не было';
@@ -140,7 +135,6 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
     });
   }
 
-  // НОВЫЙ МЕТОД: Умная проверка пустого дня (прошлое или будущее?)
   void _handleEmptyDay(String targetDate) {
     final targetDt = DateTime.tryParse(targetDate);
     if (targetDt == null) {
@@ -151,16 +145,13 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
-    // Если запрошенная дата была ДО сегодняшнего дня -> "Тренировки не было"
     if (targetDt.isBefore(todayStart)) {
       _setNoWorkoutDay();
     } else {
-      // Если сегодня или в будущем -> "День отдыха"
       _setRestDay();
     }
   }
 
-  // Загрузка по сети (n8n)
   Future<void> _fetchFromNetwork(SharedPreferences prefs, String todayDate) async {
     try {
       final String userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
@@ -177,13 +168,11 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-                if (data['success'] == true) {
-          // 1. Слияние нового календаря со старым кэшем (чтобы не терять прошлое)
+        if (data['success'] == true) {
           if (data['month_calendar'] != null) {
             final Map<String, dynamic> newMonthCalendar = data['month_calendar'];
             Map<String, dynamic> mergedCalendar = {};
             
-            // Достаем старый кэш, если он есть
             final String? oldRawCalendar = prefs.getString('calendar_workouts');
             if (oldRawCalendar != null) {
               try {
@@ -191,26 +180,20 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
               } catch (_) {}
             }
             
-            // Добавляем новые дни (записываем поверх старых совпадений, 
-            // но то, что было в прошлом, остается нетронутым)
             mergedCalendar.addAll(newMonthCalendar);
-
             await prefs.setString('calendar_workouts', jsonEncode(mergedCalendar));
             
-            // 2. Пытаемся достать сегодняшнюю тренировку из объединенного кэша
             final todayWorkout = mergedCalendar[todayDate] ?? data['today_workout'];
             
             if (todayWorkout != null) {
               _parseJsonAndSetState(todayWorkout);
             } else {
-              // ИЗМЕНЕНИЕ: Умная обработка, если ИИ не сгенерировал тренировку
               _handleEmptyDay(todayDate);
             }
           } else {
             _handleEmptyDay(todayDate);
           }
-        }
- else {
+        } else {
           setState(() => _isLoading = false);
           debugPrint('Ошибка сервера: ${data['error']}');
         }
@@ -224,8 +207,7 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
     }
   }
 
-
-  // Парсинг JSON в стейт виджета
+  // ИЗМЕНЕНО: Теперь мы парсим абсолютно все поля, которые просили от ИИ
   bool _parseJsonAndSetState(dynamic workoutData) {
     try {
       setState(() {
@@ -235,26 +217,36 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
         _calories = int.tryParse(workoutData['calories']?.toString() ?? '0') ?? 0;
         _durationMinutes = int.tryParse(workoutData['duration_min']?.toString() ?? '0') ?? 0;
 
-        _exercises = [];
+                _exercises = [];
         if (workoutData['exercises'] != null) {
           for (var ex in workoutData['exercises']) {
             _exercises.add({
-              'name':    ex['name']?.toString() ?? 'Упражнение',
-              'display': ex['display_string']?.toString() ?? '${ex['reps']} x ${ex['sets']}',
+              'name':         ex['name']?.toString() ?? 'Упражнение',
+              'display':      ex['display_string']?.toString() ?? '${ex['reps']} x ${ex['sets']}',
+              'reps':         ex['reps']?.toString() ?? '10',
+              'sets':         ex['sets']?.toString() ?? '3',
+              'weight':       ex['weight']?.toString() ?? '0',
+              
+              // ВОТ ЭТИ ПОЛЯ КРИТИЧЕСКИ ВАЖНЫ! ЕСЛИ ИХ ТУТ НЕТ - ОНИ НЕ ПОПАДУТ В SESSION SCREEN
+              'description':  ex['description']?.toString() ?? '',
+              'instructions': ex['instructions']?.toString() ?? '',
+              'benefits':     ex['benefits']?.toString() ?? '',
+              'muscles':      ex['muscles']?.toString() ?? '',
+              'tags':         (ex['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
             });
           }
         }
+
         _isLoading = false;
       });
 
-      return true; // успешно
+      return true; 
     } catch (e) {
       debugPrint('Ошибка парсинга JSON тренировки: $e');
-      return false; // битый
+      return false; 
     }
   }
 
-  // Обновляем старый метод, чтобы он понимал, что в кэше теперь лежит JSON, а не YAML
   bool _tryParseAndSetState(String cachedData) {
     try {
       final jsonData = jsonDecode(cachedData);
@@ -268,7 +260,6 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
   // ==================== UI МЕТОДЫ ====================
 
   Future<void> _showAdaptationSheet(BuildContext context) async {
-    // ЖДЕМ РЕЗУЛЬТАТ ИЗ ШТОРКИ (true если адаптировано, null если просто закрыли)
     final bool? isAdapted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -279,7 +270,6 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
       builder: (context) => const AdaptationSheet(),
     );
 
-    // ЕСЛИ УСПЕШНО — ПЕРЕЗАГРУЖАЕМ ТРЕНИРОВКУ ИЗ КЭША
     if (isAdapted == true) {
       setState(() => _isLoading = true);
       await loadWorkoutPlan();
@@ -416,8 +406,8 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                   secondChild: Column(
                     children: [
                       ..._exercises.map((ex) => _ExerciseRow(
-                            name: ex['name']!,
-                            reps: ex['display']!.split(' - ').last, 
+                            name: ex['name'].toString(),
+                            reps: ex['display'].toString().split(' - ').last, 
                             icon: Icons.fitness_center,
                           )),
                       const SizedBox(height: 12),
@@ -426,24 +416,20 @@ class TodayWorkoutCardState extends State<TodayWorkoutCard> {
                   crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 250),
                 ),
-                                SizedBox(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // Правильный вызов навигации
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => WorkoutSessionScreen(
-                            // Передаем данные из стейта текущей карточки
                             title: _workoutName,
                             exercises: _exercises,
                           ),
                         ),
                       );
                     },
-                    
-
                     icon: const Icon(Icons.play_arrow_rounded, size: 20),
                     label: const Text(
                       'НАЧАТЬ ТРЕНИРОВКУ',
