@@ -27,7 +27,6 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
     _loadWorkoutDays();
   }
 
-  // Парсим кэш, чтобы поставить точки под датами, где есть тренировка
   Future<void> _loadWorkoutDays() async {
     final prefs = await SharedPreferences.getInstance();
     final String? rawJson = prefs.getString('calendar_workouts');
@@ -56,200 +55,260 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
     }
   }
 
+  Widget _buildWeekCell(
+    DateTime date, {
+    required bool isSelected,
+    required bool isToday,
+  }) {
+    const weekdays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    final weekdayStr = weekdays[date.weekday - 1];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          width: constraints.maxWidth,
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: const Color(0xFF2C2C2E),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFF4C4C4D),
+                    width: 1,
+                  ),
+                )
+              : isToday
+                  ? BoxDecoration(
+                      color:
+                          const Color(0xFF2C2C2E).withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: const Color(0xFF4C4C4D),
+                        width: 1,
+                      ),
+                    )
+                  : const BoxDecoration(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                weekdayStr,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey[400],
+                  fontSize: 12,
+                  fontWeight:
+                      isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${date.day}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight:
+                      isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF212123), // фон календаря
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2C2C2E), width: 1),
-      ),
-      child: Column(
-        children: [
-          TableCalendar(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // контейнер с календарём
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF212123),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF2C2C2E), width: 1),
+          ),
+          child: TableCalendar(
             locale: 'ru_RU',
             availableGestures: AvailableGestures.horizontalSwipe,
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: widget.selectedDate,
             currentDay: DateTime.now(),
-            selectedDayPredicate: (day) => isSameDay(widget.selectedDate, day),
+            selectedDayPredicate: (day) =>
+                isSameDay(widget.selectedDate, day),
             calendarFormat: _calendarFormat,
             startingDayOfWeek: StartingDayOfWeek.monday,
             availableCalendarFormats: const {
               CalendarFormat.month: 'Месяц',
               CalendarFormat.week: 'Неделя',
             },
+            daysOfWeekVisible: _calendarFormat == CalendarFormat.month,
+            rowHeight: _calendarFormat == CalendarFormat.week ? 85 : 52,
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
               titleTextStyle: TextStyle(
                 color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
               leftChevronIcon: Icon(
                 Icons.chevron_left_rounded,
                 color: Colors.white,
-                size: 18,
               ),
               rightChevronIcon: Icon(
                 Icons.chevron_right_rounded,
                 color: Colors.white,
-                size: 18,
               ),
             ),
             daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: TextStyle(
-                color: Colors.grey[400]!,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-              weekendStyle: TextStyle(
-                color: Colors.grey[400]!,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
+              weekdayStyle:
+                  TextStyle(color: Colors.grey[400]!, fontSize: 12),
+              weekendStyle:
+                  TextStyle(color: Colors.grey[400]!, fontSize: 12),
             ),
-
-            // ВАЖНО: все decoration пустые, рисуем свои через builders
-            calendarStyle: const CalendarStyle(
+            calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
-              selectedDecoration: BoxDecoration(),
-              todayDecoration: BoxDecoration(),
-              cellPadding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-              defaultTextStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              defaultTextStyle: const TextStyle(color: Colors.white),
+              weekendTextStyle:
+                  const TextStyle(color: Colors.white70),
+              cellMargin: const EdgeInsets.all(4),
+              cellPadding:
+                  const EdgeInsets.symmetric(vertical: 2),
+              todayDecoration: BoxDecoration(
+                color: const Color(0xFF2C2C2E).withOpacity(0.3),
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF4C4C4D),
+                  width: 1,
+                ),
               ),
-              weekendTextStyle: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              selectedDecoration: BoxDecoration(
+                color: const Color(0xFF2C2C2E),
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF4C4C4D),
+                  width: 1,
+                ),
+              ),
+              defaultDecoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              weekendDecoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              outsideDecoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-
             onDaySelected: (selectedDay, focusedDay) {
               widget.onDateSelected(selectedDay);
             },
             onPageChanged: (focusedDay) {},
-
             calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, date, events) =>
-                  _buildDayCell(context, date),
-              outsideBuilder: (context, date, events) =>
-                  _buildDayCell(context, date, isOutside: true),
-              todayBuilder: (context, date, events) =>
-                  _buildDayCell(context, date, isToday: true),
-              // selectedBuilder больше НЕ используем
+              defaultBuilder: (context, date, _) {
+                if (_calendarFormat == CalendarFormat.month) return null;
+                return _buildWeekCell(
+                  date,
+                  isSelected: false,
+                  isToday: false,
+                );
+              },
+              selectedBuilder: (context, date, _) {
+                if (_calendarFormat == CalendarFormat.month) return null;
+                return _buildWeekCell(
+                  date,
+                  isSelected: true,
+                  isToday: false,
+                );
+              },
+              todayBuilder: (context, date, _) {
+                if (_calendarFormat == CalendarFormat.month) return null;
+                return _buildWeekCell(
+                  date,
+                  isSelected: false,
+                  isToday: true,
+                );
+              },
+              outsideBuilder: (context, date, _) {
+                if (_calendarFormat == CalendarFormat.month) return null;
+                return _buildWeekCell(
+                  date,
+                  isSelected: false,
+                  isToday: false,
+                );
+              },
+              markerBuilder: (context, date, events) {
+                final normalizedDate =
+                    DateTime(date.year, date.month, date.day);
+                if (_workoutDays[normalizedDate] == true) {
+                  return Align(
+                    alignment: _calendarFormat == CalendarFormat.week
+                        ? const Alignment(0, 0.82)
+                        : const Alignment(0, 0.7),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF51CF66),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                }
+                return null;
+              },
             ),
           ),
-
-          // Стрелочка для раскрытия/сворачивания
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _calendarFormat = _calendarFormat == CalendarFormat.week
-                    ? CalendarFormat.month
-                    : CalendarFormat.week;
-              });
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 8),
-              color: Colors.transparent,
-              child: Icon(
-                _calendarFormat == CalendarFormat.week
-                    ? Icons.keyboard_arrow_down_rounded
-                    : Icons.keyboard_arrow_up_rounded,
-                color: Colors.grey[600],
-                size: 22,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDayCell(
-    BuildContext context,
-    DateTime date, {
-    bool isToday = false,
-    bool isSelected = false,
-    bool isOutside = false,
-  }) {
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    final hasWorkout = _workoutDays[normalizedDate] == true;
-
-    // базовые цвета
-    final baseBg = const Color(0xFF212123);
-    final todayBg = const Color(0xFF2C2C2E).withOpacity(0.95);
-    final todayBorder = const Color(0xFF49494B); // уже не голубой
-
-    // для выбранного дня (пока не используем, но оставим)
-    final selectedBg = const Color(0xFF2C2C2E); // #2c2c2e
-    final selectedBorder = const Color(0xFF49494B); // #49494b
-
-    Color bgColor = baseBg;
-    Color borderColor = Colors.transparent;
-
-    if (isSelected) {
-      bgColor = selectedBg;
-      borderColor = selectedBorder;
-    } else if (isToday) {
-      bgColor = todayBg;
-      borderColor = todayBorder;
-    }
-
-    final textColor = isOutside
-        ? Colors.white.withOpacity(0.25)
-        : Colors.white.withOpacity(0.9);
-
-    // обычная ширина и увеличенная для сегодняшнего дня (3x)
-    const double normalWidth = 60;
-    const double height = 40;
-    final double width = isToday ? normalWidth * 3 : normalWidth;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(height / 2), // овал/капсула
-        border: Border.all(
-          color: borderColor,
-          width: borderColor == Colors.transparent ? 0 : 1.6,
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            date.day.toString(),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 2),
-          if (hasWorkout)
-            Container(
-              width: 4,
-              height: 4,
-              decoration: const BoxDecoration(
-                color: Color(0xFF51CF66),
-                shape: BoxShape.circle,
+
+        // стрелочка ВПЛОТНУЮ под календарём
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _calendarFormat = _calendarFormat == CalendarFormat.week
+                  ? CalendarFormat.month
+                  : CalendarFormat.week;
+            });
+          },
+          child: Container(
+            // чуть шире — уменьшаем отступы по бокам
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2C2C2E), // цвет по запросу
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(0),
+                topRight: Radius.circular(0),
+                bottomLeft: Radius.circular(999),
+                bottomRight: Radius.circular(999),
+              ),
+              border: Border.all(
+                color: const Color(0xFF2C2C2E),
+                width: 1,
               ),
             ),
-        ],
-      ),
+            child: Icon(
+              _calendarFormat == CalendarFormat.week
+                  ? Icons.keyboard_arrow_down_rounded
+                  : Icons.keyboard_arrow_up_rounded,
+              color: Colors.grey[300],
+              size: 16, // иконка чуть меньше по высоте
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
