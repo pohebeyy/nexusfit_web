@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startap/services/stat_service.dart';
 import 'dart:async';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:startap/screens/profile/profile.dart'; // путь подправь под свой
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -86,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(999),
@@ -704,7 +705,8 @@ class HomePageContentState extends State<HomePageContent> {
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
-          Appnar.buildModernAppBar(context, 'Главная'),
+          const _HomeHeader(),
+
           SliverToBoxAdapter(
             child: Padding(
               padding:
@@ -742,7 +744,7 @@ class HomePageContentState extends State<HomePageContent> {
                     child: PageView(
                       key: metricsKey,
                       padEnds: false,
-                      controller: PageController(viewportFraction: 0.9),
+                      controller: PageController(viewportFraction: 0.85),
                       children: const [
                         FlipMetricCard.sleep(),
                         FlipMetricCard.activity(),
@@ -760,6 +762,65 @@ class HomePageContentState extends State<HomePageContent> {
     );
   }
 }
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Текст "Главная" слева
+            
+            const Text(
+              'Главная',
+              textAlign: TextAlign.left,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+
+            // Правый аватар пользователя
+            GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ),
+              );
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.25),
+                  width: 1.5,
+                ),
+                color: const Color(0xFF2C2C2E),
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+}
+
 
 
 enum FlipCardType { sleep, nutrition, activity, water }
@@ -863,9 +924,9 @@ class _BaseFlipCardContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+      // важно: не используем clipBehavior, оставляем по умолчанию (Clip.none)
       padding: const EdgeInsets.all(20),
-      
       decoration: BoxDecoration(
         color: const Color(0xFF2C2C2E),
         borderRadius: BorderRadius.circular(24),
@@ -877,10 +938,13 @@ class _BaseFlipCardContainer extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      child: ClipRect( // защищаем только контент, но не режем при повороте
+        child: child,
+      ),
     );
   }
 }
+
 
 class SleepFrontCard extends StatefulWidget {
   const SleepFrontCard({super.key});
@@ -1032,7 +1096,7 @@ class _SleepFrontCardState extends State<SleepFrontCard> {
               children: [
                 Text(
                   statusText, // Динамический текст
-                  style: TextStyle(color: mainColor, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                  style: TextStyle(color: mainColor, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                 ),
                 const SizedBox(width: 6),
                 Icon(Icons.bolt_rounded, color: mainColor, size: 14),

@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../providers/ai_coach_provider.dart';
 import '../../models/chat_message.dart';
-
+import 'package:startap/screens/profile/profile.dart';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -305,43 +305,60 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFF1C1C1E),
-      elevation: 0,
-      title: Row(
+    PreferredSizeWidget _buildAppBar() {
+  return AppBar(
+    backgroundColor: const Color(0xFF1C1C1E),
+    elevation: 0,
+    automaticallyImplyLeading: false,
+    titleSpacing: 0,
+    title: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'AI Коуч',
+            'AI КОУЧ',
+            textAlign: TextAlign.left,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
           ),
-          const Spacer(),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.grey[700]!,
-                width: 2,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ),
+              );
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.25),
+                  width: 1.5,
+                ),
+                color: const Color(0xFF2C2C2E),
               ),
-            ),
-            child: ClipOval(
-              child: Icon(
-                Icons.person,
-                color: Colors.grey[600],
-                size: 24,
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white70,
+                size: 20,
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildMessageBubble(ChatMessage message, int index) {
     final isUser = message.isFromUser;

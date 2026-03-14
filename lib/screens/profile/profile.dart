@@ -506,27 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 centerTitle: true,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
-                    onPressed: provider.isLoading
-                        ? null
-                        : () async {
-                            await provider.logout();
-                            if (!context.mounted) return;
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          },
-                  ),
-                ],
+                
               ),
 
               // КОНТЕНТ
