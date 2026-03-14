@@ -7,6 +7,8 @@ import 'package:startap/screens/auth/login_screen.dart';
 import 'inventory_screen.dart';
 import 'context_json_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+
 // custom scroll behavior allowing both touch and mouse input; useful on web/mobile
 class _WebTouchScrollBehavior extends MaterialScrollBehavior {
   @override
@@ -18,19 +20,15 @@ class _WebTouchScrollBehavior extends MaterialScrollBehavior {
       };
 }
 
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
-
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-
 
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
@@ -39,11 +37,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _height = TextEditingController();
   final _weight = TextEditingController();
 
-
   DateTime? _birthDate;
 
+  // 1. Ключи для тура
+  final GlobalKey inventoryKey = GlobalKey();
+  final GlobalKey heightKey = GlobalKey();
+  final GlobalKey weightKey = GlobalKey();
+  final GlobalKey injuriesKey = GlobalKey();
 
-   @override
+  TutorialCoachMark? _tutorialCoachMark;
+
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -52,76 +56,296 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await provider.load();
       }
       _syncFromProvider();
-      _checkProfileTutorial();
+      runProfileTour(); // Запускаем тур вместо диалога
     });
   }
 
-  Future<void> _checkProfileTutorial() async {
+  // ================= ТУТОРИАЛ ЛОГИКА =================
+
+  Future<void> runProfileTour() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
     final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getBool('seen_profile_tutorial_v1') ?? false;
-    if (!seen && mounted) {
-      await _showProfileDialog();
-      await prefs.setBool('seen_profile_tutorial_v1', true);
+    final seen = prefs.getBool('seen_profile_tutorial_v2') ?? false;
+    // Если уже видели - выходим. Для тестов можно закомментировать эти 2 строки
+    if (seen) return;
+
+    await focusElement(heightKey);
+    if (!mounted) return;
+    await showTutorialStep(0);
+  }
+
+  Future<void> focusElement(GlobalKey key) async {
+    try {
+      final context = key.currentContext;
+      if (context != null) {
+        await Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+          alignment: 0.5,
+        );
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+    } catch (e) {
+      debugPrint(e.toString());
     }
   }
 
-  Future<void> _showProfileDialog() async {
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF2C2C2E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Заполни профиль',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: const Text(
-            'Укажи инвентарь, рост, вес и возможные травмы/болезни. '
-            'Это нужно, чтобы тренировки и рекомендации подстраивались под тебя и были безопасными.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'ПОЗЖЕ',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                // при желании можно сразу скролл/фокус на нужный блок
+  Future<void> showTutorialStep(int stepIndex) async {
+    if (!mounted) return;
+
+    late GlobalKey targetKey;
+    late String title;
+    late String text;
+    late ContentAlign align;
+
+    switch (stepIndex) {
+      case 0:
+        targetKey = heightKey;
+        title = 'ТВОЙ РОСТ';
+        text = 'Для точного расчета базового метаболизма и нагрузки ИИ должен знать твои параметры.';
+        align = ContentAlign.bottom;
+        break;
+      case 1:
+        targetKey = weightKey;
+        title = 'ТВОЙ ВЕС';
+        text = 'Важнейшая метрика. Мы будем следить за прогрессом и адаптировать план питания и тренировок.';
+        align = ContentAlign.bottom;
+        break;
+      case 2:
+        targetKey = inventoryKey;
+        title = 'ИНВЕНТАРЬ';
+        text = 'Выбери, где ты тренируешься (Дом/Зал) или собери свой набор. Тренировки сгенерируются только под то, что у тебя есть.';
+        align = ContentAlign.bottom;
+        break;
+      case 3:
+        targetKey = injuriesKey;
+        title = 'ОГРАНИЧЕНИЯ И ТРАВМЫ';
+        text = 'Болят колени? Астма? Укажи здесь. Нейросеть навсегда исключит опасные упражнения из твоей программы.';
+        align = ContentAlign.top;
+        break;
+      default:
+        return;
+    }
+
+    final isLast = stepIndex == 3;
+
+    final target = TargetFocus(
+      identify: "profile_step_$stepIndex",
+      keyTarget: targetKey,
+      shape: ShapeLightFocus.RRect,
+      radius: 16,
+      contents: [
+        TargetContent(
+          align: align,
+          builder: (context, controller) {
+            return buildTourContent(
+              title: title,
+              text: text,
+              controller: controller,
+              stepIndex: stepIndex,
+              isLast: isLast,
+              onNext: () async {
+                controller.skip();
+                await Future.delayed(const Duration(milliseconds: 400));
+                
+                if (!mounted) return;
+
+                if (stepIndex < 3) {
+                  late GlobalKey nextKey;
+                  if (stepIndex == 0) nextKey = weightKey;
+                  else if (stepIndex == 1) nextKey = inventoryKey;
+                  else if (stepIndex == 2) nextKey = injuriesKey;
+                  
+                  await focusElement(nextKey);
+                  await Future.delayed(const Duration(milliseconds: 100));
+                }
+
+                if (!mounted) return;
+
+                if (stepIndex < 3) {
+                  await showTutorialStep(stepIndex + 1);
+                } else {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('seen_profile_tutorial_v2', true);
+                }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: const Color(0xFF1C1C1E),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('ЗАПОЛНИТЬ'),
-            ),
-          ],
-        );
-      },
+              onPrev: () async {
+                controller.skip();
+                await Future.delayed(const Duration(milliseconds: 400));
+                
+                if (!mounted) return;
+
+                if (stepIndex > 0) {
+                  late GlobalKey prevKey;
+                  if (stepIndex == 1) prevKey = heightKey;
+                  else if (stepIndex == 2) prevKey = weightKey;
+                  else if (stepIndex == 3) prevKey = inventoryKey;
+                  
+                  await focusElement(prevKey);
+                  await Future.delayed(const Duration(milliseconds: 100));
+                }
+
+                if (!mounted) return;
+
+                if (stepIndex > 0) {
+                  await showTutorialStep(stepIndex - 1);
+                }
+              },
+            );
+          },
+        )
+      ],
     );
+
+    _tutorialCoachMark = TutorialCoachMark(
+      targets: [target],
+      colorShadow: Colors.black,
+      paddingFocus: 5,
+      opacityShadow: 0.8,
+      hideSkip: true,
+      onClickTarget: (target) {},
+    )..show(context: context);
   }
 
+  Widget buildTourContent({
+    required String title,
+    required String text,
+    required TutorialCoachMarkController controller,
+    int stepIndex = 0,
+    required VoidCallback onNext,
+    required VoidCallback onPrev,
+    bool isLast = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E).withOpacity(0.98),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFF4538).withOpacity(0.6),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF4538).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFFF4538),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 13,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (stepIndex > 0)
+                GestureDetector(
+                  onTap: onPrev,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: const Text(
+                      'НАЗАД',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ),
+              if (stepIndex > 0) const SizedBox(width: 10),
+              GestureDetector(
+                onTap: onNext,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF4538).withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    isLast ? 'ПОНЯТНО' : 'ДАЛЕЕ',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  // ================= КОНЕЦ ТУТОРИАЛА =================
 
   @override
   void dispose() {
@@ -134,11 +358,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-
   void _syncFromProvider() {
     final p = context.read<ProfileProvider>().profile;
     if (p == null) return;
-
 
     _firstName.text = p.firstName;
     _lastName.text = p.lastName;
@@ -148,10 +370,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _weight.text = p.weightKg?.toStringAsFixed(1) ?? '';
     _birthDate = p.birthDate;
 
-
     if (mounted) setState(() {});
   }
-
 
   Future<void> _editGoal() async {
     if (!mounted) return;
@@ -173,8 +393,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await provider.save(p.copyWith(goalText: result));
   }
 
-
-
   Future<void> _editHeight() async {
     if (!mounted) return;
     final provider = context.read<ProfileProvider>();
@@ -195,7 +413,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final p = provider.profile!;
     await provider.save(p.copyWith(heightCm: double.tryParse(result)));
   }
-
 
   Future<void> _editWeight() async {
     if (!mounted) return;
@@ -227,10 +444,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
-  
-
-
   @override
   Widget build(BuildContext context) {
     return Consumer<ProfileProvider>(
@@ -245,7 +458,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         }
-
 
         final p = provider.profile;
         if (p == null) {
@@ -267,7 +479,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         }
-
 
         return Scaffold(
           backgroundColor: const Color(0xFF1C1C1E),
@@ -318,7 +529,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-
               // КОНТЕНТ
               SliverToBoxAdapter(
                 child: Form(
@@ -336,9 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onEdit: () {},
                         ),
 
-
                         const SizedBox(height: 16),
-
 
                         // БЫСТРЫЕ ДЕЙСТВИЯ
                         _SectionTitle('ОБСЛЕДОВАНИЕ + ПЛАН'),
@@ -379,14 +587,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
 
-
                         const SizedBox(height: 24),
-
 
                         // ИНВЕНТАРЬ
                         _SectionTitle('ТЕЛО И ЦЕЛИ'),
                         const SizedBox(height: 12),
                         _MenuItem(
+                          key: inventoryKey, // <--- Ключ
                           icon: Icons.fitness_center_rounded,
                           title: 'ДОСТУПНЫЙ ПРЕСЕТ',
                           subtitle: equipmentPresetTitle(p.preset),
@@ -396,9 +603,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
 
-
                         const SizedBox(height: 24),
-
 
                         // АНТРОПОМЕТРИЯ
                         _SectionTitle('АНТРОПОМЕТРИЯ'),
@@ -411,6 +616,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         _MenuItem(
+                          key: heightKey, // <--- Ключ
                           icon: Icons.height_rounded,
                           title: 'Рост',
                           trailing: p.heightCm == null ? 'Не указан' : '${p.heightCm!.toInt()} см',
@@ -418,20 +624,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         _MenuItem(
+                          key: weightKey, // <--- Ключ
                           icon: Icons.monitor_weight_outlined,
                           title: 'Вес',
                           trailing: p.weightKg == null ? 'Не указан' : '${p.weightKg!.toStringAsFixed(1)} кг',
                           onTap: _editWeight,
                         ),
 
-
                         const SizedBox(height: 24),
-
 
                         // ТРАВМЫ И ОГРАНИЧЕНИЯ
                         _SectionTitle('ТРАВМЫ И ОГРАНИЧЕНИЯ'),
                         const SizedBox(height: 12),
                         _MenuItem(
+                          key: injuriesKey, // <--- Ключ
                           icon: Icons.warning_rounded,
                           iconColor: const Color(0xFFFF4538),
                           title: 'Травмы и Ограничения',
@@ -440,9 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: _editInjuries,
                         ),
 
-
                         const SizedBox(height: 24),
-
 
                         // AI КОНТЕКСТ
                         _SectionTitle('AI CONTEXT'),
@@ -456,9 +660,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
 
-
                         const SizedBox(height: 24),
-
 
                         // НАСТРОЙКИ
                         _SectionTitle('НАСТРОЙКИ'),
@@ -484,9 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: () {},
                         ),
 
-
                         const SizedBox(height: 32),
-
 
                         // КНОПКА ВЫХОДА
                         SizedBox(
@@ -523,9 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
 
-
                         const SizedBox(height: 16),
-
 
                         Center(
                           child: TextButton(
@@ -542,7 +740,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
 
-
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -558,9 +755,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-
 // КОМПОНЕНТЫ
-
 
 class _ProfileCard extends StatelessWidget {
   final String firstName;
@@ -568,14 +763,12 @@ class _ProfileCard extends StatelessWidget {
   final String subtitle;
   final VoidCallback onEdit;
 
-
   const _ProfileCard({
     required this.firstName,
     required this.lastName,
     required this.subtitle,
     required this.onEdit,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -635,11 +828,9 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-
 class _SectionTitle extends StatelessWidget {
   final String text;
   const _SectionTitle(this.text);
-
 
   @override
   Widget build(BuildContext context) {
@@ -655,19 +846,16 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-
 class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-
 
   const _QuickActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -699,7 +887,6 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final Color? iconColor;
@@ -709,8 +896,8 @@ class _MenuItem extends StatelessWidget {
   final Color? trailingColor;
   final VoidCallback onTap;
 
-
   const _MenuItem({
+    super.key, // <-- Добавили поддержку ключа для туториала
     required this.icon,
     this.iconColor,
     required this.title,
@@ -719,7 +906,6 @@ class _MenuItem extends StatelessWidget {
     this.trailingColor,
     required this.onTap,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -785,13 +971,11 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-
 class _EditDialog extends StatefulWidget {
   final String title;
   final String initialValue;
   final String hint;
   final TextInputType? keyboardType;
-
 
   const _EditDialog({
     required this.title,
@@ -860,7 +1044,7 @@ class _EditDialogState extends State<_EditDialog> {
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),
         ),
-        ElevatedButton(
+                ElevatedButton(
           onPressed: () => Navigator.pop(context, _controller.text),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFFD700),
@@ -869,33 +1053,28 @@ class _EditDialogState extends State<_EditDialog> {
           ),
           child: const Text('Сохранить'),
         ),
+
       ],
     );
   }
 }
 
-
-
 // ЭКРАН РЕДАКТИРОВАНИЯ ТРАВМ
 class _InjuriesScreen extends StatefulWidget {
   const _InjuriesScreen();
-
 
   @override
   State<_InjuriesScreen> createState() => _InjuriesScreenState();
 }
 
-
 class _InjuriesScreenState extends State<_InjuriesScreen> {
   final _ctrl = TextEditingController();
-
 
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
