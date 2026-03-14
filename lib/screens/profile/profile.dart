@@ -94,257 +94,286 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> showTutorialStep(int stepIndex) async {
-    if (!mounted) return;
+  if (!mounted) return;
 
-    late GlobalKey targetKey;
-    late String title;
-    late String text;
-    late ContentAlign align;
+  late GlobalKey targetKey;
+  late String title;
+  late String text;
+  late ContentAlign align;
 
-    switch (stepIndex) {
-      case 0:
-        targetKey = heightKey;
-        title = 'ТВОЙ РОСТ';
-        text = 'Для точного расчета базового метаболизма и нагрузки ИИ должен знать твои параметры.';
-        align = ContentAlign.bottom;
-        break;
-      case 1:
-        targetKey = weightKey;
-        title = 'ТВОЙ ВЕС';
-        text = 'Важнейшая метрика. Мы будем следить за прогрессом и адаптировать план питания и тренировок.';
-        align = ContentAlign.bottom;
-        break;
-      case 2:
-        targetKey = inventoryKey;
-        title = 'ИНВЕНТАРЬ';
-        text = 'Выбери, где ты тренируешься (Дом/Зал) или собери свой набор. Тренировки сгенерируются только под то, что у тебя есть.';
-        align = ContentAlign.bottom;
-        break;
-      case 3:
-        targetKey = injuriesKey;
-        title = 'ОГРАНИЧЕНИЯ И ТРАВМЫ';
-        text = 'Болят колени? Астма? Укажи здесь. Нейросеть навсегда исключит опасные упражнения из твоей программы.';
-        align = ContentAlign.top;
-        break;
-      default:
-        return;
-    }
-
-    final isLast = stepIndex == 3;
-
-    final target = TargetFocus(
-      identify: "profile_step_$stepIndex",
-      keyTarget: targetKey,
-      shape: ShapeLightFocus.RRect,
-      radius: 16,
-      contents: [
-        TargetContent(
-          align: align,
-          builder: (context, controller) {
-            return buildTourContent(
-              title: title,
-              text: text,
-              controller: controller,
-              stepIndex: stepIndex,
-              isLast: isLast,
-              onNext: () async {
-                controller.skip();
-                await Future.delayed(const Duration(milliseconds: 400));
-                
-                if (!mounted) return;
-
-                if (stepIndex < 3) {
-                  late GlobalKey nextKey;
-                  if (stepIndex == 0) nextKey = weightKey;
-                  else if (stepIndex == 1) nextKey = inventoryKey;
-                  else if (stepIndex == 2) nextKey = injuriesKey;
-                  
-                  await focusElement(nextKey);
-                  await Future.delayed(const Duration(milliseconds: 100));
-                }
-
-                if (!mounted) return;
-
-                if (stepIndex < 3) {
-                  await showTutorialStep(stepIndex + 1);
-                } else {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('seen_profile_tutorial_v2', true);
-                }
-              },
-              onPrev: () async {
-                controller.skip();
-                await Future.delayed(const Duration(milliseconds: 400));
-                
-                if (!mounted) return;
-
-                if (stepIndex > 0) {
-                  late GlobalKey prevKey;
-                  if (stepIndex == 1) prevKey = heightKey;
-                  else if (stepIndex == 2) prevKey = weightKey;
-                  else if (stepIndex == 3) prevKey = inventoryKey;
-                  
-                  await focusElement(prevKey);
-                  await Future.delayed(const Duration(milliseconds: 100));
-                }
-
-                if (!mounted) return;
-
-                if (stepIndex > 0) {
-                  await showTutorialStep(stepIndex - 1);
-                }
-              },
-            );
-          },
-        )
-      ],
-    );
-
-    _tutorialCoachMark = TutorialCoachMark(
-      targets: [target],
-      colorShadow: Colors.black,
-      paddingFocus: 5,
-      opacityShadow: 0.8,
-      hideSkip: true,
-      onClickTarget: (target) {},
-    )..show(context: context);
+  switch (stepIndex) {
+    case 0:
+      targetKey = heightKey;
+      title = 'ТВОЙ РОСТ';
+      text =
+          'Для точного расчета базового метаболизма и нагрузки ИИ должен знать твои параметры.';
+      align = ContentAlign.bottom;
+      break;
+    case 1:
+      targetKey = weightKey;
+      title = 'ТВОЙ ВЕС';
+      text =
+          'Важнейшая метрика. Мы будем следить за прогрессом и адаптировать план питания и тренировок.';
+      align = ContentAlign.bottom;
+      break;
+    case 2:
+      targetKey = inventoryKey;
+      title = 'ИНВЕНТАРЬ';
+      text =
+          'Выбери, где ты тренируешься (Дом/Зал) или собери свой набор. Тренировки сгенерируются только под то, что у тебя есть.';
+      align = ContentAlign.bottom;
+      break;
+    case 3:
+      targetKey = injuriesKey;
+      title = 'ОГРАНИЧЕНИЯ И ТРАВМЫ';
+      text =
+          'Болят колени? Астма? Укажи здесь. Нейросеть навсегда исключит опасные упражнения из твоей программы.';
+      align = ContentAlign.top;
+      break;
+    default:
+      return;
   }
 
-  Widget buildTourContent({
-    required String title,
-    required String text,
-    required TutorialCoachMarkController controller,
-    int stepIndex = 0,
-    required VoidCallback onNext,
-    required VoidCallback onPrev,
-    bool isLast = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E).withOpacity(0.98),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFFF4538).withOpacity(0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF4538).withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+  final isLast = stepIndex == 3;
+
+  final target = TargetFocus(
+    identify: "profile_step_$stepIndex",
+    keyTarget: targetKey,
+    shape: ShapeLightFocus.RRect,
+    radius: 16,
+    contents: [
+      TargetContent(
+        align: align,
+        builder: (context, controller) {
+          return buildTourContent(
+            title: title,
+            text: text,
+            controller: controller,
+            stepIndex: stepIndex,
+            isLast: isLast,
+            // ДАЛЕЕ / ПОНЯТНО
+            onNext: () async {
+              controller.skip();
+              await Future.delayed(const Duration(milliseconds: 400));
+
+              if (!mounted) return;
+
+              if (stepIndex < 3) {
+                late GlobalKey nextKey;
+                if (stepIndex == 0) {
+                  nextKey = weightKey;
+                } else if (stepIndex == 1) {
+                  nextKey = inventoryKey;
+                } else {
+                  nextKey = injuriesKey;
+                }
+
+                await focusElement(nextKey);
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+
+              if (!mounted) return;
+
+              if (stepIndex < 3) {
+                await showTutorialStep(stepIndex + 1);
+              } else {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('seen_profile_tutorial_v2', true);
+              }
+            },
+            // если нужно — можешь реализовать назад аналогично home
+            onPrev: () async {
+              controller.skip();
+              await Future.delayed(const Duration(milliseconds: 400));
+
+              if (!mounted) return;
+
+              if (stepIndex > 0) {
+                late GlobalKey prevKey;
+                if (stepIndex == 1) {
+                  prevKey = heightKey;
+                } else if (stepIndex == 2) {
+                  prevKey = weightKey;
+                } else {
+                  prevKey = inventoryKey;
+                }
+
+                await focusElement(prevKey);
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+
+              if (!mounted) return;
+
+              if (stepIndex > 0) {
+                await showTutorialStep(stepIndex - 1);
+              }
+            },
+            // ПРОПУСТИТЬ ВЕСЬ ТУР ПРОФИЛЯ
+            onSkip: () async {
+              controller.skip();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('seen_profile_tutorial_v2', true);
+              // дальше ничего не показываем
+            },
+          );
+        },
       ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+    ],
+  );
+
+  _tutorialCoachMark = TutorialCoachMark(
+    targets: [target],
+    colorShadow: Colors.black,
+    paddingFocus: 5,
+    opacityShadow: 0.8,
+    hideSkip: true,
+    onClickTarget: (target) {},
+  )..show(context: context);
+}
+
+
+  Widget buildTourContent({
+  required String title,
+  required String text,
+  required TutorialCoachMarkController controller,
+  int stepIndex = 0,
+  required VoidCallback onNext,
+  required VoidCallback onPrev,
+  required VoidCallback onSkip, // НОВОЕ
+  bool isLast = false,
+}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF1C1C1E).withOpacity(0.98),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: const Color(0xFFFF4538).withOpacity(0.6),
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFFFF4538).withOpacity(0.3),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFFFF4538),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.85),
+            fontSize: 13,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // ПРОПУСТИТЬ
+            GestureDetector(
+              onTap: onSkip,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                child: const Text(
+                  'ПРОПУСТИТЬ',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // ДАЛЕЕ / ПОНЯТНО
+            GestureDetector(
+              onTap: onNext,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF4538).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
                 child: Text(
-                  title,
+                  isLast ? 'ПОНЯТНО' : 'ДАЛЕЕ',
                   style: const TextStyle(
-                    color: Color(0xFFFF4538),
-                    fontSize: 15,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            text,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: 13,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (stepIndex > 0)
-                GestureDetector(
-                  onTap: onPrev,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: const Text(
-                      'НАЗАД',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                ),
-              if (stepIndex > 0) const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onNext,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF4538).withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    isLast ? 'ПОНЯТНО' : 'ДАЛЕЕ',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   // ================= КОНЕЦ ТУТОРИАЛА =================
 
   @override
@@ -692,7 +721,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             child: const Text(
-                              '🔥 ВЫЙТИ ИЗ АККАУНТА',
+                              'ВЫЙТИ ИЗ АККАУНТА',
                               style: TextStyle(
                                 color: Color(0xFFFF4538),
                                 fontSize: 14,

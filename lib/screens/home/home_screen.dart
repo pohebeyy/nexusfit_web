@@ -294,7 +294,7 @@ GestureDetector(
     await Future.delayed(const Duration(milliseconds: 200));
 
     // ДЛЯ ТЕСТОВ: всегда показываем тур
-    _chatKey.currentState?.startChatTour(forceForTests: true);
+    _chatKey.currentState?.startChatTour();
 
 
   },
@@ -394,141 +394,111 @@ class HomePageContentState extends State<HomePageContent> {
 
   /// Показывает один конкретный шаг туториала
   Future<void> showTutorialStep(int stepIndex) async {
-    if (!mounted) return;
+  if (!mounted) return;
 
-    late GlobalKey targetKey;
-    late String title;
-    late String text;
-    late ContentAlign align;
+  late GlobalKey targetKey;
+  late String title;
+  late String text;
+  late ContentAlign align;
 
-    switch (stepIndex) {
-      case 0:
-        targetKey = calendarKey;
-        title = 'АДАПТИВНЫЙ ГРАФИК';
-        text = 'Забудь про тупой подход и жесткие рамки. Neuro-Collider™ перестраивает твои дни отдыха и тренировок на лету. Просто следуй плану.';
-        align = ContentAlign.bottom;
-        break;
-      case 1:
-        targetKey = todayWorkoutKey;
-        title = 'ТРЕНИРОВКА ДНЯ';
-        text = 'Интенсивность уже подобрана под твое состояние. Мало спал? Снизим веса. Ты на пике энергии? Дадим буст.';
-        align = ContentAlign.bottom;
-        break;
-      case 2:
-        targetKey = metricsKey;
-        title = 'БИОМАШИНА НА ДАННЫХ';
-        text = 'Свайпай и тапай карточки. Чем больше метрик ты отдаешь, тем точнее нейросеть управляет твоим прогрессом.';
-        align = ContentAlign.top;
-        break;
-      case 3:
-        targetKey = widget.aiTabKey;
-        title = 'AI-НАСТАВНИК';
-        text = 'Твой карманный бро. Напиши ему, если болит плечо или нет времени на зал — весь план перестроится за секунду.';
-        align = ContentAlign.top;
-        break;
-      default:
-        return;
-    }
-
-        final isLast = stepIndex == 3;
-
-    final target = TargetFocus(
-      identify: "step_$stepIndex",
-      keyTarget: targetKey,
-      shape: ShapeLightFocus.RRect, // Теперь ВСЕГДА прямоугольник
-      radius: 20, // Скругление углов (можно сделать 20 или 24)
-      contents: [
-
-        TargetContent(
-          align: align,
-          builder: (context, controller) {
-            return buildTourContent(
-              title: title,
-              text: text,
-              controller: controller,
-              stepIndex: stepIndex,
-              isLast: isLast,
-                            onNext: () async {
-                // 1. Полностью убиваем текущий оверлей
-                controller.skip();
-                
-                // 2. Ждем чуть дольше, чтобы анимация исчезновения точно завершилась
-                // и Flutter удалил слой из дерева виджетов.
-                await Future.delayed(const Duration(milliseconds: 400));
-                
-                if (!mounted) return;
-
-                // 3. Выполняем скролл
-                if (stepIndex < 3) {
-                  late GlobalKey nextKey;
-                  if (stepIndex == 0) nextKey = todayWorkoutKey;
-                  else if (stepIndex == 1) nextKey = metricsKey;
-                  else if (stepIndex == 2) nextKey = widget.aiTabKey;
-                  
-                  await focusElement(nextKey);
-                  
-                  // 4. ГЛАВНЫЙ ФИКС: Ждем дополнительно 100 мс после скролла, 
-                  // чтобы Flutter успел просчитать layout (размеры) нового элемента.
-                  await Future.delayed(const Duration(milliseconds: 100));
-                }
-
-                if (!mounted) return;
-
-                // 5. Показываем следующий шаг только когда всё готово
-                if (stepIndex < 3) {
-                  await showTutorialStep(stepIndex + 1);
-                } else {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('seen_hometour_v2', true);
-                }
-              },
-              onPrev: () async {
-                // 1. Полностью убиваем текущий оверлей
-                controller.skip();
-                
-                await Future.delayed(const Duration(milliseconds: 400));
-                
-                if (!mounted) return;
-
-                // 2. Выполняем скролл
-                if (stepIndex > 0) {
-                  late GlobalKey prevKey;
-                  if (stepIndex == 1) prevKey = calendarKey;
-                  else if (stepIndex == 2) prevKey = todayWorkoutKey;
-                  else if (stepIndex == 3) prevKey = metricsKey;
-                  
-                  await focusElement(prevKey);
-                  
-                  // 3. ГЛАВНЫЙ ФИКС: Ждем перерисовки layout после скролла
-                  await Future.delayed(const Duration(milliseconds: 100));
-                }
-
-                if (!mounted) return;
-
-                // 4. Показываем предыдущий шаг
-                if (stepIndex > 0) {
-                  await showTutorialStep(stepIndex - 1);
-                }
-              },
-
-            );
-          },
-        )
-      ],
-    );
-
-        _tutorialCoachMark = TutorialCoachMark(
-      targets: [target],
-      colorShadow: Colors.black,
-      textSkip: "ПРОПУСТИТЬ",
-      paddingFocus: 5, // Строго положительное число или 0!
-      opacityShadow: 0.8,
-      hideSkip: true, // Скрываем стандартный skip, мы управляем им сами
-      onClickTarget: (target) {
-        // Запрещаем клики по самой выделенной области
-      },
-    )..show(context: context);
+  switch (stepIndex) {
+    case 0:
+      targetKey = calendarKey;
+      title = 'АДАПТИВНЫЙ ГРАФИК';
+      text = 'Забудь про тупой подход и жесткие рамки. Neuro-Collider™ перестраивает твои дни отдыха и тренировок на лету. Просто следуй плану.';
+      align = ContentAlign.bottom;
+      break;
+    case 1:
+      targetKey = todayWorkoutKey;
+      title = 'ТРЕНИРОВКА ДНЯ';
+      text = 'Интенсивность уже подобрана под твое состояние. Мало спал? Снизим веса. Ты на пике энергии? Дадим буст.';
+      align = ContentAlign.bottom;
+      break;
+    case 2:
+      targetKey = metricsKey;
+      title = 'БИОМАШИНА НА ДАННЫХ';
+      text = 'Свайпай и тапай карточки. Чем больше метрик ты отдаешь, тем точнее нейросеть управляет твоим прогрессом.';
+      align = ContentAlign.top;
+      break;
+    case 3:
+      targetKey = widget.aiTabKey;
+      title = 'AI-НАСТАВНИК';
+      text = 'Твой карманный бро. Напиши ему, если болит плечо или нет времени на зал — весь план перестроится за секунду.';
+      align = ContentAlign.top;
+      break;
+    default:
+      return;
   }
+
+  final isLast = stepIndex == 3;
+
+  final target = TargetFocus(
+    identify: "step_$stepIndex",
+    keyTarget: targetKey,
+    shape: ShapeLightFocus.RRect,
+    radius: 20,
+    contents: [
+      TargetContent(
+        align: align,
+        builder: (context, controller) {
+          return buildTourContent(
+            title: title,
+            text: text,
+            controller: controller,
+            stepIndex: stepIndex,
+            isLast: isLast,
+            // ДАЛЕЕ / ПОГНАЛИ
+            onNext: () async {
+              controller.skip();
+              await Future.delayed(const Duration(milliseconds: 400));
+
+              if (!mounted) return;
+
+              if (stepIndex < 3) {
+                late GlobalKey nextKey;
+                if (stepIndex == 0) nextKey = todayWorkoutKey;
+                else if (stepIndex == 1) nextKey = metricsKey;
+                else if (stepIndex == 2) nextKey = widget.aiTabKey;
+
+                await focusElement(nextKey);
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+
+              if (!mounted) return;
+
+              if (stepIndex < 3) {
+                await showTutorialStep(stepIndex + 1);
+              } else {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('seen_hometour_v2', true);
+              }
+            },
+            // Если хочешь оставить "Назад" — сюда ставь свою старую логику
+            onPrev: () async {},
+            // НОВОЕ: ПРОПУСТИТЬ ВЕСЬ ТУР
+            onSkip: () async {
+              controller.skip();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('seen_hometour_v2', true);
+              // Ничего дальше не вызываем — тур полностью завершён
+            },
+          );
+        },
+      ),
+    ],
+  );
+
+  _tutorialCoachMark = TutorialCoachMark(
+    targets: [target],
+    colorShadow: Colors.black,
+    textSkip: "ПРОПУСТИТЬ",
+    paddingFocus: 5,
+    opacityShadow: 0.8,
+    hideSkip: true,
+    onClickTarget: (target) {},
+  )..show(context: context);
+}
+
 
     Future<void> runHomeTour() async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -553,140 +523,86 @@ class HomePageContentState extends State<HomePageContent> {
 
     // --- БЛОК 2: ВСТАВИТЬ ВМЕСТО СТАРОГО buildTourContent ---
   Widget buildTourContent({
-    required String title,
-    required String text,
-    required TutorialCoachMarkController controller,
-    int stepIndex = 0,
-    required VoidCallback onNext,
-    required VoidCallback onPrev,
-    bool isLast = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E).withOpacity(0.98),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFFF4538).withOpacity(0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF4538).withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+  required String title,
+  required String text,
+  required TutorialCoachMarkController controller,
+  int stepIndex = 0,
+  required VoidCallback onNext,
+  required VoidCallback onPrev, // можно оставить, если нужно
+  required VoidCallback onSkip, // НОВЫЙ колбэк
+  bool isLast = false,
+}) {
+  return Container(
+    // ... твой декор
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // шапка + текст как было
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Кнопка "ПРОПУСТИТЬ" всегда слева
+            GestureDetector(
+              onTap: onSkip,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: const Text(
+                  'ПРОПУСТИТЬ',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Кнопка "ДАЛЕЕ / ПОГНАЛИ"
+            GestureDetector(
+              onTap: onNext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF4538).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
                 child: Text(
-                  title,
+                  isLast ? 'ПОГНАЛИ' : 'ДАЛЕЕ',
                   style: const TextStyle(
-                    color: Color(0xFFFF4538),
-                    fontSize: 15,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            text,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: 13,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (stepIndex > 0)
-                GestureDetector(
-                  onTap: onPrev,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: const Text(
-                      'НАЗАД',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                ),
-              if (stepIndex > 0) const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onNext,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF4538).withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    isLast ? 'ПОГНАЛИ' : 'ДАЛЕЕ',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   // --- КОНЕЦ БЛОКА 2 ---
 
 
@@ -694,6 +610,7 @@ class HomePageContentState extends State<HomePageContent> {
 
   @override
   Widget build(BuildContext context) {
+    
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<HealthProvider>().initHealthData();

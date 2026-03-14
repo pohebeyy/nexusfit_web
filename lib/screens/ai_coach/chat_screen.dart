@@ -82,195 +82,214 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTourCard({
-    required String title,
-    required String text,
-    required TutorialCoachMarkController controller,
-    required int stepIndex,
-    required VoidCallback onNext,
-    required VoidCallback onPrev,
-    bool isLast = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E).withOpacity(0.98),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFFF4538).withOpacity(0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF4538).withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+  required String title,
+  required String text,
+  required TutorialCoachMarkController controller,
+  required int stepIndex,
+  required VoidCallback onNext,
+  required VoidCallback onPrev,
+  required VoidCallback onSkip, // НОВОЕ
+  bool isLast = false,
+}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF1C1C1E).withOpacity(0.98),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: const Color(0xFFFF4538).withOpacity(0.6),
+        width: 2,
       ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFFFF4538).withOpacity(0.3),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.psychology_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFFFF4538),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.85),
+            fontSize: 13,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // ПРОПУСТИТЬ
+            GestureDetector(
+              onTap: onSkip,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                child: const Text(
+                  'ПРОПУСТИТЬ',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // ДАЛЕЕ / ПОГНАЛИ
+            GestureDetector(
+              onTap: onNext,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF4538).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.psychology_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
                 child: Text(
-                  title,
+                  isLast ? 'ПОГНАЛИ' : 'ДАЛЕЕ',
                   style: const TextStyle(
-                    color: Color(0xFFFF4538),
-                    fontSize: 15,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            text,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: 13,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (stepIndex > 0)
-                GestureDetector(
-                  onTap: onPrev,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                    ),
-                    child: const Text(
-                      'НАЗАД',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                ),
-              if (stepIndex > 0) const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onNext,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF4538).withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    isLast ? 'ПОГНАЛИ' : 'ДАЛЕЕ',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 
   List<TargetFocus> _createTargets() {
-    return [
-      TargetFocus(
-        identify: "quick_buttons",
-        keyTarget: quickButtonsKey,
-        shape: ShapeLightFocus.RRect,
-        radius: 20,
-        contents: [
-          TargetContent(
-            align: ContentAlign.top,
-            builder: (context, controller) {
-              return _buildTourCard(
-                title: "БЫСТРЫЕ КОМАНДЫ",
-                text:
-                    "Нет времени писать простыню? Жми сюда — Neuro-Collider сразу понимает, что у тебя болит и адаптирует план.",
-                controller: controller,
-                stepIndex: 0,
-                onNext: () => controller.next(),
-                onPrev: () {},
-                isLast: false,
-              );
-            },
-          ),
-        ],
-      ),
-      TargetFocus(
-        identify: "input_field",
-        keyTarget: inputFieldKey,
-        shape: ShapeLightFocus.RRect,
-        radius: 20,
-        contents: [
-          TargetContent(
-            align: ContentAlign.top,
-            builder: (context, controller) {
-              return _buildTourCard(
-                title: "NEURO-COLLIDER ВНУТРИ",
-                text:
-                    "Пиши сюда сон, стресс, травмы, дедлайны. Мы не просто болтаем — мы пересобираем тренировки и нагрузку под твое состояние.",
-                controller: controller,
-                stepIndex: 1,
-                onNext: () => controller.skip(), // "ПОГНАЛИ" => завершить
-                onPrev: () => controller.previous(),
-                isLast: true,
-              );
-            },
-          ),
-        ],
-      ),
-    ];
-  }
+  return [
+    TargetFocus(
+      identify: "quick_buttons",
+      keyTarget: quickButtonsKey,
+      shape: ShapeLightFocus.RRect,
+      radius: 20,
+      contents: [
+        TargetContent(
+          align: ContentAlign.top,
+          builder: (context, controller) {
+            return _buildTourCard(
+              title: "БЫСТРЫЕ КОМАНДЫ",
+              text:
+                  "Нет времени писать простыню? Жми сюда — Neuro-Collider сразу понимает, что у тебя болит и адаптирует план.",
+              controller: controller,
+              stepIndex: 0,
+              onNext: () => controller.next(),
+              onPrev: () {}, // тут "Назад" не нужен
+              onSkip: () async {
+                controller.skip();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('seen_chat_tour_v1', true);
+              },
+              isLast: false,
+            );
+          },
+        ),
+      ],
+    ),
+    TargetFocus(
+      identify: "input_field",
+      keyTarget: inputFieldKey,
+      shape: ShapeLightFocus.RRect,
+      radius: 20,
+      contents: [
+        TargetContent(
+          align: ContentAlign.top,
+          builder: (context, controller) {
+            return _buildTourCard(
+              title: "NEURO-COLLIDER ВНУТРИ",
+              text:
+                  "Пиши сюда сон, стресс, травмы, дедлайны. Мы не просто болтаем — мы пересобираем тренировки и нагрузку под твое состояние.",
+              controller: controller,
+              stepIndex: 1,
+              onNext: () async {
+                // ПОГНАЛИ — завершаем и ставим флаг
+                controller.skip();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('seen_chat_tour_v1', true);
+              },
+              onPrev: () => controller.previous(),
+              onSkip: () async {
+                controller.skip();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('seen_chat_tour_v1', true);
+              },
+              isLast: true,
+            );
+          },
+        ),
+      ],
+    ),
+  ];
+}
+
 
   @override
   Widget build(BuildContext context) {
