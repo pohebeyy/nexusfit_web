@@ -89,14 +89,16 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
 
   bool get _isLastExercise => _currentIndex == widget.exercises.length - 1;
 
-  Future<void> _finishAndSaveWorkout() async {
+    Future<void> _finishAndSaveWorkout() async {
     try {
       final duration = DateTime.now().difference(_startTime ?? DateTime.now());
       int activeMinutes = duration.inMinutes;
       
-      if (activeMinutes < 5) {
-        activeMinutes = 45; 
-        debugPrint('ТЕСТ: Искусственно установили время на 45 минут');
+      // Убираем искусственную накрутку минут, 
+      // но если прошла меньше 1 минуты (например, 30 сек), ставим хотя бы 1 минуту,
+      // чтобы статистика (калории) не умножалась на ноль.
+      if (activeMinutes == 0) {
+        activeMinutes = 1; 
       }
 
       double avgRpe = 5.0;
@@ -128,12 +130,13 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
       );
 
       if (response.statusCode == 200) {
-        debugPrint('Статистика сохранена: $caloriesBurned ккал за $activeMinutes мин. RPE: $avgRpe, Дата: $formattedDate');
+        debugPrint('Статистика сохранена: $caloriesBurned ккал за $activeMinutes мин.');
       }
     } catch (e) {
       debugPrint('Ошибка сети: $e');
     }
   }
+
 
   Future<void> _onCompleteSetPressed() async {
     _stopTimer();
@@ -167,10 +170,12 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
     if (_isLastExercise) {
       await _finishAndSaveWorkout();
       
-      // Вычисляем данные для финального экрана
-      final totalMins = DateTime.now().difference(_startTime ?? DateTime.now()).inMinutes;
+      // Вычисляем реальные данные
+      int totalMins = DateTime.now().difference(_startTime ?? DateTime.now()).inMinutes;
+      if (totalMins == 0) totalMins = 1; // минимум 1 минута
+
       final avgRpe = _rpeHistory.isNotEmpty ? _rpeHistory.reduce((a, b) => a + b) / _rpeHistory.length : 5.0;
-      final calories = ((avgRpe * 1.2) * (totalMins < 5 ? 45 : totalMins)).round();
+      final calories = ((avgRpe * 1.2) * totalMins).round();
       
       if (mounted) {
         // Переход на новый экран
@@ -178,7 +183,8 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
           context,
           MaterialPageRoute(
             builder: (context) => WorkoutCompleteScreen(
-              totalMinutes: totalMins < 5 ? 45 : totalMins, 
+              // Передаем реальное время без костылей
+              totalMinutes: totalMins, 
               caloriesBurned: calories,
             ),
           ),
