@@ -1,0 +1,689 @@
+import 'package:flutter/material.dart';
+import 'package:bodychart_heatmap/bodychart_heatmap.dart';
+import 'package:provider/provider.dart';
+import 'package:startap/providers/onboarding_provider.dart';
+import 'package:startap/screens/onboarding/shared/questionnaire/training_location_screen.dart';
+
+/// Shared: Выбор целевых зон тела для акцента (ИДЕАЛЬНАЯ КАЛИБРОВКА)
+class TargetZonesScreen extends StatefulWidget {
+  const TargetZonesScreen({super.key});
+
+  @override
+  State<TargetZonesScreen> createState() => _TargetZonesScreenState();
+}
+
+class _TargetZonesScreenState extends State<TargetZonesScreen> {
+  final Set<String> _selectedZones = {};
+  final int _maxSelections = 3;
+  BodyViewType _viewType = BodyViewType.front;
+
+  final Map<String, Map<String, dynamic>> _bodyZones = {
+    'chest': {
+      'title': '',
+      'subtitle': 'Грудные мышцы',
+      'icon': '💪',
+      'color': const Color(0xFF00D9FF),
+      'side': 'front',
+    },
+    'back': {
+      'title': 'Спина',
+      'subtitle': 'Широчайшие, трапеции',
+      'icon': '🏋️',
+      'color': const Color(0xFF4CAF50),
+      'side': 'back',
+    },
+    'shoulder': {
+      'title': 'Плечи',
+      'subtitle': 'Дельтовидные мышцы',
+      'icon': '🦾',
+      'color': const Color(0xFFFF9800),
+      'side': 'both',
+    },
+    'arm': {
+      'title': 'Руки',
+      'subtitle': 'Бицепс, трицепс, предплечья',
+      'icon': '💪',
+      'color': const Color(0xFF9C27B0),
+      'side': 'both',
+    },
+    'abs': {
+      'title': 'Пресс',
+      'subtitle': 'Прямая и косые мышцы живота',
+      'icon': '🔥',
+      'color': const Color(0xFFFFD700),
+      'side': 'front',
+    },
+    'butt': {
+      'title': 'Ягодицы',
+      'subtitle': 'Ягодичные мышцы',
+      'icon': '🍑',
+      'color': const Color(0xFFFF5252),
+      'side': 'back',
+    },
+    'leg': {
+      'title': 'Ноги',
+      'subtitle': 'Квадрицепс, бицепс бедра, икры',
+      'icon': '🦵',
+      'color': const Color(0xFF00BCD4),
+      'side': 'both',
+    },
+  };
+
+  void _toggleZone(String zoneId) {
+    setState(() {
+      if (_selectedZones.contains(zoneId)) {
+        _selectedZones.remove(zoneId);
+      } else {
+        if (_selectedZones.length >= _maxSelections) {
+          _showMaxSelectionWarning();
+          return;
+        }
+        _selectedZones.add(zoneId);
+      }
+    });
+  }
+
+  void _showMaxSelectionWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Максимум 3 зоны',
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        backgroundColor: const Color(0xFFFF5252),
+        duration: const Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  // 🔥 ИДЕАЛЬНАЯ КАЛИБРОВКА ПОД bodychart_heatmap
+    // 🔥 ИДЕАЛЬНАЯ КАЛИБРОВКА ПОД bodychart_heatmap (СМЕЩЕНИЕ ВНИЗ)
+    String? _detectZoneFromTap(Offset localPosition, Size size) {
+    // Теперь localPosition отсчитывается строго от 0 до 340 по X и от 0 до 500 по Y
+    final relX = localPosition.dx / size.width;
+    final relY = localPosition.dy / size.height;
+    
+    // Если клик вне модели - игнор (хотя теперь это почти невозможно)
+    if (relX < 0 || relX > 1 || relY < 0 || relY > 1) {
+      return null;
+    }
+    
+    final bool isCenter = relX >= 0.35 && relX <= 0.65;
+    final bool isLeft = relX < 0.35;
+    final bool isRight = relX > 0.65;
+    
+        if (_viewType == BodyViewType.front) {
+      // ============ СПЕРЕДИ ============
+      
+      // Голова и шея (0.00 - 0.15)
+      if (relY < 0.15) return null; 
+      
+      // Плечи (очень узкая полоса на самом верху торса: 0.15 - 0.20)
+      if (relY >= 0.15 && relY < 0.20) {
+        return 'shoulder';
+      }
+      
+      // Грудь (поднята выше, четко под ключицами: 0.20 - 0.28)
+      if (relY >= 0.20 && relY < 0.28 && isCenter) {
+        return 'chest';
+      }
+      
+      // Пресс (начинается сразу под грудью: 0.28 - 0.48)
+      if (relY >= 0.28 && relY < 0.48 && isCenter) {
+        return 'abs';
+      }
+      
+      // Руки (по бокам от плеч до таза: 0.20 - 0.48)
+      if (relY >= 0.20 && relY < 0.48) {
+        if (isLeft || isRight) return 'arm';
+      }
+      
+      // Ноги (с 0.48 и ниже)
+      if (relY >= 0.48) {
+        return 'leg';
+      }
+      
+    } else if (_viewType == BodyViewType.back) {
+      // ============ СЗАДИ ============
+      
+      // Голова и шея
+      if (relY < 0.15) return null; 
+      
+      // Плечи (задняя дельта: 0.15 - 0.20)
+      if (relY >= 0.15 && relY < 0.20) {
+        return 'shoulder';
+      }
+      
+      // Спина (широчайшие и поясница: 0.20 - 0.42)
+      if (relY >= 0.20 && relY < 0.42 && isCenter) {
+        return 'back';
+      }
+      
+      // Руки
+      if (relY >= 0.20 && relY < 0.48) {
+        if (isLeft || isRight) return 'arm';
+      }
+      
+      // Ягодицы (0.42 - 0.52)
+      if (relY >= 0.42 && relY < 0.52 && isCenter) {
+        return 'butt';
+      }
+      
+      // Ноги (задняя поверхность: 0.52+)
+      if (relY >= 0.52) {
+        return 'leg';
+      }
+    }
+
+    
+    return null;
+  }
+
+
+  List<String> _getVisibleZones() {
+    if (_viewType == BodyViewType.front) {
+      return _bodyZones.entries
+          .where((e) => e.value['side'] == 'front' || e.value['side'] == 'both')
+          .map((e) => e.key)
+          .toList();
+    } else if (_viewType == BodyViewType.back) {
+      return _bodyZones.entries
+          .where((e) => e.value['side'] == 'back' || e.value['side'] == 'both')
+          .map((e) => e.key)
+          .toList();
+    } else {
+      return _bodyZones.keys.toList();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1C1C1E),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF1C1C1E),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded,
+              color: Color(0xFFFF4538)),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              children: [
+                const SizedBox(height: 8),
+
+                const Text(
+                  'На какие зоны\nсделать акцент?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  'Выбери до $_maxSelections зон. Нажми на тело или на кнопки ниже',
+                  style: TextStyle(
+                    color: const Color(0xFFB0B5C0).withOpacity(0.8),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                _buildViewToggle(),
+
+                const SizedBox(height: 24),
+
+                _buildBodyVisualization(),
+
+                const SizedBox(height: 24),
+
+                _buildSelectionHint(),
+
+                const SizedBox(height: 24),
+
+                _buildZoneChips(),
+
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+
+          _buildFloatingButton(),
+        ],
+      ),
+    );
+  }
+
+    Widget _buildViewToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E), // Цвет по твоей палитре
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildToggleButton(
+              'Спереди',
+              Icons.accessibility_new,
+              BodyViewType.front,
+            ),
+          ),
+          const SizedBox(width: 8), // Отступ между кнопками
+          Expanded(
+            child: _buildToggleButton(
+              'Сзади',
+              Icons.accessibility,
+              BodyViewType.back,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(String label, IconData icon, BodyViewType type) {
+    final isSelected = _viewType == type;
+
+    return InkWell(
+      onTap: () => setState(() => _viewType = type),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFFFF4538) // Акцентный цвет
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : const Color(0xFFB0B5C0),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFFB0B5C0),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+    Widget _buildBodyVisualization() {
+    return Container(
+      height: 520,
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E), // Обновленный фон
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFB0B5C0).withOpacity(0.1), // Нейтральная обводка
+          width: 1,
+        ),
+        // Тень убрана для более чистого "плоского" дизайна под 2C2C2E
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            _buildGridBackground(),
+
+            // 🔥 ИДЕАЛЬНАЯ КЛИКАБЕЛЬНОСТЬ
+                        // 🔥 ИДЕАЛЬНАЯ КЛИКАБЕЛЬНОСТЬ
+            Center(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                // Используем onPanDown вместо onTapDown для более точного перехвата локальных координат
+                onPanDown: (details) {
+                  // details.localPosition - это координаты КЛИКА ОТНОСИТЕЛЬНО ЭТОГО SizedBox (340x500)
+                  // Ему вообще не важно, где находится скролл!
+                  final localPos = details.localPosition;
+                  
+                  // Передаем точные размеры нашего SizedBox (340x500)
+                  final zone = _detectZoneFromTap(localPos, const Size(340, 500));
+                  
+                  if (zone != null) {
+                    _toggleZone(zone);
+                  }
+                },
+                child: SizedBox(
+                  width: 340,
+                  height: 500,
+                  child: BodyChart(
+                    selectedParts: _selectedZones,
+                    selectedColor: const Color(0xFFFF4538),
+                    unselectedColor: const Color(0xFF3A3A3C), 
+                    viewType: _viewType,
+                    width: 340, // Ширина должна совпадать с шириной SizedBox
+                  ),
+                ),
+              ),
+            ),
+
+
+            Positioned(
+              top: 16,
+              right: 16,
+              child: _buildSelectionCounter(),
+            ),
+
+            if (_selectedZones.isEmpty)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF4538).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFFF4538).withOpacity(0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.touch_app, color: Color(0xFFFF4538), size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Нажми на тело',
+                          style: TextStyle(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildGridBackground() {
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _GridPainter(),
+    );
+  }
+
+  Widget _buildSelectionCounter() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: _selectedZones.length >= _maxSelections
+            ? const LinearGradient(colors: [Color(0xFFFF4538), Color(0xFFFF4538)])
+            : const LinearGradient(colors: [Color(0xFFFF4538), Color(0xFFFF4538)]),
+        borderRadius: BorderRadius.circular(20),
+        
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _selectedZones.length >= _maxSelections
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: Colors.white,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '${_selectedZones.length}/$_maxSelections',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectionHint() {
+    return AnimatedOpacity(
+      opacity: _selectedZones.isEmpty ? 1.0 : 0.7,
+      duration: const Duration(milliseconds: 300),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF2C2C2E).withOpacity(0.15),
+              const Color(0xFF2C2C2E).withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFF2C2C2E).withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _selectedZones.isEmpty ? Icons.touch_app : Icons.lightbulb_outline,
+              color: const Color(0xFFFF4538),
+              size: 22,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                _selectedZones.isEmpty
+                    ? 'Нажми на зоны тела или выбери кнопками ниже'
+                    : 'Программа добавит больше упражнений на выбранные области',
+                style: TextStyle(
+                  color: const Color(0xFFB0B5C0).withOpacity(0.95),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZoneChips() {
+    final visibleZones = _getVisibleZones();
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      alignment: WrapAlignment.center,
+      children: visibleZones.map((zoneId) {
+        final zone = _bodyZones[zoneId]!;
+        final isSelected = _selectedZones.contains(zoneId);
+        final color = zone['color'] as Color;
+
+        return AnimatedScale(
+          scale: isSelected ? 1.05 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: InkWell(
+            onTap: () => _toggleZone(zoneId),
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [color.withOpacity(0.3), color.withOpacity(0.15)],
+                      )
+                    : null,
+                color: isSelected ? null : const Color(0xFF2C2C2E),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isSelected ? color : color.withOpacity(0.3),
+                  width: isSelected ? 2 : 1,
+                ),
+                
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(zone['icon'] as String, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        zone['title'] as String,
+                        style: TextStyle(
+                          color: isSelected ? color : Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (zone['subtitle'] != null)
+                        Text(
+                          zone['subtitle'] as String,
+                          style: TextStyle(
+                            color: const Color(0xFFB0B5C0).withOpacity(0.7),
+                            fontSize: 10,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+    Widget _buildFloatingButton() {
+    final canContinue = _selectedZones.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: canContinue ? 1.0 : 0.5,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: canContinue
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF4538), Color(0xFFFF4538)],
+                  )
+                : null,
+            color: canContinue ? null : const Color(0xFF2C2C2E),
+          ),
+          child: ElevatedButton(
+            onPressed: canContinue
+                ? () {
+                    // Сохраняем список выбранных зон в Provider
+                    context.read<OnboardingProvider>().setTargetZones(_selectedZones.toList());
+
+                    // Переходим на следующий экран
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TrainingLocationScreen(),
+                      ),
+                    );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Продолжить',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: canContinue 
+                        ? Colors.white 
+                        : const Color(0xFFB0B5C0).withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_rounded, 
+                  color: canContinue 
+                      ? Colors.white 
+                      : const Color(0xFFB0B5C0).withOpacity(0.5), 
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFB0B5C0).withOpacity(0.03)
+      ..strokeWidth = 1;
+
+    const spacing = 25.0;
+
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
