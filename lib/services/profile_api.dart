@@ -56,11 +56,13 @@ class ProfileApi {
       debugPrint('>>> updateProfile email: $actualEmail');
       debugPrint('>>> updateProfile equipment: ${updated.equipmentEnabled.toList()}');
 
-      final response = await http.post(
+            final response = await http.post(
         Uri.parse(StringApi.profileUpdate),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: utf8.encode(jsonEncode({
           'email':     actualEmail,
+          'firstName': updated.firstName, // <-- ДОБАВИТЬ ЭТО
+          'lastName':  updated.lastName,  // <-- ДОБАВИТЬ ЭТО
           'heightCm':  updated.heightCm,
           'weightKg':  updated.weightKg,
           'goalText':  updated.goalText,
@@ -69,6 +71,7 @@ class ProfileApi {
           'preset':    updated.preset.name,
         })),
       );
+
 
       debugPrint('>>> updateProfile статус: ${response.statusCode}');
       debugPrint('>>> updateProfile ответ: ${response.body}');

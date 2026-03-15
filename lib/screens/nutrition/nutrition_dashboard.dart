@@ -404,7 +404,7 @@ Future<void> _saveToCache() async {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-          Appnar.buildModernAppBar(context, "Питание"),
+          AppSectionHeader(title: 'Питание'),
           SliverToBoxAdapter(
             child: SafeArea(
               top: false,

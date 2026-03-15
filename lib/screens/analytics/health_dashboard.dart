@@ -212,7 +212,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-          Appnar.buildModernAppBar(context, "Статистика"),
+          AppSectionHeader(title: 'Статистика'),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),

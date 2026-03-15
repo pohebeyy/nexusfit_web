@@ -33,19 +33,40 @@ class _ContextJsonScreenState extends State<ContextJsonScreen> {
     final p = provider.profile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF1C1C1E), // Основной фон приложения
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1D1E33),
-        title: const Text('💻 Контекст (JSON)'),
+        backgroundColor: const Color(0xFF2C2C2E), // Фон AppBar как в профиле
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Контекст (JSON)',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF00D9FF), Color(0xFF0099CC)],
+                colors: [Color(0xFFFF4538), Color(0xFFFF6B35)], // Ваш фирменный градиент
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF4538).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: IconButton(
               tooltip: 'Сохранить',
@@ -56,24 +77,38 @@ class _ContextJsonScreenState extends State<ContextJsonScreen> {
                         await provider.updateAiContextFromJson(_ctrl.text);
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('✅ Контекст сохранен'),
-                            backgroundColor: Colors.green,
+                          SnackBar(
+                            content: const Text(
+                              'Контекст сохранен',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: const Color(0xFF2C2C2E),
                             behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: const BorderSide(color: Color(0xFFFF4538), width: 1),
+                            ),
                           ),
                         );
                       } catch (e) {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('❌ Ошибка JSON: $e'),
-                            backgroundColor: Colors.red,
+                            content: Text(
+                              'Ошибка JSON: $e',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: const Color(0xFF2C2C2E),
                             behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: const BorderSide(color: Colors.red, width: 1),
+                            ),
                           ),
                         );
                       }
                     },
-              icon: const Icon(Icons.save_rounded, color: Colors.white),
+              icon: const Icon(Icons.save_rounded, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -82,36 +117,28 @@ class _ContextJsonScreenState extends State<ContextJsonScreen> {
         padding: const EdgeInsets.all(16),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1D1E33),
-                const Color(0xFF252B41).withOpacity(0.8),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.08),
-            ),
+            color: const Color(0xFF2C2C2E), // Фон карточек в вашем приложении
+            borderRadius: BorderRadius.circular(16),
           ),
           child: TextField(
             controller: _ctrl,
             maxLines: null,
-            expands: true,
+            
             style: const TextStyle(
               fontFamily: 'monospace',
-              color: Color(0xFF00D9FF),
+              color: Color(0xFFFFFFFF), // Золотой/желтый цвет, который используется у вас для акцентов
               fontSize: 13,
+              height: 1.5,
             ),
             decoration: InputDecoration(
               labelText: 'JSON Контекст для AI',
               labelStyle: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withOpacity(0.5),
+                fontWeight: FontWeight.w500,
               ),
               alignLabelWithHint: true,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.all(20),

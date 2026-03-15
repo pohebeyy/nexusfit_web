@@ -38,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _weight = TextEditingController();
 
   DateTime? _birthDate;
-
+   double? _dragStartX; 
   // 1. Ключи для тура
   final GlobalKey inventoryKey = GlobalKey();
   final GlobalKey heightKey = GlobalKey();
@@ -401,6 +401,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (mounted) setState(() {});
   }
+    Future<void> _editName() async {
+    if (!mounted) return;
+    final provider = context.read<ProfileProvider>();
+    final p = provider.profile;
+    if (p == null) return;
+
+    // Склеиваем имя и фамилию для редактирования одной строкой
+    final currentName = '${p.firstName} ${p.lastName}'.trim();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => _EditDialog(
+        title: 'Имя',
+        initialValue: currentName,
+        hint: 'Например: Александр',
+        keyboardType: TextInputType.name,
+      ),
+    );
+
+    if (!mounted || result == null || result.trim().isEmpty) return;
+
+    // Разбиваем введенную строку обратно на имя и фамилию
+    final parts = result.trim().split(' ');
+    final newFirstName = parts.isNotEmpty ? parts[0] : '';
+    final newLastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    await provider.save(p.copyWith(
+      firstName: newFirstName,
+      lastName: newLastName,
+    ));
+  }
 
   Future<void> _editGoal() async {
     if (!mounted) return;
@@ -475,291 +506,221 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProfileProvider>(
-      builder: (context, provider, _) {
-        if (provider.isLoading && provider.profile == null) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF1C1C1E),
-            body: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Color(0xFFFFD700)),
-              ),
-            ),
-          );
+    return GestureDetector(
+      onHorizontalDragStart: (details) {
+        _dragStartX = details.globalPosition.dx;
+      },
+      onHorizontalDragUpdate: (details) {
+        // Если жест начался в левых 60 пикселях экрана и идет вправо
+        if (_dragStartX != null && _dragStartX! < 60) {
+          if (details.delta.dx > 12) {
+            Navigator.of(context).pop();
+            _dragStartX = null;
+          }
         }
+      },
+      child: Consumer<ProfileProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading && provider.profile == null) {
+            return const Scaffold(
+              backgroundColor: Color(0xFF1C1C1E),
+              body: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(Color(0xFFFF4538)),
+                ),
+              ),
+            );
+          }
 
-        final p = provider.profile;
-        if (p == null) {
+          final p = provider.profile;
+          if (p == null) {
+            return Scaffold(
+              backgroundColor: const Color(0xFF1C1C1E),
+              appBar: AppBar(
+                backgroundColor: const Color(0xFF2C2C2E),
+                title: const Text('Профиль'),
+              ),
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: provider.isLoading ? null : () async => provider.load(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF4538),
+                    foregroundColor: const Color(0xFF1C1C1E),
+                  ),
+                  child: const Text('Загрузить профиль'),
+                ),
+              ),
+            );
+          }
+
           return Scaffold(
             backgroundColor: const Color(0xFF1C1C1E),
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF2C2C2E),
-              title: const Text('Профиль'),
-            ),
-            body: Center(
-              child: ElevatedButton(
-                onPressed: provider.isLoading ? null : () async => provider.load(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
-                  foregroundColor: const Color(0xFF1C1C1E),
-                ),
-                child: const Text('Загрузить профиль'),
+            body: ScrollConfiguration(
+              behavior: _WebTouchScrollBehavior(),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // КОМПАКТНЫЙ APP BAR
+                  SliverAppBar(
+                    floating: false,
+                    pinned: true,
+                    backgroundColor: const Color(0xFF1C1C1E),
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    title: const Text(
+                      'Профиль',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    centerTitle: true,
+                  ),
+
+                  // КОНТЕНТ
+                  SliverToBoxAdapter(
+                    child: Form(
+                      key: _formKey,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ПРОФИЛЬ КАРТОЧКА
+                            _ProfileCard(
+                              firstName: p.firstName.isEmpty ? 'Александр' : p.firstName,
+                              lastName: p.lastName.isEmpty ? '' : p.lastName,
+                              subtitle: '💎 PRO SUBSCRIBER',
+                              onEdit: _editName, // <--- ВЫЗЫВАЕМ НОВУЮ ФУНКЦИЮ
+                            ),
+
+
+                            const SizedBox(height: 16),
+
+                            // ИНВЕНТАРЬ
+                            const _SectionTitle('ТЕЛО И ЦЕЛИ'),
+                            const SizedBox(height: 12),
+                            _MenuItem(
+                              key: inventoryKey,
+                              icon: Icons.fitness_center_rounded,
+                              title: 'ДОСТУПНЫЙ ПРЕСЕТ',
+                              subtitle: equipmentPresetTitle(p.preset),
+                              trailing: '',
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const InventoryScreen()),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // АНТРОПОМЕТРИЯ
+                            const _SectionTitle('АНТРОПОМЕТРИЯ'),
+                            const SizedBox(height: 12),
+                            _MenuItem(
+                              icon: Icons.flag_rounded,
+                              title: 'Цель',
+                              trailing: p.goalText.isEmpty ? 'Не указана' : p.goalText,
+                              onTap: _editGoal,
+                            ),
+                            const SizedBox(height: 8),
+                            _MenuItem(
+                              key: heightKey,
+                              icon: Icons.height_rounded,
+                              title: 'Рост',
+                              trailing: p.heightCm == null ? 'Не указан' : '${p.heightCm!.toInt()} см',
+                              onTap: _editHeight,
+                            ),
+                            const SizedBox(height: 8),
+                            _MenuItem(
+                              key: weightKey,
+                              icon: Icons.monitor_weight_outlined,
+                              title: 'Вес',
+                              trailing: p.weightKg == null ? 'Не указан' : '${p.weightKg!.toStringAsFixed(1)} кг',
+                              onTap: _editWeight,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ТРАВМЫ И ОГРАНИЧЕНИЯ
+                            const _SectionTitle('ТРАВМЫ И ОГРАНИЧЕНИЯ'),
+                            const SizedBox(height: 12),
+                            _MenuItem(
+                              key: injuriesKey,
+                              icon: Icons.warning_rounded,
+                              iconColor: const Color(0xFFFF4538),
+                              title: 'Травмы и Ограничения',
+                              trailing: p.injuries.isEmpty ? 'ОПИСАТЬ' : '${p.injuries.length} шт',
+                              trailingColor: const Color(0xFFFF4538),
+                              onTap: _editInjuries,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // AI КОНТЕКСТ
+                            const _SectionTitle('AI CONTEXT'),
+                            const SizedBox(height: 12),
+                            _MenuItem(
+                              icon: Icons.memory_rounded,
+                              title: 'AI Context',
+                              trailing: 'Digital Twin',
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const ContextJsonScreen()),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // КНОПКА ВЫХОДА
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: provider.isLoading
+                                    ? null
+                                    : () async {
+                                        await provider.logout();
+                                        if (!context.mounted) return;
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder: (context) => const LoginScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  side: const BorderSide(color: Color(0xFFFF4538), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'ВЫЙТИ ИЗ АККАУНТА',
+                                  style: TextStyle(
+                                    color: Color(0xFFFF4538),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
-        }
-
-        return Scaffold(
-          backgroundColor: const Color(0xFF1C1C1E),
-          body: ScrollConfiguration(
-            behavior: _WebTouchScrollBehavior(),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-              // КОМПАКТНЫЙ APP BAR
-              SliverAppBar(
-                floating: false,
-                pinned: true,
-                backgroundColor: const Color(0xFF1C1C1E),
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                title: const Text(
-                  'Профиль',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                centerTitle: true,
-                
-              ),
-
-              // КОНТЕНТ
-              SliverToBoxAdapter(
-                child: Form(
-                  key: _formKey,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ПРОФИЛЬ КАРТОЧКА
-                        _ProfileCard(
-                          firstName: p.firstName.isEmpty ? 'Александр' : p.firstName,
-                          lastName: p.lastName.isEmpty ? '' : p.lastName,
-                          subtitle: '💎 PRO SUBSCRIBER',
-                          onEdit: () {},
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // БЫСТРЫЕ ДЕЙСТВИЯ
-                        _SectionTitle('ОБСЛЕДОВАНИЕ + ПЛАН'),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _QuickActionButton(
-                                icon: Icons.home_rounded,
-                                label: 'ДОМ',
-                                onTap: () {},
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _QuickActionButton(
-                                icon: Icons.fitness_center_rounded,
-                                label: 'ЗАЛ',
-                                onTap: () {},
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _QuickActionButton(
-                                icon: Icons.water_drop_rounded,
-                                label: 'ДИЕТА',
-                                onTap: () {},
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _QuickActionButton(
-                                icon: Icons.add_rounded,
-                                label: 'CUSTOM',
-                                onTap: () {},
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // ИНВЕНТАРЬ
-                        _SectionTitle('ТЕЛО И ЦЕЛИ'),
-                        const SizedBox(height: 12),
-                        _MenuItem(
-                          key: inventoryKey, // <--- Ключ
-                          icon: Icons.fitness_center_rounded,
-                          title: 'ДОСТУПНЫЙ ПРЕСЕТ',
-                          subtitle: equipmentPresetTitle(p.preset),
-                          trailing: '',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const InventoryScreen()),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // АНТРОПОМЕТРИЯ
-                        _SectionTitle('АНТРОПОМЕТРИЯ'),
-                        const SizedBox(height: 12),
-                        _MenuItem(
-                          icon: Icons.flag_rounded,
-                          title: 'Цель',
-                          trailing: p.goalText.isEmpty ? 'Не указана' : p.goalText,
-                          onTap: _editGoal,
-                        ),
-                        const SizedBox(height: 8),
-                        _MenuItem(
-                          key: heightKey, // <--- Ключ
-                          icon: Icons.height_rounded,
-                          title: 'Рост',
-                          trailing: p.heightCm == null ? 'Не указан' : '${p.heightCm!.toInt()} см',
-                          onTap: _editHeight,
-                        ),
-                        const SizedBox(height: 8),
-                        _MenuItem(
-                          key: weightKey, // <--- Ключ
-                          icon: Icons.monitor_weight_outlined,
-                          title: 'Вес',
-                          trailing: p.weightKg == null ? 'Не указан' : '${p.weightKg!.toStringAsFixed(1)} кг',
-                          onTap: _editWeight,
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // ТРАВМЫ И ОГРАНИЧЕНИЯ
-                        _SectionTitle('ТРАВМЫ И ОГРАНИЧЕНИЯ'),
-                        const SizedBox(height: 12),
-                        _MenuItem(
-                          key: injuriesKey, // <--- Ключ
-                          icon: Icons.warning_rounded,
-                          iconColor: const Color(0xFFFF4538),
-                          title: 'Травмы и Ограничения',
-                          trailing: p.injuries.isEmpty ? 'ОПИСАТЬ' : '${p.injuries.length} шт',
-                          trailingColor: const Color(0xFFFF4538),
-                          onTap: _editInjuries,
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // AI КОНТЕКСТ
-                        _SectionTitle('AI CONTEXT'),
-                        const SizedBox(height: 12),
-                        _MenuItem(
-                          icon: Icons.memory_rounded,
-                          title: 'AI Context',
-                          trailing: 'Digital Twin',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const ContextJsonScreen()),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // НАСТРОЙКИ
-                        _SectionTitle('НАСТРОЙКИ'),
-                        const SizedBox(height: 12),
-                        _MenuItem(
-                          icon: Icons.shopping_bag_rounded,
-                          title: 'Подписка',
-                          trailing: 'Актив',
-                          onTap: () {},
-                        ),
-                        const SizedBox(height: 8),
-                        _MenuItem(
-                          icon: Icons.notifications_outlined,
-                          title: 'Уведомления',
-                          trailing: '',
-                          onTap: () {},
-                        ),
-                        const SizedBox(height: 8),
-                        _MenuItem(
-                          icon: Icons.language_rounded,
-                          title: 'Язык',
-                          trailing: 'Русский',
-                          onTap: () {},
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // КНОПКА ВЫХОДА
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: provider.isLoading
-                                ? null
-                                : () async {
-                                    await provider.logout();
-                                    if (!context.mounted) return;
-                                    Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute(
-                                        builder: (context) => const LoginScreen(),
-                                      ),
-                                      (route) => false,
-                                    );
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: const BorderSide(color: Color(0xFFFF4538), width: 1.5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'ВЫЙТИ ИЗ АККАУНТА',
-                              style: TextStyle(
-                                color: Color(0xFFFF4538),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Center(
-                          child: TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              'УДАЛИТЬ БАЗУ',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.4),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }
@@ -1041,7 +1002,7 @@ class _EditDialogState extends State<_EditDialog> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFFFD700), width: 2),
+            borderSide: const BorderSide(color: Color(0xFFFF4538), width: 2),
           ),
         ),
       ),
@@ -1054,14 +1015,23 @@ class _EditDialogState extends State<_EditDialog> {
           ),
         ),
                 ElevatedButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700),
-            foregroundColor: const Color(0xFF1C1C1E),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: const Text('Сохранить'),
-        ),
+  onPressed: () => Navigator.pop(context, _controller.text),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFFF4538), // Красный/оранжевый фон кнопки
+    foregroundColor: Colors.white,            // <--- СДЕЛАЕТ ТЕКСТ "Сохранить" БЕЛЫМ
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10)
+    ),
+  ),
+  child: const Text(
+    'Сохранить',
+    style: TextStyle(
+      fontWeight: FontWeight.w700, // Можно добавить жирность для лучшей читаемости
+      letterSpacing: 0.5,
+    ),
+  ),
+),
+
 
       ],
     );
@@ -1078,122 +1048,136 @@ class _InjuriesScreen extends StatefulWidget {
 
 class _InjuriesScreenState extends State<_InjuriesScreen> {
   final _ctrl = TextEditingController();
-
+  double? _dragStartX;
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
-    return Consumer<ProfileProvider>(
-      builder: (context, provider, _) {
-        final p = provider.profile!;
-        
-        return Scaffold(
-          backgroundColor: const Color(0xFF1C1C1E),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF2C2C2E),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
+    // ---> НОВОЕ: Обертка GestureDetector
+    return GestureDetector(
+      onHorizontalDragStart: (details) {
+        _dragStartX = details.globalPosition.dx;
+      },
+      onHorizontalDragUpdate: (details) {
+        if (_dragStartX != null && _dragStartX! < 60) {
+          if (details.delta.dx > 12) {
+            Navigator.of(context).pop();
+            _dragStartX = null;
+          }
+        }
+      },
+      child: Consumer<ProfileProvider>(
+        builder: (context, provider, _) {
+          final p = provider.profile!;
+          
+          return Scaffold(
+            backgroundColor: const Color(0xFF1C1C1E),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2C2C2E),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Травмы и Ограничения',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              centerTitle: true,
             ),
-            title: const Text(
-              'Травмы и Ограничения',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            centerTitle: true,
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _ctrl,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Например: сломал ногу, астма',
-                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                          filled: true,
-                          fillColor: const Color(0xFF2C2C2E),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _ctrl,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Например: сломал ногу, астма',
+                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                            filled: true,
+                            fillColor: const Color(0xFF2C2C2E),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD700),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF4538),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          onPressed: provider.isLoading
+                              ? null
+                              : () async {
+                                  final text = _ctrl.text.trim();
+                                  if (text.isEmpty) return;
+                                  _ctrl.clear();
+                                  await provider.addInjury(text);
+                                },
+                          icon: const Icon(Icons.add_rounded, color: Color(0xFF1C1C1E)),
+                        ),
                       ),
-                      child: IconButton(
-                        onPressed: provider.isLoading
-                            ? null
-                            : () async {
-                                final text = _ctrl.text.trim();
-                                if (text.isEmpty) return;
-                                _ctrl.clear();
-                                await provider.addInjury(text);
-                              },
-                        icon: const Icon(Icons.add_rounded, color: Color(0xFF1C1C1E)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                if (p.injuries.isEmpty)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Пока пусто',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: p.injuries.length,
-                      itemBuilder: (context, i) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2C2C2E),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning_rounded, color: Color(0xFFFF4538), size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  p.injuries[i],
-                                  style: const TextStyle(color: Colors.white, fontSize: 15),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: provider.isLoading ? null : () => provider.removeInjuryAt(i),
-                                icon: const Icon(Icons.close_rounded, color: Color(0xFFFF4538), size: 20),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 24),
+                  if (p.injuries.isEmpty)
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Пока пусто',
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+                        ),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: p.injuries.length,
+                        itemBuilder: (context, i) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2C2C2E),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_rounded, color: Color(0xFFFF4538), size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    p.injuries[i],
+                                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: provider.isLoading ? null : () => provider.removeInjuryAt(i),
+                                  icon: const Icon(Icons.close_rounded, color: Color(0xFFFF4538), size: 20),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

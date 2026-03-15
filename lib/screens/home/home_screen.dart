@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // 0 - Home, 1 - AI Chat
   int selectedIndex = 0;
 
-  
+  double? _dragStartX;
   final GlobalKey _aiTabKey = GlobalKey();
   final GlobalKey<ChatScreenState> _chatKey = GlobalKey<ChatScreenState>();
   // если у тебя был callback switchToStats - не трогаем
@@ -202,22 +202,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+Widget build(BuildContext context) {
+  final screenWidth = MediaQuery.of(context).size.width;
+
+  return Listener(
+    onPointerDown: (event) {
+      _dragStartX = event.position.dx;
+    },
+    onPointerMove: (event) {
+      if (_dragStartX == null) return;
+      final currentX = event.position.dx;
+      final deltaX = currentX - _dragStartX!;
+
+      // свайп справа налево: Home -> AI
+      if (selectedIndex == 0 && _dragStartX! > screenWidth - 50) {
+        if (deltaX < -15) {
+          setState(() => selectedIndex = 1);
+          _dragStartX = null;
+        }
+      }
+      // свайп слева направо: AI -> Home
+      else if (selectedIndex == 1 && _dragStartX! < 50) {
+        if (deltaX > 15) {
+          setState(() => selectedIndex = 0);
+          _dragStartX = null;
+        }
+      }
+    },
+    onPointerUp: (_) => _dragStartX = null,
+    onPointerCancel: (_) => _dragStartX = null,
+
+    child: Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
-      body: IndexedStack(
-        index: selectedIndex,
+      body: Stack(
         children: [
-          HomePageContent(
-            switchToStats: switchToStats,
-            aiTabKey: _aiTabKey,
+          // Home
+          IgnorePointer(
+            ignoring: selectedIndex != 0,
+            child: AnimatedOpacity(
+              opacity: selectedIndex == 0 ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: HomePageContent(
+                switchToStats: switchToStats,
+                aiTabKey: _aiTabKey,
+              ),
+            ),
           ),
-          ChatScreen(key: _chatKey), // AI‑коуч
+
+          // AI Chat
+          IgnorePointer(
+            ignoring: selectedIndex != 1,
+            child: AnimatedOpacity(
+              opacity: selectedIndex == 1 ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: ChatScreen(key: _chatKey),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: _buildModernBottomNav(),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildModernBottomNav() {
     const activeColor = Color(0xFFFF6B35);
@@ -652,24 +701,24 @@ class HomePageContentState extends State<HomePageContent> {
                     selectedDate: selectedDate,
                   ),
 
-                  const SizedBox(height: 24),
-                  const SizedBox(height: 24),
+                  
                   const SizedBox(height: 16),
 
-                  SizedBox(
-                    height: 320,
-                    child: PageView(
-                      key: metricsKey,
-                      padEnds: false,
-                      controller: PageController(viewportFraction: 0.85),
-                      children: const [
-                        FlipMetricCard.sleep(),
-                        FlipMetricCard.activity(),
-                      ],
-                    ),
-                  ),
+                 SizedBox(
+    height: 320,
+    child: PageView(
+      key: metricsKey,
+      padEnds: false,
+      clipBehavior: Clip.none, 
+      controller: PageController(viewportFraction: 0.85),
+      children: [
+        FlipMetricCard.sleep(selectedDate: selectedDate),
+        FlipMetricCard.activity(selectedDate: selectedDate), // <-- РџР•Р Р•Р”РђР•Рњ Р”РђРўРЈ
+      ],
+    ),
+  ),
 
-                  const SizedBox(height: 60),
+                  
                 ],
               ),
             ),
@@ -686,14 +735,14 @@ class _HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Текст "Главная" слева
             
             const Text(
-              'Главная',
+              'ГЛАВНАЯ',
               textAlign: TextAlign.left,
               style: TextStyle(
                 color: Colors.white,
@@ -740,19 +789,23 @@ class _HomeHeader extends StatelessWidget {
 
 
 
+
+
 enum FlipCardType { sleep, nutrition, activity, water }
 
 class FlipMetricCard extends StatefulWidget {
   final FlipCardType type;
+  final DateTime selectedDate; // <-- РќРћР’РћР• РџРћР›Р•
 
-  const FlipMetricCard.sleep({super.key}) : type = FlipCardType.sleep;
-  const FlipMetricCard.nutrition({super.key}) : type = FlipCardType.nutrition;
-  const FlipMetricCard.activity({super.key}) : type = FlipCardType.activity;
-  const FlipMetricCard.water({super.key}) : type = FlipCardType.water;
+  const FlipMetricCard.sleep({super.key, required this.selectedDate}) : type = FlipCardType.sleep;
+  const FlipMetricCard.nutrition({super.key, required this.selectedDate}) : type = FlipCardType.nutrition;
+  const FlipMetricCard.activity({super.key, required this.selectedDate}) : type = FlipCardType.activity;
+  const FlipMetricCard.water({super.key, required this.selectedDate}) : type = FlipCardType.water;
 
   @override
   State<FlipMetricCard> createState() => _FlipMetricCardState();
 }
+
 
 class _FlipMetricCardState extends State<FlipMetricCard> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
@@ -802,23 +855,28 @@ class _FlipMetricCardState extends State<FlipMetricCard> with SingleTickerProvid
                     alignment: Alignment.center,
                     transform: Matrix4.identity()..rotateY(3.14159),
                     child: _buildBack(),
+                    
                   ),
+                  
           );
+          
         },
+        
       ),
     );
   }
 
-    Widget _buildFront() {
+     Widget _buildFront() {
     switch (widget.type) {
       case FlipCardType.sleep:
         return const SleepFrontCard();
       case FlipCardType.activity:
-        return const ActivityFrontCard();
+        return ActivityFrontCard(selectedDate: widget.selectedDate); // <-- РћС€РёР±РєР° Р±С‹Р»Р° Р·РґРµСЃСЊ (РёСЃРїСЂР°РІР»РµРЅРѕ)
       default:
         return const SizedBox.shrink(); 
     }
   }
+
 
   Widget _buildBack() {
     switch (widget.type) {
@@ -842,7 +900,7 @@ class _BaseFlipCardContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-      // важно: не используем clipBehavior, оставляем по умолчанию (Clip.none)
+      // РІР°Р¶РЅРѕ: РЅРµ РёСЃРїРѕР»СЊР·СѓРµРј clipBehavior, РѕСЃС‚Р°РІР»СЏРµРј РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ (Clip.none)
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF2C2C2E),
@@ -855,7 +913,7 @@ class _BaseFlipCardContainer extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRect( // защищаем только контент, но не режем при повороте
+      child: ClipRect( // Р·Р°С‰РёС‰Р°РµРј С‚РѕР»СЊРєРѕ РєРѕРЅС‚РµРЅС‚, РЅРѕ РЅРµ СЂРµР¶РµРј РїСЂРё РїРѕРІРѕСЂРѕС‚Рµ
         child: child,
       ),
     );
@@ -883,12 +941,7 @@ class _SleepFrontCardState extends State<SleepFrontCard> {
   Future<void> _loadSleepData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      // Достаем сохраненное количество часов (если вы его сохраняете в провайдере)
-      // Если вы еще не сохраняете саму цифру в AICoachProvider, добавьте туда: 
-      // await prefs.setDouble('last_sleep_hours', hours); 
-      // во время вызова _handleSleepLogInput
-      final hours = prefs.getDouble('last_sleep_hours') ?? 8.0; 
+      final hours = prefs.getDouble('last_sleep_hours') ?? 8.0;
 
       if (mounted) {
         setState(() {
@@ -905,125 +958,145 @@ class _SleepFrontCardState extends State<SleepFrontCard> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Высчитываем процент качества сна (идеал = 8 часов)
     double targetSleep = 8.0;
     double sleepScoreRaw = (_sleepHours / targetSleep).clamp(0.0, 1.0);
     int sleepScorePercent = (sleepScoreRaw * 100).toInt();
 
-    // 2. Определяем цвета и статус в зависимости от сна
     Color mainColor;
     String statusText;
 
     if (_sleepHours >= 7.0) {
-      mainColor = const Color(0xFF5AC8FA); // Голубой - отлично
+      mainColor = const Color(0xFF5AC8FA);
       statusText = 'ЦНС ВОССТАНОВЛЕНА: НАГРУЗКА 100%';
     } else if (_sleepHours >= 5.5) {
-      mainColor = const Color(0xFFFF9500); // Оранжевый - средне
+      mainColor = const Color(0xFFFF9500);
       statusText = 'НЕЙРОКОЛЛАЙДЕР: НАГРУЗКА СНИЖЕНА';
     } else {
-      mainColor = const Color(0xFFFF3B30); // Красный - плохо
+      mainColor = const Color(0xFFFF3B30);
       statusText = 'КРИТИЧЕСКИЙ НЕДОСЫП: РЕЖИМ ЛАЙТ';
     }
 
     return _BaseFlipCardContainer(
-      child: _isLoading 
-      ? const Center(child: CircularProgressIndicator(color: Color(0xFF5AC8FA)))
-      : Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildDotIndicator(),
-              Row(
-                children: [
-                  const Text(
-                    'СОН',
-                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: mainColor, // Динамический цвет
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.nightlight_round, color: Colors.white, size: 20),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          // Сегментированный круг с помощью стандартного индикатора
-          SizedBox(
-            width: 140, // Увеличили ширину (было 130)
-            height: 140, // Увеличили высоту (было 130)
-            child: Stack(
-              alignment: Alignment.center,
+      child: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF5AC8FA)),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 140, // Указываем размеры явно для CircularProgressIndicator
-                  height: 140,
-                  child: CircularProgressIndicator(
-                    value: sleepScoreRaw, // Динамическое заполнение круга
-                    strokeWidth: 12, // Сделали линию чуть толще (было 10)
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(mainColor), // Динамический цвет
-                    strokeCap: StrokeCap.round,
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '$sleepScorePercent%', // Динамический процент
-                      style: const TextStyle(
-                        color: Colors.white, 
-                        fontSize: 42, // Увеличили размер шрифта (было 36)
-                        fontWeight: FontWeight.w800, 
-                        height: 1.0
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'ОЦЕНКА',
-                      style: TextStyle(
-                        color: Colors.white54, 
-                        fontSize: 11, // Чуть увеличили подпись (было 10)
-                        fontWeight: FontWeight.w700, 
-                        letterSpacing: 1.0
-                      ),
+                    _buildDotIndicator(),
+                    Row(
+                      children: [
+                        const Text(
+                          'СОН',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: mainColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.nightlight_round,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: mainColor.withOpacity(0.1), // Слегка подкрашиваем фон плашки
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: mainColor.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  statusText, // Динамический текст
-                  style: TextStyle(color: mainColor, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                const Spacer(),
+                SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 140,
+                        height: 140,
+                        child: CircularProgressIndicator(
+                          value: sleepScoreRaw,
+                          strokeWidth: 12,
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(mainColor),
+                          strokeCap: StrokeCap.round,
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$sleepScorePercent%',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'ОЦЕНКА',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 6),
-                Icon(Icons.bolt_rounded, color: mainColor, size: 14),
+                const SizedBox(height: 16),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: mainColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: mainColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: mainColor,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.bolt_rounded,
+                        color: mainColor,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildTapToExpand(),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-          _buildTapToExpand(),
-        ],
-      ),
     );
   }
 
@@ -1039,7 +1112,10 @@ class _SleepFrontCardState extends State<SleepFrontCard> {
         child: Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );
@@ -1057,15 +1133,25 @@ class _SleepFrontCardState extends State<SleepFrontCard> {
         children: const [
           Text(
             'НАЖМИ, ЧТОБЫ РАЗВЕРНУТЬ',
-            style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
           ),
           SizedBox(width: 4),
-          Icon(Icons.adjust_rounded, color: Colors.white54, size: 12),
+          Icon(
+            Icons.adjust_rounded,
+            color: Colors.white54,
+            size: 12,
+          ),
         ],
       ),
     );
   }
 }
+
 
 class SleepBackCard extends StatelessWidget {
   const SleepBackCard({super.key});
@@ -1086,28 +1172,45 @@ class SleepBackCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white12),
                 ),
-                child: const Icon(Icons.nightlight_round, color: Colors.white54, size: 16),
+                child: const Icon(
+                  Icons.nightlight_round,
+                  color: Colors.white54,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
                 'AI ИНСАЙТ',
-                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+                style: TextStyle(
+                  color: Color(0xFFFF3B30),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           Row(
             children: const [
-              Icon(Icons.bolt_rounded, color: Color(0xFFFF3B30), size: 16),
+              Icon(
+                Icons.bolt_rounded,
+                color: Color(0xFFFF3B30),
+                size: 16,
+              ),
               SizedBox(width: 6),
               Text(
                 'ГОТОВНОСТЬ ЦНС',
-                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0),
+                style: TextStyle(
+                  color: Color(0xFFFF3B30),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Градиентный график готовности ЦНС
           _buildRedBarChart(),
           const SizedBox(height: 16),
           Expanded(
@@ -1119,8 +1222,14 @@ class SleepBackCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Text(
-                'Сон поверхностный. Фокус снижен. ИИ убрал 2 подхода из становой тяги, чтобы не перегрузить ЦНС.',
-                style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
+                'Сон поверхностный. Фокус снижен. ИИ убрал 2 подхода '
+                'из становой тяги, чтобы не перегрузить ЦНС.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -1128,7 +1237,12 @@ class SleepBackCard extends StatelessWidget {
           const Center(
             child: Text(
               'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-              style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -1150,8 +1264,8 @@ class SleepBackCard extends StatelessWidget {
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [
-                Color(0xFF8B1A2B), // Темно-красный внизу
-                Color(0xFFFF3B30), // Ярко-красный вверху
+                Color(0xFF8B1A2B),
+                Color(0xFFFF3B30),
               ],
             ),
             borderRadius: BorderRadius.circular(4),
@@ -1164,8 +1278,14 @@ class SleepBackCard extends StatelessWidget {
 
 
 
+
 class ActivityFrontCard extends StatefulWidget {
-  const ActivityFrontCard({super.key});
+  final DateTime selectedDate;
+
+  const ActivityFrontCard({
+    super.key,
+    required this.selectedDate,
+  });
 
   @override
   State<ActivityFrontCard> createState() => _ActivityFrontCardState();
@@ -1178,29 +1298,60 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
   @override
   void initState() {
     super.initState();
-    _fetchActivityData();
+    _loadCachedAndFetchData();
   }
 
-  Future<void> _fetchActivityData() async {
+  @override
+  void didUpdateWidget(ActivityFrontCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedDate.year != oldWidget.selectedDate.year ||
+        widget.selectedDate.month != oldWidget.selectedDate.month ||
+        widget.selectedDate.day != oldWidget.selectedDate.day) {
+      setState(() => _isLoading = true);
+      _loadCachedAndFetchData();
+    }
+  }
+
+  Future<void> _loadCachedAndFetchData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final dateKey =
+        "${widget.selectedDate.year}-${widget.selectedDate.month.toString().padLeft(2, '0')}-${widget.selectedDate.day.toString().padLeft(2, '0')}";
+    final cacheKey = 'cached_active_calories_$dateKey';
+
+    final cachedCalories = prefs.getInt(cacheKey);
+    if (cachedCalories != null && mounted) {
+      setState(() {
+        _activeCalories = cachedCalories;
+        _isLoading = false;
+      });
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
       final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
-      final today = DateTime.now();
+      final activityData =
+          await StatService.fetchDailyActivity(userEmail, widget.selectedDate);
 
-      // Запрашиваем данные за сегодня
-      final activityData = await StatService.fetchDailyActivity(userEmail, today);
+      if (activityData != null && mounted) {
+        final newCalories = activityData['active_calories'] ?? 0;
 
-      if (mounted) {
+        if (newCalories != _activeCalories || cachedCalories == null) {
+          setState(() {
+            _activeCalories = newCalories;
+            _isLoading = false;
+          });
+          await prefs.setInt(cacheKey, newCalories);
+        }
+      } else if (mounted && _isLoading) {
         setState(() {
-          if (activityData != null) {
-            _activeCalories = activityData['active_calories'] ?? 0;
-          }
+          _activeCalories = 0;
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Ошибка загрузки калорий в ActivityFrontCard: $e');
-      if (mounted) {
+      debugPrint(
+          'Ошибка загрузки калорий в ActivityFrontCard: $e');
+      if (mounted && _isLoading) {
         setState(() => _isLoading = false);
       }
     }
@@ -1212,7 +1363,6 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Верхняя строка с точкой и заголовком
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1235,39 +1385,40 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
                       color: const Color(0xFFFF3B30),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.bolt_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
           const Spacer(),
-          
-          // Основные данные (Центр)
-          _isLoading 
-            ? const SizedBox(
-                height: 40, 
-                child: Center(
-                  child: SizedBox(
-                    width: 20, 
-                    height: 20, 
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFFF3B30), 
-                      strokeWidth: 2
-                    )
-                  )
+          _isLoading
+              ? const SizedBox(
+                  height: 40,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3B30),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
                 )
-              )
-            : Text(
-                '$_activeCalories', // <--- ЗДЕСЬ ПОДСТАВЛЯЮТСЯ РЕАЛЬНЫЕ ДАННЫЕ
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
+              : Text(
+                  '$_activeCalories',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
                 ),
-              ),
-              
           const SizedBox(height: 4),
           const Text(
             'АКТИВНЫЕ ККАЛ',
@@ -1279,12 +1430,8 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
             ),
           ),
           const SizedBox(height: 24),
-          
-          // График гистограммы
           _buildBarChart(),
           const Spacer(),
-          
-          // Нижние плашки
           _buildTapToExpand(),
         ],
       ),
@@ -1313,19 +1460,36 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
   }
 
   Widget _buildBarChart() {
-    // Высоты столбцов для имитации графика
-    final heights = [10.0, 15.0, 12.0, 25.0, 45.0, 65.0, 40.0, 90.0, 70.0, 35.0, 25.0, 20.0, 15.0, 25.0, 20.0];
+    final heights = [
+      10.0,
+      15.0,
+      12.0,
+      25.0,
+      45.0,
+      65.0,
+      40.0,
+      90.0,
+      70.0,
+      35.0,
+      25.0,
+      20.0,
+      15.0,
+      25.0,
+      20.0
+    ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(heights.length, (index) {
-        final isMax = index == 7; // Выделяем самый высокий столбец красным
+        final isMax = index == 7;
         return Container(
           width: 8,
           height: heights[index],
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            color: isMax ? const Color(0xFFFF3B30) : Colors.white.withOpacity(0.2),
+            color: isMax
+                ? const Color(0xFFFF3B30)
+                : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -1345,15 +1509,26 @@ class _ActivityFrontCardState extends State<ActivityFrontCard> {
         children: const [
           Text(
             'НАЖМИ, ЧТОБЫ РАЗВЕРНУТЬ',
-            style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
           ),
           SizedBox(width: 4),
-          Icon(Icons.adjust_rounded, color: Colors.white54, size: 12),
+          Icon(
+            Icons.adjust_rounded,
+            color: Colors.white54,
+            size: 12,
+          ),
         ],
       ),
     );
   }
 }
+
+
 class _AiCoachBullet extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -1431,23 +1606,41 @@ class ActivityBackCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white12),
                 ),
-                child: const Icon(Icons.bolt_rounded, color: Colors.white54, size: 18),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  color: Colors.white54,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
                 'AI ИНСАЙТ',
-                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+                style: TextStyle(
+                  color: Color(0xFFFF3B30),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 32),
           Row(
             children: const [
-              Icon(Icons.bolt_rounded, color: Color(0xFFFF3B30), size: 16),
+              Icon(
+                Icons.bolt_rounded,
+                color: Color(0xFFFF3B30),
+                size: 16,
+              ),
               SizedBox(width: 6),
               Text(
                 'АНАЛИЗ ЭНЕРГИИ',
-                style: TextStyle(color: Color(0xFFFF3B30), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0),
+                style: TextStyle(
+                  color: Color(0xFFFF3B30),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
@@ -1461,8 +1654,14 @@ class ActivityBackCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Text(
-                'Высокая бытовая активность. Лактат утилизирован. Выполни 5 минут МФР на икры, чтобы снять спазм перед сном.',
-                style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5, fontWeight: FontWeight.w500),
+                'Высокая бытовая активность. Лактат утилизирован. '
+                'Выполни 5 минут МФР на икры, чтобы снять спазм перед сном.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -1470,7 +1669,12 @@ class ActivityBackCard extends StatelessWidget {
           const Center(
             child: Text(
               'НАЖМИ, ЧТОБЫ ВЕРНУТЬСЯ',
-              style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],

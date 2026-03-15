@@ -2,42 +2,35 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/chat_message.dart'; // Убедитесь, что этот импорт правильный для вашего проекта
-import '../models/deep_link_action.dart'; // Если у вас нет этого файла, скажите, я напишу его код
+import '../models/chat_message.dart';
+import '../models/deep_link_action.dart';
 
 class AICoachProvider extends ChangeNotifier {
   // === СОСТОЯНИЕ ===
   final List<ChatMessage> _messages = [];
   final Map<String, dynamic> _userContext = {};
-  
+
   bool _isLoading = false;
   bool _isDisposed = false;
   bool _isWaitingForSleepLog = false;
+
+  // флаг для отмены текущего запроса
+  bool _cancelRequested = false;
 
   // === ГЕТТЕРЫ ===
   List<ChatMessage> get messages => _messages;
   Map<String, dynamic> get userContext => _userContext;
   bool get isLoading => _isLoading;
 
-  // Вспомогательный метод для старого кода, где ожидался List<Map>
-  // Если у вас где-то используется _chatHistory как Map, мы конвертируем его
-  List<Map<String, dynamic>> get _chatHistory {
-    return _messages.map((m) => {
-      'id': m.id,
-      'text': m.content,
-      'isMe': m.isFromUser,
-      // Добавьте остальные поля, если нужно
-    }).toList();
-  }
-
   // === ИНИЦИАЛИЗАЦИЯ ===
   Future<void> initChat() async {
     _messages.clear();
     _userContext.clear();
     _isWaitingForSleepLog = false;
+    _cancelRequested = false;
+    _isLoading = false;
     notifyListeners();
 
-    // Симуляция загрузки контекста
     _userContext.addAll({
       'name': 'Алексей',
       'age': 28,
@@ -49,8 +42,6 @@ class AICoachProvider extends ChangeNotifier {
     });
 
     await Future.delayed(const Duration(milliseconds: 500));
-
-    // Проверяем, вводил ли пользователь данные о сне сегодня
     await _checkDailySleepLog();
   }
 
@@ -63,108 +54,113 @@ class AICoachProvider extends ChangeNotifier {
       _isWaitingForSleepLog = true;
       _addBotMessage('Доброе утро! ☀️ Сколько часов ты спал сегодня?');
     } else if (_messages.isEmpty) {
-      // Если чат пустой и про сон уже спрашивали, просто здороваемся
       _addBotMessage('Привет! Готов к тренировке? 💪');
     }
   }
 
   // === ОТПРАВКА СООБЩЕНИЯ ===
-    // === ОТПРАВКА СООБЩЕНИЯ ===
-    // === ОТПРАВКА СООБЩЕНИЯ ===
   Future<void> sendMessage(String userMessage) async {
     if (_isDisposed) return;
 
-    // 1. Показываем сообщение пользователя
+    // запрет на параллельные запросы
+    if (_isLoading) return;
+
+    // добавляем сообщение пользователя
     _addUserMessage(userMessage);
 
-    // 2. Проверяем, есть ли в сообщении данные о сне (даже если мы об этом не спрашивали!)
+    // сон
     final sleepHours = _extractSleepHours(userMessage);
-
     if (sleepHours != null) {
-      // Бот понял, что юзер сообщает о сне
       _isWaitingForSleepLog = false;
       await _handleSleepLogInput(sleepHours);
-      return; // Прерываемся, к нейронке не идем
+      return;
     }
 
-    // Если мы ждали лог сна, но юзер перевел тему (например, нажал кнопку "как накачать пресс"),
-    // мы снимаем ожидание сна и отправляем его запрос нейросети.
     if (_isWaitingForSleepLog) {
       _isWaitingForSleepLog = false;
     }
 
-    // 3. Отправляем вопрос в нейросеть
     await _sendChatMessageToNetwork(userMessage);
+  }
+
+  // === ОТМЕНА ТЕКУЩЕГО ЗАПРОСА ===
+  void cancelCurrentRequest() {
+    if (!_isLoading) return;
+    _cancelRequested = true;
+    _setLoading(false);
+
+    _messages.add(ChatMessage(
+      id: _generateId(),
+      content: 'Запрос отменён',
+      isFromUser: false,
+      timestamp: DateTime.now(),
+    ));
+    notifyListeners();
   }
 
   // === УМНЫЙ ПАРСЕР СНА ===
   double? _extractSleepHours(String text) {
     final textLower = text.toLowerCase();
-    
-    // Ищем любую цифру (целую или с точкой/запятой)
+
     final match = RegExp(r'\d+([.,]\d+)?').firstMatch(textLower);
-    if (match == null) return null; // Нет цифр -> точно не про сон
-    
-    final double hours = double.parse(match.group(0)!.replaceAll(',', '.'));
-    
-    // Проверяем наличие ключевых слов о сне
-    final hasSleepKeywords = textLower.contains(RegExp(r'(сон|спал|спала|выспался|сном)'));
-    
-    // Сценарий 1: Мы сами только что спросили про сон утром (_isWaitingForSleepLog == true)
-    // Юзеру достаточно написать короткий ответ (например "8", "около 7") или любое сообщение со словом "спал"
-    if (_isWaitingForSleepLog && (textLower.length <= 20 || hasSleepKeywords)) {
+    if (match == null) return null;
+
+    final double hours =
+        double.parse(match.group(0)!.replaceAll(',', '.'));
+    final hasSleepKeywords =
+        textLower.contains(RegExp(r'(сон|спал|спала|выспался|сном)'));
+
+    if (_isWaitingForSleepLog &&
+        (textLower.length <= 20 || hasSleepKeywords)) {
       return hours;
     }
-    
-    // Сценарий 2: Юзер В ЛЮБОЙ МОМЕНТ сам написал "сон 3 часа" или "я спал 7 часов"
-    // Ограничиваем длину сообщения <= 40, чтобы если он задаст длинный вопрос 
-    // ("я спал 8 часов, но у меня болит спина, как мне делать становую тягу?"), 
-    // этот сложный вопрос ушел к AI-тренеру, а не просто залогировал сон.
+
     if (hasSleepKeywords && textLower.length <= 40) {
       return hours;
     }
-    
+
     return null;
   }
 
-
-
-  // === ЛОГИКА СНА (n8n webhook) ===
-    // === ЛОКАЛЬНАЯ ЛОГИКА СНА ===
-    // === ЛОКАЛЬНАЯ ЛОГИКА СНА ===
+  // === ЛОКАЛЬНАЯ ЛОГИКА СНА ===
   Future<void> _handleSleepLogInput(double hours) async {
     _setLoading(true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      // Запоминаем, что сегодня уже спрашивали про сон
+
       final todayDate = DateTime.now().toIso8601String().split('T')[0];
       await prefs.setString('last_sleep_log_date', todayDate);
       await prefs.setDouble('last_sleep_hours', hours);
-      
-      // Логика: Если сон меньше 6 часов, мы считаем это недосыпом
+
       if (hours < 6.0) {
-        // Облегчаем тренировку локально
-        bool workoutModified = await _reduceTodayWorkoutIntensityLocally();
-        
+        final workoutModified =
+            await _reduceTodayWorkoutIntensityLocally();
+
         if (workoutModified) {
           _addBotMessageWithReplacement(
-            text: 'Я вижу, что ты спал всего $hours ч. Твоя ЦНС не восстановилась. Я автоматически облегчил твою сегодняшнюю тренировку, чтобы не словить перетрен.',
+            text:
+                'Я вижу, что ты спал всего $hours ч. Твоя ЦНС не восстановилась. '
+                'Я автоматически облегчил твою сегодняшнюю тренировку, чтобы не словить перетрен.',
             oldEx: 'Обычный план',
             newEx: 'Облегченный план (-20% нагрузки)',
           );
         } else {
-          _addBotMessage('Ты спал маловато ($hours ч). У тебя сегодня день отдыха, так что просто восстанавливайся!');
+          _addBotMessage(
+            'Ты спал маловато ($hours ч). У тебя сегодня день отдыха, так что просто восстанавливайся!',
+          );
         }
-      } 
-      else if (hours >= 6.0 && hours <= 7.0) {
-        _addBotMessage('Ты спал $hours ч. Это приемлемо, но старайся спать около 8 часов. Тренировку оставляем по плану, но следи за самочувствием.');
-      } 
-      else {
-        _addBotMessage('Отличный сон ($hours ч)! 🚀 Твоя ЦНС полностью восстановлена, сегодня можно выкладываться на 100%!');
+      } else if (hours >= 6.0 && hours <= 7.0) {
+        _addBotMessage(
+          'Ты спал $hours ч. Это приемлемо, но старайся спать около 8 часов. '
+          'Тренировку оставляем по плану, но следи за самочувствием.',
+        );
+      } else {
+        _addBotMessage(
+          'Отличный сон ($hours ч)! 🚀 Твоя ЦНС полностью восстановлена, '
+          'сегодня можно выкладываться на 100%!',
+        );
       }
-
     } catch (e) {
       debugPrint('Ошибка обработки сна: $e');
       _addBotMessage('Понял, записал! Учту это в твоем прогрессе.');
@@ -173,8 +169,6 @@ class AICoachProvider extends ChangeNotifier {
     }
   }
 
-
-  // Метод, который лезет в SharedPreferences, достает сегодняшнюю тренировку и урезает ее
   Future<bool> _reduceTodayWorkoutIntensityLocally() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -183,75 +177,76 @@ class AICoachProvider extends ChangeNotifier {
 
       if (rawCalendar == null) return false;
 
-      final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
+      final Map<String, dynamic> calendarCache =
+          jsonDecode(rawCalendar);
 
-      if (calendarCache.containsKey(todayDate)) {
-        var todayWorkout = calendarCache[todayDate];
-        List<dynamic> exercises = todayWorkout['exercises'] ?? [];
+      if (!calendarCache.containsKey(todayDate)) return false;
 
-        if (exercises.isEmpty) return false;
+      var todayWorkout = calendarCache[todayDate];
+      List<dynamic> exercises =
+          todayWorkout['exercises'] ?? [];
 
-        // Идем по всем упражнениям и снижаем количество подходов или повторений
-        for (int i = 0; i < exercises.length; i++) {
-          // Пытаемся распарсить строку "display_string" (например "12x3")
-          String display = exercises[i]['display_string'] ?? '';
-          if (display.contains('x')) {
-            var parts = display.split('x');
-            int reps = int.tryParse(parts[0]) ?? 0;
-            int sets = int.tryParse(parts[1]) ?? 0;
+      if (exercises.isEmpty) return false;
 
-            if (sets > 1) {
-              sets -= 1; // Убираем 1 подход
-            } else if (reps > 8) {
-              reps -= 4; // Или снижаем повторения
-            }
+      for (int i = 0; i < exercises.length; i++) {
+        String display = exercises[i]['display_string'] ?? '';
+        if (!display.contains('x')) continue;
 
-            // Обновляем данные
-            exercises[i]['display_string'] = '${reps}x$sets';
-            exercises[i]['reps'] = reps.toString();
-            exercises[i]['sets'] = sets.toString();
-          }
+        final parts = display.split('x');
+        int reps = int.tryParse(parts[0]) ?? 0;
+        int sets = int.tryParse(parts[1]) ?? 0;
+
+        if (sets > 1) {
+          sets -= 1;
+        } else if (reps > 8) {
+          reps -= 4;
         }
 
-        // Меняем сложность на easy и уменьшаем калории/время
-        todayWorkout['difficulty'] = 'easy';
-        todayWorkout['workout_name'] = '${todayWorkout['workout_name']} (Лайт)';
-        
-        // Сохраняем обратно в кэш
-        calendarCache[todayDate] = todayWorkout;
-        await prefs.setString('calendar_workouts', jsonEncode(calendarCache));
-
-        return true; // Успешно изменили
+        exercises[i]['display_string'] = '${reps}x$sets';
+        exercises[i]['reps'] = reps.toString();
+        exercises[i]['sets'] = sets.toString();
       }
-      return false; // Сегодня нет тренировки
+
+      todayWorkout['difficulty'] = 'easy';
+      todayWorkout['workout_name'] =
+          '${todayWorkout['workout_name']} (Лайт)';
+
+      calendarCache[todayDate] = todayWorkout;
+      await prefs.setString(
+          'calendar_workouts', jsonEncode(calendarCache));
+
+      return true;
     } catch (e) {
       debugPrint('Ошибка снижения интенсивности: $e');
       return false;
     }
   }
 
-
   // === ЛОГИКА ЧАТА (n8n webhook) ===
   Future<void> _sendChatMessageToNetwork(String userMessage) async {
     _setLoading(true);
+    _cancelRequested = false;
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userEmail = prefs.getString('user_email') ?? 'akk@gmail.com';
-      
+      final userEmail =
+          prefs.getString('user_email') ?? 'akk@gmail.com';
+
       List<dynamic> currentWorkout = [];
       final todayDate = DateTime.now().toIso8601String().split('T')[0];
       final rawCalendar = prefs.getString('calendar_workouts');
-      
+
       if (rawCalendar != null) {
-        final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
+        final Map<String, dynamic> calendarCache =
+            jsonDecode(rawCalendar);
         if (calendarCache.containsKey(todayDate)) {
-          currentWorkout = calendarCache[todayDate]['exercises'] ?? [];
+          currentWorkout =
+              calendarCache[todayDate]['exercises'] ?? [];
         }
       }
 
       final response = await http.post(
-        Uri.parse('https://n8n.nexusfit.ru/webhook/chat'), // ЗАМЕНИТЕ НА ВАШ URL ЧАТА
+        Uri.parse('https://n8n.nexusfit.ru/webhook/chat'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': userEmail,
@@ -260,68 +255,93 @@ class AICoachProvider extends ChangeNotifier {
         }),
       );
 
-      if (_isDisposed) return;
+      if (_isDisposed || _cancelRequested) return;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final aiText = data['response'] ?? 'Я тебя понял.';
-        final bool isZamena = data['zamena'] == true;
-        final zamenaDetails = data['zamena_details'];
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Ошибка сервера чата: ${response.statusCode}');
+      }
 
-        if (isZamena && zamenaDetails != null) {
-          final oldEx = zamenaDetails['old_exercise']?.toString() ?? 'Старое';
-          final newEx = zamenaDetails['new_exercise']?.toString() ?? 'Новое';
-          
-          _addBotMessageWithReplacement(text: aiText, oldEx: oldEx, newEx: newEx);
-        } else {
-          _addBotMessage(aiText);
-        }
+      dynamic raw;
+      try {
+        raw = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Некорректный JSON от сервера');
+      }
+
+      Map<String, dynamic> data;
+      if (raw is List && raw.isNotEmpty && raw.first is Map) {
+        data = raw.first as Map<String, dynamic>;
+      } else if (raw is Map<String, dynamic>) {
+        data = raw;
       } else {
-        throw Exception('Ошибка сервера чата: ${response.statusCode}');
+        throw Exception('Некорректный JSON от сервера');
+      }
+
+      final aiText = data['response']?.toString() ??
+          data['aiResponse']?.toString() ??
+          'Я тебя понял.';
+      final bool isZamena = data['zamena'] == true;
+      final zamenaDetails = data['zamena_details'];
+
+      if (isZamena && zamenaDetails != null) {
+        final oldEx =
+            zamenaDetails['old_exercise']?.toString() ?? 'Старое';
+        final newEx =
+            zamenaDetails['new_exercise']?.toString() ?? 'Новое';
+
+        _addBotMessageWithReplacement(
+          text: aiText,
+          oldEx: oldEx,
+          newEx: newEx,
+        );
+      } else {
+        _addBotMessage(aiText);
       }
     } catch (e) {
       debugPrint('Ошибка отправки сообщения в чат: $e');
-      if (!_isDisposed) {
-        _addBotMessage('Извини, сейчас нет связи с сервером 📡 Попробуй чуть позже.');
+      if (!_isDisposed && !_cancelRequested) {
+        _addBotMessage(
+          'Извини, сейчас нет связи с сервером 📡 Попробуй чуть позже.',
+        );
       }
     } finally {
       _setLoading(false);
     }
   }
 
-  // === ПРИМЕНЕНИЕ ЗАМЕНЫ (Кнопка в UI) ===
+  // === ПРИМЕНЕНИЕ ЗАМЕНЫ ===
   void applyReplacement(ChatMessage message) async {
     if (message.oldExercise == null || message.newExercise == null) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final String todayDate = DateTime.now().toIso8601String().split('T')[0];
-    final String? rawCalendar = prefs.getString('calendar_workouts');
+    final todayDate = DateTime.now().toIso8601String().split('T')[0];
+    final rawCalendar = prefs.getString('calendar_workouts');
 
-    if (rawCalendar != null) {
-      final Map<String, dynamic> calendarCache = jsonDecode(rawCalendar);
-      
-      if (calendarCache.containsKey(todayDate)) {
-        List<dynamic> exercises = calendarCache[todayDate]['exercises'];
-        
-        // Заменяем старое упражнение на новое
-        for (int i = 0; i < exercises.length; i++) {
-          if (exercises[i]['name'] == message.oldExercise) {
-            exercises[i]['name'] = message.newExercise;
-          }
-        }
-        
-        // Сохраняем обновленный кэш
-        await prefs.setString('calendar_workouts', jsonEncode(calendarCache));
-        
-        // Помечаем сообщение как примененное
-        message.isApplied = true;
-        notifyListeners();
+    if (rawCalendar == null) return;
+
+    final Map<String, dynamic> calendarCache =
+        jsonDecode(rawCalendar);
+
+    if (!calendarCache.containsKey(todayDate)) return;
+
+    final exercises =
+        calendarCache[todayDate]['exercises'] as List<dynamic>;
+
+    for (int i = 0; i < exercises.length; i++) {
+      if (exercises[i]['name'] == message.oldExercise) {
+        exercises[i]['name'] = message.newExercise;
       }
     }
+
+    await prefs.setString(
+        'calendar_workouts', jsonEncode(calendarCache));
+
+    message.isApplied = true;
+    notifyListeners();
   }
 
   // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
-  
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -347,7 +367,11 @@ class AICoachProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _addBotMessageWithReplacement({required String text, required String oldEx, required String newEx}) {
+  void _addBotMessageWithReplacement({
+    required String text,
+    required String oldEx,
+    required String newEx,
+  }) {
     _messages.add(ChatMessage(
       id: _generateId(),
       content: text,
@@ -360,7 +384,8 @@ class AICoachProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _generateId() => '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
+  String _generateId() =>
+      '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
 
   @override
   void dispose() {

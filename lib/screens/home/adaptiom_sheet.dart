@@ -67,7 +67,7 @@ bool _isAdapting = false;
                           value: _options[k],
                           onChanged: (v) => setState(() => _options[k] = v ?? false),
                           title: Text(k, style: const TextStyle(color: Colors.white)),
-                          activeColor: const Color(0xFF6C5CE7),
+                          activeColor: const Color(0xFFFF4538),
                           checkColor: Colors.white,
                           contentPadding: EdgeInsets.zero,
                         );
@@ -81,7 +81,7 @@ bool _isAdapting = false;
                           labelText: 'Напиши свой вариант',
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
-                          fillColor: const Color(0xFFFF6B35),
+                          fillColor: const Color(0xFF2C2C2E),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: const BorderSide(color: Colors.white24),
@@ -128,10 +128,10 @@ bool _isAdapting = false;
                       child: ElevatedButton(
                         onPressed: _onApply,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B35),
+                          backgroundColor: const Color(0xFFFF4538),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('ПРИМЕНИТЬ АДАПТАЦИЮ', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),

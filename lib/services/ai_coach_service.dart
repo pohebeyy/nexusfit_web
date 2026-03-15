@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/deep_link_action.dart';
 
+
 class AICoachService {
-  final List<Map<String, dynamic>> _chatHistory = [];
-  final Map<String, dynamic> _userContext = {};
-  bool _isDisposed = false;
+ final List<Map<String, dynamic>> _chatHistory = [];
+ final Map<String, dynamic> _userContext = {};
+ bool _isDisposed = false;
 
-  List<Map<String, dynamic>> get chatHistory => _chatHistory;
-  Map<String, dynamic> get userContext => _userContext;
 
-  Future<void> initChat() async {
-    _chatHistory.clear();
-    _userContext.clear();
+ List<Map<String, dynamic>> get chatHistory => _chatHistory;
+ Map<String, dynamic> get userContext => _userContext;
 
-    // Загрузить контекст пользователя из БД
-    // (симуляция)
+
+ Future<void> initChat() async {
+ _chatHistory.clear();
+  _userContext.clear();
+
+
+ // Загрузить контекст пользователя из БД
+// (симуляция)
     _userContext.addAll({
       'name': 'Алексей',
       'age': 28,
@@ -25,11 +29,14 @@ class AICoachService {
       'motivation': 'medium',
     });
 
+
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
+
   Future<void> sendMessage(String userMessage) async {
     if (_isDisposed) return;
+
 
     // Добавить сообщение пользователя
     _chatHistory.add({
@@ -40,20 +47,26 @@ class AICoachService {
       'timestamp': DateTime.now().toIso8601String(),
     });
 
+
     // Имитация задержки сети
     await Future.delayed(const Duration(milliseconds: 800));
 
+
     if (_isDisposed) return;
+
 
     // Генерировать ответ коуча с контекстом
     final aiResponse = _generateContextualResponse(userMessage);
 
+
     _chatHistory.add(aiResponse);
   }
+
 
   Map<String, dynamic> _generateContextualResponse(String userMessage) {
     final messageWithContext = _buildContextString();
     debugPrint('📊 Context for AI:\n$messageWithContext');
+
 
     // Примеры ответов в зависимости от сообщения
     if (userMessage.toLowerCase().contains('боль') ||
@@ -67,8 +80,10 @@ class AICoachService {
       return _generateMotivationResponse(userMessage);
     }
 
+
     return _generateGenericResponse(userMessage);
   }
+
 
   Map<String, dynamic> _generateInjuryResponse(String userMessage) {
     final actionCard = ActionCardData(
@@ -101,6 +116,7 @@ class AICoachService {
       ),
     );
 
+
     return {
       'id': _generateId(),
       'text': 'Вижу, у тебя проблемы с ногой. Неделю назад была травма икры, вчера была тяжелая тренировка, '
@@ -117,6 +133,7 @@ class AICoachService {
       'actionCards': [actionCard.toJson()],
     };
   }
+
 
   Map<String, dynamic> _generateWorkoutResponse(String userMessage) {
     final actionCard = ActionCardData(
@@ -149,6 +166,7 @@ class AICoachService {
       ),
     );
 
+
     return {
       'id': _generateId(),
       'text': 'Окей, составлю классный план для тебя! Я вижу, что ты ищешь полноценную программу.\n\n'
@@ -159,6 +177,7 @@ class AICoachService {
       'actionCards': [actionCard.toJson()],
     };
   }
+
 
   Map<String, dynamic> _generateNutritionResponse(String userMessage) {
     return {
@@ -175,6 +194,7 @@ class AICoachService {
       'timestamp': DateTime.now().toIso8601String(),
     };
   }
+
 
   Map<String, dynamic> _generateMotivationResponse(String userMessage) {
     return {
@@ -195,6 +215,7 @@ class AICoachService {
     };
   }
 
+
   Map<String, dynamic> _generateGenericResponse(String userMessage) {
     return {
       'id': _generateId(),
@@ -208,8 +229,10 @@ class AICoachService {
     };
   }
 
+
   Future<void> sendMotivationalMessage() async {
     if (_isDisposed) return;
+
 
     final message = {
       'id': _generateId(),
@@ -220,8 +243,10 @@ class AICoachService {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
+
     _chatHistory.add(message);
   }
+
 
   String _buildContextString() {
     final sb = StringBuffer();
@@ -236,16 +261,20 @@ class AICoachService {
     return sb.toString();
   }
 
+
   int _daysSinceLastWorkout() {
     final lastWorkout = _userContext['lastWorkout'] as DateTime?;
     if (lastWorkout == null) return 0;
     return DateTime.now().difference(lastWorkout).inDays;
   }
 
+
   String _generateId() => '${DateTime.now().millisecondsSinceEpoch}_$_randomSuffix';
+
 
   String get _randomSuffix =>
       (DateTime.now().millisecond + DateTime.now().microsecond).toString();
+
 
   void dispose() {
     _isDisposed = true;

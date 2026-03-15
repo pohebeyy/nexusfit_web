@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:startap/widgets/appnar.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../providers/ai_coach_provider.dart';
 import '../../models/chat_message.dart';
@@ -8,19 +9,24 @@ import 'package:startap/screens/profile/profile.dart';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
+
   @override
   State<ChatScreen> createState() => ChatScreenState();
 }
+
 
 class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
 
+
   late TutorialCoachMark _tutorialCoachMark;
   final GlobalKey quickButtonsKey = GlobalKey();
   final GlobalKey inputFieldKey = GlobalKey();
 
+
   bool _tourStartedThisSession = false;
+
 
   @override
   void initState() {
@@ -30,29 +36,37 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
 
+
   // Публичный метод для запуска тура снаружи (из Home)
   // В проде: максимум 1 раз на аккаунт
   Future<void> startChatTour({bool forceForTests = false}) async {
     if (!mounted) return;
 
+
     // 1. Проверяем флаг в SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool('seen_chat_tour_v1') ?? false;
 
+
     // Если уже показывали и нет force — выходим
     if (seen && !forceForTests) return;
+
 
     // Чтобы в рамках одной "жизни" экрана не спамить,
     // даже если кто-то дергает метод много раз подряд
     if (_tourStartedThisSession && !forceForTests) return;
 
+
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
+
     _tourStartedThisSession = true;
+
 
     _showTutorial(prefs: prefs, forceForTests: forceForTests);
   }
+
 
   void _showTutorial({
     required SharedPreferences prefs,
@@ -78,8 +92,10 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       },
     );
 
+
     _tutorialCoachMark.show(context: context);
   }
+
 
   Widget _buildTourCard({
   required String title,
@@ -224,6 +240,7 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 }
 
 
+
   List<TargetFocus> _createTargets() {
   return [
     TargetFocus(
@@ -291,6 +308,7 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 }
 
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,59 +342,21 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+
     PreferredSizeWidget _buildAppBar() {
   return AppBar(
+    
     backgroundColor: const Color(0xFF1C1C1E),
     elevation: 0,
     automaticallyImplyLeading: false,
     titleSpacing: 0,
-    title: Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'AI КОУЧ',
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
-              );
-            },
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1.5,
-                ),
-                color: const Color(0xFF2C2C2E),
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white70,
-                size: 20,
-              ),
-            ),
-          ),
-        ],
-      ),
+    title: const AppSectionHeader(
+      title: 'AI КОУЧ',
+      padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
     ),
   );
 }
+
 
 
   Widget _buildMessageBubble(ChatMessage message, int index) {
@@ -539,6 +519,7 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+
   Widget _buildTypingIndicator() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -581,6 +562,7 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+
   Widget _buildDot(int index) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
@@ -606,42 +588,46 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+
   Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey[900]!,
-            width: 0.5,
-          ),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF1C1C1E),
+      border: Border(
+        top: BorderSide(
+          color: Colors.grey[900]!,
+          width: 0.5,
         ),
       ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              key: quickButtonsKey,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildQuickButton('БОЛИТ ПЛЕЧО'),
-                    const SizedBox(width: 8),
-                    _buildQuickButton('УПАЛА МОТИВАЦИЯ'),
-                    const SizedBox(width: 8),
-                    _buildQuickButton('КАК НАКАЧАТЬ ПРЕСС'),
-                    const SizedBox(width: 8),
-                    _buildQuickButton('ДИЕТА ДЛЯ ПОХУДЕНИЯ'),
-                  ],
+    ),
+    child: SafeArea(
+      child: Consumer<AICoachProvider>(
+        builder: (context, coachProvider, _) {
+          final isLoading = coachProvider.isLoading;
+
+          return Column(
+            children: [
+              // Быстрые подсказки — скрываем во время запроса
+              if (!isLoading)
+                Container(
+                  key: quickButtonsKey,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildQuickButton('Я плохо спал'),
+                        const SizedBox(width: 8),
+                        _buildQuickButton('Болит плечо'),
+                        const SizedBox(width: 8),
+                        _buildQuickButton('Нет энергии'),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              key: inputFieldKey,
-              child: Row(
+              Row(
+                key: inputFieldKey,
                 children: [
                   Expanded(
                     child: Container(
@@ -651,81 +637,78 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       ),
                       child: TextField(
                         controller: _textController,
+                        enabled: !isLoading, // нельзя печатать во время запроса
                         style: const TextStyle(color: Colors.white),
                         maxLines: null,
                         decoration: InputDecoration(
-                          hintText: 'Напиши свой вопрос...',
-                          hintStyle:
-                              TextStyle(color: Colors.grey[600], fontSize: 14),
+                          hintText: isLoading
+                              ? 'Подожди завершения ответа...'
+                              : 'Напиши вопрос или расскажи, как ты спал',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
-                          ),
-                          suffixIcon: IconButton(
-                            icon:
-                                Icon(Icons.mic, color: Colors.grey[600]),
-                            onPressed: () {},
                           ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Consumer<AICoachProvider>(
-                    builder: (context, coachProvider, _) {
-                      return Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFFF3B30),
-                              Color(0xFFFF6B6B),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF3B30), Color(0xFFFF6B6B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          if (isLoading) {
+                            context
+                                .read<AICoachProvider>()
+                                .cancelCurrentRequest();
+                          } else {
+                            _sendMessage();
+                          }
+                        },
+                        child: Center(
+                          child: isLoading
+                              ? const Icon(
+                                  Icons.stop_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                )
+                              : const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: coachProvider.isLoading
-                                ? null
-                                : _sendMessage,
-                            child: Center(
-                              child: coachProvider.isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation(
-                                                Colors.white),
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.send_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   Widget _buildQuickButton(String text) {
     return InkWell(
@@ -756,21 +739,26 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _sendMessage() {
-    if (_textController.text.isNotEmpty) {
-      context.read<AICoachProvider>().sendMessage(_textController.text);
-      _textController.clear();
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+
+ void _sendMessage() {
+  final text = _textController.text.trim();
+  if (text.isEmpty) return;
+
+  context.read<AICoachProvider>().sendMessage(text);
+  _textController.clear();
+
+  Future.delayed(const Duration(milliseconds: 300), () {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
-  }
+  });
+}
+
+
 
   @override
   void dispose() {

@@ -262,7 +262,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
         builder: (context, workoutProvider, _) {
           return CustomScrollView(
             slivers: [
-              Appnar.buildModernAppBar(context, 'Тренировки'),
+              AppSectionHeader(title: 'Главная'),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
