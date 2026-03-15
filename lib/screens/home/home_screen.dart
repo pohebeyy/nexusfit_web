@@ -577,30 +577,70 @@ class HomePageContentState extends State<HomePageContent> {
   required TutorialCoachMarkController controller,
   int stepIndex = 0,
   required VoidCallback onNext,
-  required VoidCallback onPrev, // можно оставить, если нужно
-  required VoidCallback onSkip, // НОВЫЙ колбэк
+  required VoidCallback onPrev,
+  required VoidCallback onSkip,
   bool isLast = false,
 }) {
   return Container(
-    // ... твой декор
+    decoration: BoxDecoration(
+      color: const Color(0xFF1C1C1E).withOpacity(0.98),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: const Color(0xFFFF4538).withOpacity(0.6),
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFFFF4538).withOpacity(0.3),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(20),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // шапка + текст как было
+        // заголовок
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFFF4538),
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // текст
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.85),
+            fontSize: 13,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 20),
+        // нижняя полоска с кнопками
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Кнопка "ПРОПУСТИТЬ" всегда слева
             GestureDetector(
               onTap: onSkip,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                  ),
                 ),
                 child: const Text(
                   'ПРОПУСТИТЬ',
@@ -614,11 +654,13 @@ class HomePageContentState extends State<HomePageContent> {
               ),
             ),
             const SizedBox(width: 10),
-            // Кнопка "ДАЛЕЕ / ПОГНАЛИ"
             GestureDetector(
               onTap: onNext,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF4538), Color(0xFFFF6B35)],
@@ -651,6 +693,7 @@ class HomePageContentState extends State<HomePageContent> {
     ),
   );
 }
+
 
   // --- КОНЕЦ БЛОКА 2 ---
 
