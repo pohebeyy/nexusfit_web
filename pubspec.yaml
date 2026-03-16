@@ -51,6 +51,7 @@ dependencies:
   tutorial_coach_mark: ^1.3.3
   dio: ^5.9.2
   flutter_svg: ^2.0.9
+  vibration: ^3.1.8
   
 
 
@@ -78,3 +79,4 @@ flutter:
 
   assets:
      - assets/
+     - assets/sounds/click.mp3

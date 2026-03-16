@@ -302,30 +302,22 @@ Widget build(BuildContext context) {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SvgPicture.asset(
-                        'assets/container.svg',
-                        width: 26,
-                        height: 26,
-                        colorFilter: selectedIndex == 0
-                            ? null
-                            : const ColorFilter.mode(
-                                inactiveColor,
-                                BlendMode.srcIn,
-                              ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'HOME',
-                        style: TextStyle(
-                          color: selectedIndex == 0
-                              ? activeColor
-                              : inactiveColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
+  Icon(
+    Icons.home_rounded,
+    size: 26,
+    color: selectedIndex == 0 ? activeColor : inactiveColor,
+  ),
+  const SizedBox(height: 4),
+  Text(
+    'HOME',
+    style: TextStyle(
+      color: selectedIndex == 0 ? activeColor : inactiveColor,
+      fontSize: 10,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.5,
+    ),
+  ),
+],
                   ),
                 ),
               ),

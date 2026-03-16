@@ -1,6 +1,7 @@
 // workout_player_screen.dart
 import 'dart:convert';
 import 'dart:ui';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:startap/providers/workout_provider.dart';
 import 'package:startap/screens/workouts/workout_exercise.dart';
 import 'package:startap/screens/workouts/rpe_rating_screen.dart';
-
+import 'dart:html' as html;
 // ВАЖНО: Проверь, что путь правильный. Здесь мы импортируем новый экран завершения тренировки.
 import 'package:startap/screens/workouts/WorkoutCompleteScreen.dart'; 
 
@@ -64,22 +65,31 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
     _ticker.dispose();
     super.dispose();
   }
+  void playClick() {
+  final audio = html.AudioElement('assets/sounds/click.mp3');
+  audio.play();
+}
+ void _startTimer() {
+  if (_isTimerRunning) return;
 
-  void _startTimer() {
-    if (_isTimerRunning) return;
-    _isTimerRunning = true;
+  playClick();
+
+  _isTimerRunning = true;
+  _elapsed = Duration.zero;
+  _ticker.start();
+}
+
+void _stopTimer() {
+  if (!_isTimerRunning) return;
+
+  playClick();
+
+  _isTimerRunning = false;
+  _ticker.stop();
+  setState(() {
     _elapsed = Duration.zero;
-    _ticker.start();
-  }
-
-  void _stopTimer() {
-    if (!_isTimerRunning) return;
-    _isTimerRunning = false;
-    _ticker.stop();
-    setState(() {
-      _elapsed = Duration.zero; 
-    });
-  }
+  });
+}
 
   String _formatDuration(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
