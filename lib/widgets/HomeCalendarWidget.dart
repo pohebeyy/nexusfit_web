@@ -79,8 +79,7 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
                 )
               : isToday
                   ? BoxDecoration(
-                      color:
-                          const Color(0xFF2C2C2E).withOpacity(0.3),
+                      color: const Color(0xFF2C2C2E).withOpacity(0.3),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: const Color(0xFF4C4C4D),
@@ -132,147 +131,150 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFF2C2C2E), width: 1),
           ),
-          child: TableCalendar(
-            locale: 'ru_RU',
-            availableGestures: AvailableGestures.horizontalSwipe,
-            firstDay: DateTime.utc(2024, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: widget.selectedDate,
-            currentDay: DateTime.now(),
-            selectedDayPredicate: (day) =>
-                isSameDay(widget.selectedDate, day),
-            calendarFormat: _calendarFormat,
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            availableCalendarFormats: const {
-              CalendarFormat.month: 'Месяц',
-              CalendarFormat.week: 'Неделя',
-            },
-            daysOfWeekVisible: _calendarFormat == CalendarFormat.month,
-            rowHeight: _calendarFormat == CalendarFormat.week ? 85 : 52,
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              leftChevronIcon: Icon(
-                Icons.chevron_left_rounded,
-                color: Colors.white,
-              ),
-              rightChevronIcon: Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white,
-              ),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle:
-                  TextStyle(color: Colors.grey[400]!, fontSize: 12),
-              weekendStyle:
-                  TextStyle(color: Colors.grey[400]!, fontSize: 12),
-            ),
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              defaultTextStyle: const TextStyle(color: Colors.white),
-              weekendTextStyle:
-                  const TextStyle(color: Colors.white70),
-              cellMargin: const EdgeInsets.all(4),
-              cellPadding:
-                  const EdgeInsets.symmetric(vertical: 2),
-              todayDecoration: BoxDecoration(
-                color: const Color(0xFF2C2C2E).withOpacity(0.3),
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF4C4C4D),
-                  width: 1,
+          // Только AnimatedSize — плавное изменение высоты в обе стороны
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: TableCalendar(
+              locale: 'ru_RU',
+              availableGestures: AvailableGestures.horizontalSwipe,
+              firstDay: DateTime.utc(2024, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: widget.selectedDate,
+              currentDay: DateTime.now(),
+              selectedDayPredicate: (day) =>
+                  isSameDay(widget.selectedDate, day),
+              calendarFormat: _calendarFormat,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              availableCalendarFormats: const {
+                CalendarFormat.month: 'Месяц',
+                CalendarFormat.week: 'Неделя',
+              },
+              daysOfWeekVisible: _calendarFormat == CalendarFormat.month,
+              rowHeight: _calendarFormat == CalendarFormat.week ? 85 : 52,
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                leftChevronIcon: Icon(
+                  Icons.chevron_left_rounded,
+                  color: Colors.white,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
                 ),
               ),
-              selectedDecoration: BoxDecoration(
-                color: const Color(0xFF2C2C2E),
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF4C4C4D),
-                  width: 1,
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle:
+                    TextStyle(color: Colors.grey[400]!, fontSize: 12),
+                weekendStyle:
+                    TextStyle(color: Colors.grey[400]!, fontSize: 12),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                defaultTextStyle: const TextStyle(color: Colors.white),
+                weekendTextStyle: const TextStyle(color: Colors.white70),
+                cellMargin: const EdgeInsets.all(4),
+                cellPadding: const EdgeInsets.symmetric(vertical: 2),
+                todayDecoration: BoxDecoration(
+                  color: const Color(0xFF2C2C2E).withOpacity(0.3),
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF4C4C4D),
+                    width: 1,
+                  ),
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: const Color(0xFF2C2C2E),
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF4C4C4D),
+                    width: 1,
+                  ),
+                ),
+                defaultDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                weekendDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                outsideDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              defaultDecoration: BoxDecoration(
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              weekendDecoration: BoxDecoration(
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              outsideDecoration: BoxDecoration(
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onDaySelected: (selectedDay, focusedDay) {
-              widget.onDateSelected(selectedDay);
-            },
-            onPageChanged: (focusedDay) {},
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, date, _) {
-                if (_calendarFormat == CalendarFormat.month) return null;
-                return _buildWeekCell(
-                  date,
-                  isSelected: false,
-                  isToday: false,
-                );
+              onDaySelected: (selectedDay, focusedDay) {
+                widget.onDateSelected(selectedDay);
               },
-              selectedBuilder: (context, date, _) {
-                if (_calendarFormat == CalendarFormat.month) return null;
-                return _buildWeekCell(
-                  date,
-                  isSelected: true,
-                  isToday: false,
-                );
-              },
-              todayBuilder: (context, date, _) {
-                if (_calendarFormat == CalendarFormat.month) return null;
-                return _buildWeekCell(
-                  date,
-                  isSelected: false,
-                  isToday: true,
-                );
-              },
-              outsideBuilder: (context, date, _) {
-                if (_calendarFormat == CalendarFormat.month) return null;
-                return _buildWeekCell(
-                  date,
-                  isSelected: false,
-                  isToday: false,
-                );
-              },
-              markerBuilder: (context, date, events) {
-                final normalizedDate =
-                    DateTime(date.year, date.month, date.day);
-                if (_workoutDays[normalizedDate] == true) {
-                  return Align(
-                    alignment: _calendarFormat == CalendarFormat.week
-                        ? const Alignment(0, 0.82)
-                        : const Alignment(0, 0.7),
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF51CF66),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+              onPageChanged: (focusedDay) {},
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, date, _) {
+                  if (_calendarFormat == CalendarFormat.month) return null;
+                  return _buildWeekCell(
+                    date,
+                    isSelected: false,
+                    isToday: false,
                   );
-                }
-                return null;
-              },
+                },
+                selectedBuilder: (context, date, _) {
+                  if (_calendarFormat == CalendarFormat.month) return null;
+                  return _buildWeekCell(
+                    date,
+                    isSelected: true,
+                    isToday: false,
+                  );
+                },
+                todayBuilder: (context, date, _) {
+                  if (_calendarFormat == CalendarFormat.month) return null;
+                  return _buildWeekCell(
+                    date,
+                    isSelected: false,
+                    isToday: true,
+                  );
+                },
+                outsideBuilder: (context, date, _) {
+                  if (_calendarFormat == CalendarFormat.month) return null;
+                  return _buildWeekCell(
+                    date,
+                    isSelected: false,
+                    isToday: false,
+                  );
+                },
+                markerBuilder: (context, date, events) {
+                  final normalizedDate =
+                      DateTime(date.year, date.month, date.day);
+                  if (_workoutDays[normalizedDate] == true) {
+                    return Align(
+                      alignment: _calendarFormat == CalendarFormat.week
+                          ? const Alignment(0, 0.82)
+                          : const Alignment(0, 0.7),
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF51CF66),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
+              ),
             ),
           ),
         ),
 
-        // стрелочка ВПЛОТНУЮ под календарём
+        // стрелочка под календарём (плавная смена иконки)
         GestureDetector(
           onTap: () {
             setState(() {
@@ -282,12 +284,10 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
             });
           },
           child: Container(
-            // чуть шире — уменьшаем отступы по бокам
             margin: const EdgeInsets.symmetric(horizontal: 12),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2E), // цвет по запросу
+              color: const Color(0xFF2C2C2E),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(0),
                 topRight: Radius.circular(0),
@@ -299,12 +299,19 @@ class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
                 width: 1,
               ),
             ),
-            child: Icon(
-              _calendarFormat == CalendarFormat.week
-                  ? Icons.keyboard_arrow_down_rounded
-                  : Icons.keyboard_arrow_up_rounded,
-              color: Colors.grey[300],
-              size: 16, // иконка чуть меньше по высоте
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: Icon(
+                _calendarFormat == CalendarFormat.week
+                    ? Icons.keyboard_arrow_down_rounded
+                    : Icons.keyboard_arrow_up_rounded,
+                key: ValueKey(_calendarFormat),
+                color: Colors.grey[300],
+                size: 16,
+              ),
             ),
           ),
         ),

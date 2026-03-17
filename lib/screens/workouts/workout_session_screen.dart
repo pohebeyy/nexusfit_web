@@ -156,32 +156,24 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
 
   Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFF242426),
-                borderRadius: BorderRadius.circular(21),
-              ),
-              child: IconButton(
-                splashRadius: 20,
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _textPrimary,
-                  size: 18,
-                ),
-              ),
-            ),
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+    child: Row(
+      children: [
+        // Стрелка слева с отступом
+        IconButton(
+          splashRadius: 20,
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: _textPrimary,
+            size: 18,
           ),
-          Column(
+        ),
+        // Растягиваемая область для центрирования текста
+        SizedBox(width: 8,),
+        Expanded(
+          child: Column(
             children: [
               Text(
                 widget.title.toUpperCase(),
@@ -206,10 +198,15 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        // Пустой SizedBox той же ширины, что и стрелка, для симметрии
+        SizedBox(
+          width: 48, // примерно ширина IconButton
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildMeta() {
     return const SizedBox.shrink();

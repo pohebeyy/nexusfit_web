@@ -22,28 +22,31 @@ class AICoachProvider extends ChangeNotifier {
   Map<String, dynamic> get userContext => _userContext;
   bool get isLoading => _isLoading;
 
-  // === ИНИЦИАЛИЗАЦИЯ ===
   Future<void> initChat() async {
-    _messages.clear();
-    _userContext.clear();
-    _isWaitingForSleepLog = false;
-    _cancelRequested = false;
-    _isLoading = false;
-    notifyListeners();
+  _messages.clear();
+  _userContext.clear();
+  _isWaitingForSleepLog = false;
+  _cancelRequested = false;
+  _isLoading = false;
+  notifyListeners();
 
-    _userContext.addAll({
-      'name': 'Алексей',
-      'age': 28,
-      'lastWorkout': DateTime.now().subtract(const Duration(days: 1)),
-      'injuries': ['икра_неделю_назад'],
-      'sleepHours': 5,
-      'hydration': 'low',
-      'motivation': 'medium',
-    });
+  _userContext.addAll({
+    'name': 'Алексей',
+    'age': 28,
+    'lastWorkout': DateTime.now().subtract(const Duration(days: 1)),
+    'injuries': ['икра_неделю_назад'],
+    'sleepHours': 5,
+    'hydration': 'low',
+    'motivation': 'medium',
+  });
 
-    await Future.delayed(const Duration(milliseconds: 500));
+  await Future.delayed(const Duration(milliseconds: 500));
+  
+  if (_messages.isEmpty) {
     await _checkDailySleepLog();
   }
+}
+
 
   Future<void> _checkDailySleepLog() async {
     final prefs = await SharedPreferences.getInstance();
