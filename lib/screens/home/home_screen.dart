@@ -393,7 +393,7 @@ class HomePageContentState extends State<HomePageContent> {
   DateTime selectedDate = DateTime.now();
   
   // Ключи должны быть глобальными переменными класса!
-  final GlobalKey calendarKey = GlobalKey();
+  final GlobalKey<HomeCalendarWidgetState> calendarKey = GlobalKey<HomeCalendarWidgetState>();
   final GlobalKey todayWorkoutKey = GlobalKey();
   final GlobalKey metricsKey = GlobalKey();
   
@@ -734,6 +734,7 @@ class HomePageContentState extends State<HomePageContent> {
                   TodayWorkoutCard(
                     key: todayWorkoutKey,
                     selectedDate: selectedDate,
+                    onWorkoutGenerated: () => calendarKey.currentState?.reloadWorkoutDays(),
                   ),
 
                   

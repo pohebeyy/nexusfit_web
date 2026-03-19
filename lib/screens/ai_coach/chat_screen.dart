@@ -6,6 +6,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../providers/ai_coach_provider.dart';
 import '../../models/chat_message.dart';
 import 'package:startap/screens/profile/profile.dart';
+import 'dart:math';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -325,10 +326,10 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   itemCount: coachProvider.messages.length +
                       (coachProvider.isLoading ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (index == coachProvider.messages.length &&
-                        coachProvider.isLoading) {
-                      return _buildTypingIndicator();
-                    }
+                     if (index == coachProvider.messages.length &&
+                      coachProvider.isLoading) {
+                    return const _TypingIndicator(); // ← добавили return
+                  }
                     final message = coachProvider.messages[index];
                     return _buildMessageBubble(message, index);
                   },
@@ -765,5 +766,92 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+}
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator({Key? key}) : super(key: key);
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(); // бесконечное повторение
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF2C2C2E),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.psychology_rounded,
+                color: Colors.grey[500], size: 18),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2C2C2E),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDot(0),
+                const SizedBox(width: 4),
+                _buildDot(1),
+                const SizedBox(width: 4),
+                _buildDot(2),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // Плавное движение вверх-вниз, каждая точка со сдвигом фазы
+        final phase = (_controller.value * 2 * pi + index * 2.0) % (2 * pi);
+        final offset = 4 * (0.5 - 0.5 * cos(phase)); // от 0 до 4 пикселей
+        return Transform.translate(
+          offset: Offset(0, -offset),
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
   }
 }

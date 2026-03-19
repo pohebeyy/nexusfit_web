@@ -14,16 +14,20 @@ class HomeCalendarWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<HomeCalendarWidget> createState() => _HomeCalendarWidgetState();
+  State<HomeCalendarWidget> createState() => HomeCalendarWidgetState();
 }
 
-class _HomeCalendarWidgetState extends State<HomeCalendarWidget> {
+class HomeCalendarWidgetState extends State<HomeCalendarWidget> {
   CalendarFormat _calendarFormat = CalendarFormat.week;
   Map<DateTime, bool> _workoutDays = {};
 
   @override
   void initState() {
     super.initState();
+    _loadWorkoutDays();
+  }
+
+  void reloadWorkoutDays() {
     _loadWorkoutDays();
   }
 
